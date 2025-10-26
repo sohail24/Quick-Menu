@@ -20,9 +20,20 @@ spring:
     properties:
       hibernate:
         format_sql: true
+# file upload / post size limits
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 server:
   port: 8080
+  tomcat:
+    # Accept POST bodies up to ~10MB (bytes)
+    max-http-post-size: 10485760
+    # -1 means unlimited swallowing of request body on error; helps avoid some 413 issues
+    max-swallow-size: -1
 
 springdoc:
   swagger-ui:
@@ -39,4 +50,7 @@ websocket:
   allowed-origins: "*"
 
 app:
+  uploads-dir: ./uploads
   base-url: http://localhost:8080
+
+

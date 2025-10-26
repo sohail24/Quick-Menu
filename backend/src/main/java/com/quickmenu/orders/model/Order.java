@@ -40,7 +40,15 @@ public class Order {
 
     private BigDecimal totalAmount;
 
-    private Instant placedAt = Instant.now();
+    @Column(name = "placed_at", nullable = false)
+    private Instant placedAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (placedAt == null) {
+            placedAt = Instant.now();
+        }
+    }
 
     // Not mapped; kept for DTO mapping convenience
     @Transient
