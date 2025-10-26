@@ -34,7 +34,7 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> register(@Valid @RequestBody SignUpRequest request) {
-        User created = userService.registerAdmin(request.getName(), request.getEmail(), request.getPassword());
+        User created = userService.registerAdmin(request.getName(), request.getEmail(), request.getPassword(), request.getRole());
         String token = tokenProvider.generateToken(created.getId(), created.getEmail(), created.getRole());
         return ResponseEntity.status(201).body(new AuthResponse(token, "Bearer", tokenProvider.parseClaims(token).getBody().getExpiration().getTime()));
     }

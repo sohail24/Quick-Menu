@@ -6,6 +6,7 @@ import com.quickmenu.auth.repo.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -13,13 +14,19 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    Map<String, Role> roleMap = Map.of(
+            "ADMIN", Role.ROLE_ADMIN,
+            "STAFF", Role.ROLE_STAFF,
+            "CUSTOMER", Role.ROLE_CUSTOMER
+    );
+
     public UserService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User registerAdmin(String name, String email, String rawPassword) {
+    public User registerAdmin(String name, String email, String rawPassword, String role) {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already in use");
         }
@@ -27,7 +34,7 @@ public class UserService {
                 .name(name)
                 .email(email)
                 .passwordHash(passwordEncoder.encode(rawPassword))
-                .role(Role.ROLE_ADMIN)
+                .role(roleMap.getOrDefault(role.toUpperCase(), Role.ROLE_CUSTOMER))
                 .build();
         return userRepository.save(user);
     }
