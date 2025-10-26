@@ -34,3 +34,9 @@ springdoc:
 jwt:
   secret: "change-this-to-a-long-secure-secret-at-least-32-chars"
   expirationMs: 3600000  # 1 hour
+
+websocket:
+  allowed-origins: "*"
+
+app:
+  base-url: http://localhost:8080
