@@ -1,6 +1,8 @@
 package com.quickmenu.orders.repo;
 
 import com.quickmenu.orders.model.Order;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +14,11 @@ import java.math.BigDecimal;
 public interface OrderRepository extends JpaRepository<Order, String> {
     List<Order> findByRestaurantId(String restaurantId);
     List<Order> findByRestaurantIdAndStatus(String restaurantId, Order.Status status);
+    // Pageable variants
+    Page<Order> findByRestaurantId(String restaurantId, Pageable pageable);
+    Page<Order> findByRestaurantIdAndStatus(String restaurantId, Order.Status status, Pageable pageable);
+
+
     long countByRestaurantIdAndPlacedAtBetween(String restaurantId, Instant start, Instant end);
 
     @Query("select coalesce(sum(o.totalAmount), 0) from Order o where o.restaurantId = :rid and o.placedAt between :start and :end")
