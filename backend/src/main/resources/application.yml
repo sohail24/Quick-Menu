@@ -35,12 +35,12 @@ server:
     # -1 means unlimited swallowing of request body on error; helps avoid some 413 issues
     max-swallow-size: -1
 
-springdoc:
-  swagger-ui:
-    url: /openapi.yaml
-    path: /swagger-ui.html
-  api-docs:
-    path: /v3/api-docs     # not used when using static, but safe to keep
+#springdoc:
+#  swagger-ui:
+#    url: /openapi.yaml
+#    path: /swagger-ui.html
+#  api-docs:
+#    path: /v3/api-docs     # not used when using static, but safe to keep
 
 jwt:
   secret: "change-this-to-a-long-secure-secret-at-least-32-chars"
