@@ -4,6 +4,7 @@ import com.quickmenu.menu.model.Restaurant;
 import com.quickmenu.menu.repo.RestaurantRepository;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -56,6 +57,7 @@ public class RestaurantController {
     }
 
     @DeleteMapping("/{restaurantId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> delete(@PathVariable String restaurantId) {
         restaurantRepository.deleteById(restaurantId);
         return ResponseEntity.noContent().build();
