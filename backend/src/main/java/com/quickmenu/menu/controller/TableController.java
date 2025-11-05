@@ -1,12 +1,20 @@
 package com.quickmenu.menu.controller;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 import com.quickmenu.menu.model.TableEntity;
 import com.quickmenu.menu.repo.TableRepository;
 import com.quickmenu.menu.service.TableService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 
@@ -53,6 +61,40 @@ public class TableController {
                                          @PathVariable String tableId) {
         tableService.deleteTable(restaurantId, tableId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Returns PNG image of the QR code that encodes the table's qrUrl.
+     * Example: GET /api/restaurants/{restaurantId}/tables/{tableId}/qr.png
+     */
+    @GetMapping("/{tableId}/qr.png")
+    public void getTableQrPng(@PathVariable String restaurantId,
+                              @PathVariable String tableId,
+                              HttpServletResponse response) throws IOException {
+        TableEntity table = tableService.getTable(restaurantId, tableId);
+        String url = table.getQrUrl();
+        if (url == null || url.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "QR URL not set for table");
+            return;
+        }
+
+        try {
+            byte[] png = generateQrPng(url, 300, 300);
+            response.setContentType("image/png");
+            response.setContentLength(png.length);
+            response.getOutputStream().write(png);
+        } catch (WriterException e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to generate QR");
+        }
+    }
+
+    // Utility: generate PNG bytes from text using ZXing
+    private byte[] generateQrPng(String text, int width, int height) throws WriterException, IOException {
+        QRCodeWriter qrWriter = new QRCodeWriter();
+        BitMatrix matrix = qrWriter.encode(text, BarcodeFormat.QR_CODE, width, height);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        MatrixToImageWriter.writeToStream(matrix, "PNG", baos);
+        return baos.toByteArray();
     }
 
     private Sort.Order[] parseSort(String[] sort) {
