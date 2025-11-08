@@ -1,6 +1,5 @@
 package com.quickmenu.admin;
 
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -10,11 +9,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
-public class AdminStatsController {
+public class AdminStatsControllerOld {
 
     private final AdminStatsService statsService;
 
-    public AdminStatsController(AdminStatsService statsService) {
+    public AdminStatsControllerOld(AdminStatsService statsService) {
         this.statsService = statsService;
     }
 

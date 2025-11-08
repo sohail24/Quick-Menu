@@ -1,5 +1,7 @@
 package com.quickmenu.uploads;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/uploads")
+@Tag(name = "Uploads", description = "File/image uploads for menu items")
 public class UploadController {
 
     private final Path uploadDir;
@@ -33,6 +36,7 @@ public class UploadController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload image", description = "Upload an image and return accessible URL.")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {

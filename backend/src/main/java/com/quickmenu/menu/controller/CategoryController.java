@@ -3,12 +3,16 @@ package com.quickmenu.menu.controller;
 import com.quickmenu.menu.model.Category;
 import com.quickmenu.menu.repo.CategoryRepository;
 import com.quickmenu.menu.service.MenuService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/{restaurantId}/categories")
+@Tag(name = "Menu", description = "Categories for restaurant menus")
 public class CategoryController {
 
     private final CategoryRepository categoryRepository;
@@ -20,12 +24,15 @@ public class CategoryController {
     }
 
     @PostMapping
+    @Operation(summary = "Create category", description = "Create a category under the restaurant (admin/staff).")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     public ResponseEntity<Category> create(@PathVariable String restaurantId, @RequestBody Category req) {
         Category created = menuService.createCategory(restaurantId, req.getName(), req.getOrderIndex());
         return ResponseEntity.status(201).body(created);
     }
 
     @GetMapping
+    @Operation(summary = "List categories", description = "List categories (paginated).")
     public ResponseEntity<Page<Category>> listCategories(@PathVariable String restaurantId,
                                                          @RequestParam(defaultValue = "0") int page,
                                                          @RequestParam(defaultValue = "20") int size,

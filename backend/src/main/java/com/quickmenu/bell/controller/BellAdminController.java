@@ -3,6 +3,8 @@ package com.quickmenu.bell.controller;
 import com.quickmenu.bell.model.BellEvent;
 import com.quickmenu.bell.repo.BellEventRepository;
 import com.quickmenu.bell.service.BellService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +20,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/{restaurantId}/bells")
+@Tag(name = "Bell Admin", description = "Staff endpoints for bell events (list & acknowledge)")
 public class BellAdminController {
 
     private final BellEventRepository bellEventRepository;
@@ -33,6 +36,7 @@ public class BellAdminController {
      * List bell events (paged). Staff-only.
      */
     @GetMapping
+    @Operation(summary = "List bell events", description = "List recent bell events (paginated), filter by status.")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     public ResponseEntity<Page<BellEvent>> list(@PathVariable String restaurantId,
                                                 @RequestParam(defaultValue = "0") int page,
@@ -52,6 +56,7 @@ public class BellAdminController {
      * Extracts authenticated user id/name from SecurityContext.
      */
     @PatchMapping("/{bellId}/ack")
+    @Operation(summary = "Acknowledge bell", description = "Staff acknowledges a bell event. The authenticated user is recorded as the ackBy.")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     public ResponseEntity<?> ack(@PathVariable String restaurantId,
                                  @PathVariable String bellId) {

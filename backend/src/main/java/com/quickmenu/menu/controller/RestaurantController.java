@@ -2,6 +2,8 @@ package com.quickmenu.menu.controller;
 
 import com.quickmenu.menu.model.Restaurant;
 import com.quickmenu.menu.repo.RestaurantRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,6 +13,7 @@ import java.util.Arrays;
 
 @RestController
 @RequestMapping("/api/restaurants")
+@Tag(name = "Restaurants", description = "Restaurant onboarding, details and listing")
 public class RestaurantController {
 
     private final RestaurantRepository restaurantRepository;
@@ -20,12 +23,15 @@ public class RestaurantController {
     }
 
     @PostMapping
+    @Operation(summary = "Create restaurant", description = "Create a new restaurant (admin).")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Restaurant> create(@RequestBody Restaurant req) {
         Restaurant created = restaurantRepository.save(req);
         return ResponseEntity.status(201).body(created);
     }
 
     @GetMapping
+    @Operation(summary = "List restaurants", description = "List restaurants (paginated).")
     public ResponseEntity<Page<Restaurant>> listAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -37,6 +43,7 @@ public class RestaurantController {
     }
 
     @GetMapping("/{restaurantId}")
+    @Operation(summary = "Get restaurant details", description = "Get details for a restaurant by id.")
     public ResponseEntity<Restaurant> getOne(@PathVariable String restaurantId) {
         return restaurantRepository.findById(restaurantId)
                 .map(ResponseEntity::ok)
@@ -44,6 +51,8 @@ public class RestaurantController {
     }
 
     @PatchMapping("/{restaurantId}")
+    @Operation(summary = "Update restaurant", description = "Partially update restaurant metadata (admin).")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Restaurant> update(@PathVariable String restaurantId, @RequestBody Restaurant req) {
         return restaurantRepository.findById(restaurantId)
                 .map(existing -> {
@@ -57,6 +66,7 @@ public class RestaurantController {
     }
 
     @DeleteMapping("/{restaurantId}")
+    @Operation(summary = "Delete restaurant", description = "Delete a restaurant (admin).")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> delete(@PathVariable String restaurantId) {
         restaurantRepository.deleteById(restaurantId);

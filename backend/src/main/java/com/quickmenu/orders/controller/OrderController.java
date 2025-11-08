@@ -4,14 +4,18 @@ import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.repo.OrderRepository;
 import com.quickmenu.orders.service.OrderService;
 import com.quickmenu.dto.OrderDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/{restaurantId}/orders")
+@Tag(name = "Orders", description = "Customer orders and staff order management")
 public class OrderController {
 
     private final OrderService orderService;
@@ -23,6 +27,7 @@ public class OrderController {
     }
 
     @PostMapping
+    @Operation(summary = "Place order", description = "Place an order for a table (customer).")
     public ResponseEntity<?> placeOrder(@PathVariable String restaurantId,
                                         @RequestBody OrderDto.CreateOrderRequest req) {
         Order saved = orderService.placeOrder(restaurantId, req);
@@ -30,6 +35,8 @@ public class OrderController {
     }
 
     @GetMapping
+    @Operation(summary = "List orders", description = "List orders for staff (paginated, filterable by status).")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     public ResponseEntity<Page<Order>> listOrders(@PathVariable String restaurantId,
                                                   @RequestParam(required = false) Order.Status status,
                                                   @RequestParam(defaultValue = "0") int page,
@@ -46,6 +53,8 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
+    @Operation(summary = "Get order", description = "Get order details (staff).")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     public ResponseEntity<Order> getOrder(@PathVariable String restaurantId, @PathVariable String orderId) {
         return orderRepository.findById(orderId)
                 .filter(o -> restaurantId.equals(o.getRestaurantId()))
@@ -54,6 +63,8 @@ public class OrderController {
     }
 
     @PatchMapping("/{orderId}")
+    @Operation(summary = "Update order", description = "Update order status (staff).")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     public ResponseEntity<Order> updateStatus(@PathVariable String restaurantId,
                                               @PathVariable String orderId,
                                               @RequestBody Order req) {
