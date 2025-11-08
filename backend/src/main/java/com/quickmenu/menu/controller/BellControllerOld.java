@@ -9,10 +9,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/{restaurantId}/tables")
-public class BellController {
+public class BellControllerOld {
 
     private final SimpMessagingTemplate messagingTemplate;
-    public BellController(SimpMessagingTemplate messagingTemplate) {
+    public BellControllerOld(SimpMessagingTemplate messagingTemplate) {
         this.messagingTemplate = messagingTemplate;
     }
 
