@@ -1,4 +1,4 @@
-package com.quickmenu.security;
+package com.quickmenu.auth.security;
 
 import com.quickmenu.auth.model.Role;
 import com.quickmenu.auth.model.User;

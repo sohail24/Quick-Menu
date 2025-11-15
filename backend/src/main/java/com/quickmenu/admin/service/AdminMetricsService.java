@@ -1,4 +1,4 @@
-package com.quickmenu.admin;
+package com.quickmenu.admin.service;
 
 import com.quickmenu.admin.dto.MetricDtos.HourlyDto;
 import com.quickmenu.admin.dto.MetricDtos.TopDishDto;

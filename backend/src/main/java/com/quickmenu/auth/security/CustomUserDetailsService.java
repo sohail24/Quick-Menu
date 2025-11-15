@@ -1,4 +1,4 @@
-package com.quickmenu.security;
+package com.quickmenu.auth.security;
 
 import com.quickmenu.auth.repo.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;

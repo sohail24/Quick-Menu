@@ -1,4 +1,4 @@
-package com.quickmenu.security;
+package com.quickmenu.auth.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

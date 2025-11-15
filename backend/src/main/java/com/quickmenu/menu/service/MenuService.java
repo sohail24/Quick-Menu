@@ -1,6 +1,6 @@
 package com.quickmenu.menu.service;
 
-import com.quickmenu.dto.MenuDto;
+import com.quickmenu.menu.dto.MenuDto;
 import com.quickmenu.menu.model.Category;
 import com.quickmenu.menu.model.Dish;
 import com.quickmenu.menu.repo.CategoryRepository;

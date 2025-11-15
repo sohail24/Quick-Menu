@@ -1,4 +1,4 @@
-package com.quickmenu.admin;
+package com.quickmenu.admin.service;
 
 import com.quickmenu.orders.repo.OrderRepository;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.quickmenu.dto;
+package com.quickmenu.menu.dto;
 
 import lombok.Data;
 

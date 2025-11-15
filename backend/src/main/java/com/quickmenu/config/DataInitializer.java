@@ -1,4 +1,4 @@
-package com.quickmenu.auth.config;
+package com.quickmenu.config;
 
 import com.quickmenu.auth.model.User;
 import com.quickmenu.auth.repo.UserRepository;

@@ -1,6 +1,6 @@
 package com.quickmenu.orders.service;
 
-import com.quickmenu.dto.OrderDto;
+import com.quickmenu.orders.dto.OrderDto;
 import com.quickmenu.menu.model.Dish;
 import com.quickmenu.menu.repo.DishRepository;
 import com.quickmenu.orders.model.Order;

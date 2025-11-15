@@ -1,6 +1,8 @@
-package com.quickmenu.admin;
+package com.quickmenu.admin.controller;
 
 import com.quickmenu.admin.dto.MetricDtos.AdminMetricsResponse;
+import com.quickmenu.admin.service.AdminMetricsService;
+import com.quickmenu.admin.service.AdminStatsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;

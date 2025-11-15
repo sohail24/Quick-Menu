@@ -5,8 +5,10 @@ import com.quickmenu.auth.dto.LoginRequest;
 import com.quickmenu.auth.dto.SignUpRequest;
 import com.quickmenu.auth.model.User;
 import com.quickmenu.auth.service.UserService;
-import com.quickmenu.security.CustomUserDetails;
-import com.quickmenu.security.JwtTokenProvider;
+import com.quickmenu.auth.security.CustomUserDetails;
+import com.quickmenu.auth.security.JwtTokenProvider;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Authentication", description = "Endpoints for Authentication")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -33,6 +36,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
+    @Operation(summary = "Signup Endpoint", description = "Used for registering a new User (ADMIN/STAFF/CUSTOMER")
     public ResponseEntity<?> register(@Valid @RequestBody SignUpRequest request) {
         User created = userService.registerAdmin(request.getName(), request.getEmail(), request.getPassword(), request.getRole());
         String token = tokenProvider.generateToken(created.getId(), created.getEmail(), created.getRole());
@@ -40,6 +44,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Login Endpoint", description = "Used for loging existing User to the application (ADMIN/STAFF/CUSTOMER")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
