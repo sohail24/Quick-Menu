@@ -16,7 +16,6 @@ public class SignUpRequest {
     @NotBlank
     private String password;
 
-    @NotBlank
     private String role;
 
     // optional / future: planId, restaurantName for onboarding

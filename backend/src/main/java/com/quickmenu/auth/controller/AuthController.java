@@ -38,7 +38,7 @@ public class AuthController {
     @PostMapping("/signup")
     @Operation(summary = "Signup Endpoint", description = "Used for registering a new User (ADMIN/STAFF/CUSTOMER")
     public ResponseEntity<?> register(@Valid @RequestBody SignUpRequest request) {
-        User created = userService.registerAdmin(request.getName(), request.getEmail(), request.getPassword(), request.getRole());
+        User created = userService.registerUser(request.getName(), request.getEmail(), request.getPassword(), request.getRole());
         String token = tokenProvider.generateToken(created.getId(), created.getEmail(), created.getRole());
         return ResponseEntity.status(201).body(new AuthResponse(token, "Bearer", tokenProvider.parseClaims(token).getBody().getExpiration().getTime()));
     }

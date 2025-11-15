@@ -26,7 +26,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User registerAdmin(String name, String email, String rawPassword, String role) {
+    public User registerUser(String name, String email, String rawPassword, String role) {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already in use");
         }
@@ -34,7 +34,7 @@ public class UserService {
                 .name(name)
                 .email(email)
                 .passwordHash(passwordEncoder.encode(rawPassword))
-                .role(roleMap.getOrDefault(role.toUpperCase(), Role.ROLE_CUSTOMER))
+                .role(roleMap.get(role != null ? role.toUpperCase() : "CUSTOMER"))
                 .build();
         return userRepository.save(user);
     }
