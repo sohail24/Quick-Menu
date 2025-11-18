@@ -1,21 +1,38 @@
-import { create } from "zustand";
+// src/app/store.ts
+import { create } from 'zustand';
+import { jwtDecode } from '../lib/jwt';
 
-type User = { id?: string; email?: string; name?: string; role?: string };
+type User = { sub?: string; name?: string; email?: string; roles?: string[] } | null;
 
 type AuthState = {
   token: string | null;
-  user: User | null;
+  user: User;
   setToken: (token: string | null) => void;
-  setUser: (user: User | null) => void;
+  setUser: (user: User) => void;
+  logout: () => void;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
-  token: localStorage.getItem("qm_token"),
-  user: null,
-  setToken: (token) => {
-    if (token) localStorage.setItem("qm_token", token);
-    else localStorage.removeItem("qm_token");
-    set({ token });
-  },
-  setUser: (user) => set({ user }),
-}));
+export const useAuthStore = create<AuthState>((set) => {
+  const initialToken = localStorage.getItem('qm_token');
+  const initialUser = initialToken ? jwtDecode(initialToken) : null;
+  return {
+    token: initialToken,
+    user: initialUser,
+    setToken: (token) => {
+      if (token) {
+        localStorage.setItem('qm_token', token);
+        const decoded = jwtDecode(token);
+        set({ token, user: decoded });
+      } else {
+        localStorage.removeItem('qm_token');
+        set({ token: null, user: null });
+      }
+    },
+    setUser: (user) => set({ user }),
+    logout: () => {
+      localStorage.removeItem('qm_token');
+      set({ token: null, user: null });
+      // optional: reload or redirect handled by components
+    },
+  };
+});

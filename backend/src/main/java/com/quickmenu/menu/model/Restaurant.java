@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "restaurants")
 @Getter
@@ -24,4 +26,15 @@ public class Restaurant {
     private String timezone;
     private String currency;
     private String address;
+    private String ownerUserId;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+    }
 }

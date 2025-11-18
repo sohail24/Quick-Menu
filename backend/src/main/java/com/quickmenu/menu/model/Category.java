@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "categories")
 @Getter
@@ -25,4 +27,14 @@ public class Category {
     private String name;
 
     private Integer orderIndex;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+    }
 }

@@ -1,35 +1,34 @@
-import React, { useState } from "react";
-import api from "../../lib/api";
-import { useAuthStore } from "../../app/store";
-import { useNavigate } from "react-router-dom";
-import Button from "../../components/ui/Button";
+// src/pages/Auth/Signup.tsx
+import React, { useState } from 'react';
+import api from '../../lib/api';
+import { useAuthStore } from '../../app/store';
+import { useNavigate } from 'react-router-dom';
+import Button from '../../components/ui/Button';
 
 export default function Signup() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const setToken = useAuthStore((s) => s.setToken);
   const navigate = useNavigate();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const res = await api.post("/api/auth/signup", { name, email, password });
+      const res = await api.post('/api/auth/signup', { name, email, password });
       const token = res.data.token;
+      if (!token) throw new Error('No token returned');
       setToken(token);
-      navigate("/menu/demo");
-    } catch (err) {
+      navigate('/menu/demo');
+    } catch (err: any) {
       console.error(err);
-      alert("Signup failed");
+      alert(err?.response?.data?.message || 'Signup failed');
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <form
-        onSubmit={submit}
-        className="w-full max-w-sm bg-white p-6 rounded shadow"
-      >
+      <form onSubmit={submit} className="w-full max-w-sm bg-white p-6 rounded shadow">
         <h1 className="text-xl mb-4">Sign up</h1>
         <input
           value={name}

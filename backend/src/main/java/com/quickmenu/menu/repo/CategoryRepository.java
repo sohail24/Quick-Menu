@@ -6,10 +6,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CategoryRepository extends JpaRepository<Category, String> {
     List<Category> findByRestaurantIdOrderByOrderIndex(String restaurantId);
 
     // Pageable variant (order by orderIndex)
     Page<Category> findByRestaurantId(String restaurantId, Pageable pageable);
+
+    <T> Optional<T> findByRestaurantIdAndName(String restaurantId, String name);
 }
