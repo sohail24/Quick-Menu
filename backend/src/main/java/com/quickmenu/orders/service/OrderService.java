@@ -1,8 +1,14 @@
 package com.quickmenu.orders.service;
 
+import com.quickmenu.bell.service.BellService;
+import com.quickmenu.config.WebSocketConfig;
+import com.quickmenu.config.customExceptions.TableOccupiedException;
+import com.quickmenu.menu.model.TableEntity;
+import com.quickmenu.menu.repo.TableRepository;
 import com.quickmenu.orders.dto.OrderDto;
 import com.quickmenu.menu.model.Dish;
 import com.quickmenu.menu.repo.DishRepository;
+import com.quickmenu.orders.dto.OrderRequest;
 import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.model.OrderItem;
 import com.quickmenu.orders.repo.OrderItemRepository;
@@ -12,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,19 +29,37 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final DishRepository dishRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final TableRepository tableRepository;
+    private final BellService bellService;
 
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
                         DishRepository dishRepository,
-                        SimpMessagingTemplate messagingTemplate) {
+                        SimpMessagingTemplate messagingTemplate,
+                        TableRepository tableRepository,
+                        BellService bellService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.dishRepository = dishRepository;
         this.messagingTemplate = messagingTemplate;
+        this.tableRepository = tableRepository;
+        this.bellService = bellService;
     }
 
     @Transactional
     public Order placeOrder(String restaurantId, OrderDto.CreateOrderRequest req) {
+        // find table row with pessimistic lock (for concurrency) or check occupied flag
+        TableEntity table = tableRepository.findByIdForUpdate(req.getTableId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid table"));
+
+        if (Boolean.TRUE.equals(table.getOccupied())) {
+            throw new TableOccupiedException();
+        }
+
+        // mark table occupied (optional: you may mark occupied only when order is accepted/paid)
+        table.setOccupied(true);
+        tableRepository.save(table);
+
         // validate dishes and compute total
         BigDecimal total = BigDecimal.ZERO;
         List<OrderItem> items = new ArrayList<>();
@@ -59,9 +84,12 @@ public class OrderService {
         Order order = Order.builder()
                 .restaurantId(restaurantId)
                 .tableId(req.getTableId())
+                .customerName(req.getCustomerName())
+                .customerPhone(req.getCustomerPhone())
                 .customerNote(req.getCustomerNote())
                 .totalAmount(total)
                 .status(Order.Status.PENDING)
+                .items(items)
                 .build();
 
         Order saved = orderRepository.save(order);

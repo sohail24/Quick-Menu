@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -102,6 +103,14 @@ public class TableController {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to generate QR");
         }
     }
+
+    @GetMapping("/available")
+    @Operation(summary = "Get table availability", description = "Return list of tables which are not occupied")
+    public ResponseEntity<List<TableEntity>> listAvailableTables(@PathVariable String restaurantId) {
+        List<TableEntity> tables = tableRepository.findByRestaurantIdAndOccupiedFalse(restaurantId);
+        return ResponseEntity.ok(tables);
+    }
+
 
     // Utility: generate PNG bytes from text using ZXing
     private byte[] generateQrPng(String text, int width, int height) throws WriterException, IOException {

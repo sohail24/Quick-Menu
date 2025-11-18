@@ -32,10 +32,16 @@ public class TableEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "occupied", nullable = false)
+    private Boolean occupied;
+
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
             createdAt = Instant.now();
+        }
+        if (occupied == null){
+            occupied = false;
         }
     }
 }

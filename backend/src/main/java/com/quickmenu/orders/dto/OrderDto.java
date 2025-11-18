@@ -17,6 +17,8 @@ public class OrderDto {
     @Data
     public static class CreateOrderRequest {
         private String tableId;
+        private String customerName;
+        private String customerPhone;
         private String customerNote;
         private List<CreateOrderItem> items;
     }
@@ -26,6 +28,9 @@ public class OrderDto {
         private String id;
         private String restaurantId;
         private String tableId;
+        private String customerName;
+        private String customerPhone;
+        private String customerNote;
         private String status;
         private BigDecimal totalAmount;
         private List<OrderItemResponse> items;

@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import api from '../../lib/api';
 import DishCard from '../../components/DishCard';
 import CartFloating from '../../components/CartFloating';
+import OrderSummaryModal from '../../components/OrderSummaryModal';
 
 type CartItem = { dishId: string; name: string; price: number; quantity: number };
 
@@ -30,6 +31,8 @@ export default function RestaurantMenu() {
       return [];
     }
   });
+
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   // If the route param is "demo", fetch mapping info
   useEffect(() => {
@@ -96,24 +99,39 @@ export default function RestaurantMenu() {
     });
   }
 
-  async function placeOrder() {
-    if (!cart.length) return alert('Cart empty');
-    if (!effectiveRestaurantId) return alert('Restaurant not resolved');
-    const payload = {
-      tableId: effectiveTableId ?? 'unknown-table',
-      customerNote: '',
-      items: cart.map((c) => ({ dishId: c.dishId, quantity: c.quantity })),
-    };
-    try {
-      const res = await api.post(`/api/${effectiveRestaurantId}/orders`, payload);
-      alert('Order placed: ' + res.data.id);
-      setCart([]);
-      localStorage.removeItem('qm_cart');
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.response?.data?.message || 'Order failed');
+  function handlePlaceOrderClick() {
+    if (cart.length === 0) {
+      alert('Cart empty');
+      return;
     }
+    setShowOrderModal(true);
   }
+
+  function handleOrderPlaced(responseData: any) {
+    // responseData could be { id: "order-uuid" } — show confirmation
+    alert('Order placed successfully: ' + JSON.stringify(responseData));
+    setCart([]);
+    localStorage.removeItem('qm_cart');
+  }
+
+  // async function placeOrder() {
+  //   if (!cart.length) return alert('Cart empty');
+  //   if (!effectiveRestaurantId) return alert('Restaurant not resolved');
+  //   const payload = {
+  //     tableId: effectiveTableId ?? 'unknown-table',
+  //     customerNote: '',
+  //     items: cart.map((c) => ({ dishId: c.dishId, quantity: c.quantity })),
+  //   };
+  //   try {
+  //     const res = await api.post(`/api/${effectiveRestaurantId}/orders`, payload);
+  //     alert('Order placed: ' + res.data.id);
+  //     setCart([]);
+  //     localStorage.removeItem('qm_cart');
+  //   } catch (err: any) {
+  //     console.error(err);
+  //     alert(err?.response?.data?.message || 'Order failed');
+  //   }
+  // }
 
   if (loadingDemo) {
     return <div className="p-4">Resolving demo restaurant...</div>;
@@ -133,7 +151,16 @@ export default function RestaurantMenu() {
           <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
         ))}
       </div>
-      <CartFloating items={cart} onCheckout={placeOrder} />
+
+      <CartFloating items={cart} onCheckout={handlePlaceOrderClick} />
+
+      <OrderSummaryModal
+        isOpen={showOrderModal}
+        onClose={() => setShowOrderModal(false)}
+        cart={cart}
+        restaurantId={effectiveRestaurantId}
+        onOrderPlaced={handleOrderPlaced}
+      />
     </div>
   );
 }

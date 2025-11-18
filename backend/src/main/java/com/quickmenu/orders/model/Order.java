@@ -17,7 +17,7 @@ import java.util.List;
 @Builder
 public class Order {
     public enum Status {
-        PENDING, IN_PROGRESS, READY, SERVED, CANCELLED
+        PLACED, PENDING, IN_PROGRESS, READY, SERVED, CANCELLED
     }
 
     @Id
@@ -31,6 +31,12 @@ public class Order {
 
     @Column(nullable = false)
     private String tableId;
+
+    @Column(nullable = false)
+    private String customerName;
+
+    @Column(nullable = false)
+    private String customerPhone;
 
     @Column(length = 2000)
     private String customerNote;

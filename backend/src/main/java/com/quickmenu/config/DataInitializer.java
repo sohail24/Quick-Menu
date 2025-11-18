@@ -127,6 +127,7 @@ public class DataInitializer implements CommandLineRunner {
                     .name(tableName)
                     .qrUrl(qrUrl)
                     .createdAt(Instant.now())
+                    .occupied(false)
                     .build();
             table = tableRepo.save(table);
             System.out.println("Created demo table: id=" + table.getId() + " qrUrl=" + qrUrl);
