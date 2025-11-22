@@ -85,7 +85,6 @@ export default function StaffDashboard() {
       else if (payload.content && Array.isArray(payload.content)) list = payload.content;
       else if (payload.id) list = [payload];
       else list = payload.orders ?? payload.items ?? [];
-      console.log('[ORDERS] fetched:', list.length, 'orders');
       setOrders(list);
     } catch (e) {
       console.error('fetchOrdersList failed', e);
@@ -101,7 +100,6 @@ export default function StaffDashboard() {
       const res = await api.get(`/api/${restaurantId}/bells`);
       const payload = res.data;
       const list: Bell[] = Array.isArray(payload) ? payload : (payload?.content ?? []);
-      console.log('[BELLS] fetched:', list.length, 'bells', list);
       setBells(list);
     } catch (e) {
       // some backends might not expose bells list; that's OK
@@ -116,12 +114,11 @@ export default function StaffDashboard() {
       await fetchBellsList();
     })();
 
-    // Polling fallback: refetch orders every 5 seconds to catch orders that don't come via STOMP
-    const pollInterval = setInterval(() => {
-      fetchOrdersList();
-    }, 5000);
-
-    return () => clearInterval(pollInterval);
+    // TODO: Re-enable polling if STOMP order messages are not being published by backend
+    // const pollInterval = setInterval(() => {
+    //   fetchOrdersList();
+    // }, 2000);
+    // return () => clearInterval(pollInterval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId]);
 
@@ -145,51 +142,56 @@ export default function StaffDashboard() {
     const ordersTopic = `/topic/restaurants/${restaurantId}/orders`;
     const bellsTopic = `/topic/restaurants/${restaurantId}/bells`;
 
-    const orderSub = stomp.subscribe(ordersTopic, (msg) => {
-      const payload = safeParseMsg(msg);
-      if (!payload) return;
-      // server should send full order object; otherwise ignore
-      const orderObj = payload.id ? payload : payload.order || payload.data || null;
-      if (!orderObj || !orderObj.id) return;
-      console.log('[STOMP] order message received:', orderObj);
-      setOrders((prev) => {
-        const idx = prev.findIndex((o) => o.id === orderObj.id);
-        if (idx >= 0) {
-          const copy = [...prev];
-          copy[idx] = orderObj;
-          return copy;
-        }
-        return [orderObj, ...prev];
+    // Small delay to ensure STOMP client is connected before subscribing
+    const timeoutId = setTimeout(() => {
+      const orderSub = stomp.subscribe(ordersTopic, (msg) => {
+        const payload = safeParseMsg(msg);
+        if (!payload) return;
+        // server should send full order object; otherwise ignore
+        const orderObj = payload.id ? payload : payload.order || payload.data || null;
+        if (!orderObj || !orderObj.id) return;
+        console.log('[STOMP] order message received:', orderObj);
+        setOrders((prev) => {
+          const idx = prev.findIndex((o) => o.id === orderObj.id);
+          if (idx >= 0) {
+            const copy = [...prev];
+            copy[idx] = orderObj;
+            return copy;
+          }
+          return [orderObj, ...prev];
+        });
       });
-    });
 
-    const bellSub = stomp.subscribe(bellsTopic, (msg) => {
-      const payload = safeParseMsg(msg);
-      if (!payload) return;
-      const bellObj = payload.id ? payload : payload.bell || payload.data || null;
-      if (!bellObj || !bellObj.id) return;
-      console.log('[STOMP] bell message received:', bellObj);
-      setBells((prev) => {
-        const idx = prev.findIndex((b) => b.id === bellObj.id);
-        if (idx >= 0) {
-          // Merge with existing data to preserve fields not in STOMP message
-          const merged = { ...prev[idx], ...bellObj };
-          const copy = [...prev];
-          copy[idx] = merged;
-          return copy;
-        }
-        return [bellObj, ...prev];
+      const bellSub = stomp.subscribe(bellsTopic, (msg) => {
+        const payload = safeParseMsg(msg);
+        if (!payload) return;
+        const bellObj = payload.id ? payload : payload.bell || payload.data || null;
+        if (!bellObj || !bellObj.id) return;
+        console.log('[STOMP] bell message received:', bellObj);
+        setBells((prev) => {
+          const idx = prev.findIndex((b) => b.id === bellObj.id);
+          if (idx >= 0) {
+            // Merge with existing data to preserve fields not in STOMP message
+            const merged = { ...prev[idx], ...bellObj };
+            const copy = [...prev];
+            copy[idx] = merged;
+            return copy;
+          }
+          return [bellObj, ...prev];
+        });
       });
-    });
 
-    return () => {
-      try {
-        orderSub?.unsubscribe();
-      } catch {}
-      try {
-        bellSub?.unsubscribe();
-      } catch {}
-    };
+      return () => {
+        try {
+          orderSub?.unsubscribe();
+        } catch {}
+        try {
+          bellSub?.unsubscribe();
+        } catch {}
+      };
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId]);
 
@@ -225,23 +227,15 @@ export default function StaffDashboard() {
   async function ackBell(bellId: string) {
     if (!restaurantId) {
       setError('No restaurant assigned');
-      console.error('ackBell: no restaurantId');
       return;
     }
     try {
-      console.log('[ACK] attempting to ack bell:', bellId);
       setError(null);
-      const ackRes = await api.patch(`/api/${restaurantId}/bells/${bellId}/ack`);
-      console.log('[ACK] response status:', ackRes.status, 'data:', ackRes.data);
-
-      // Always refetch full list to ensure consistency
-      console.log('[ACK] refetching bells list...');
+      await api.patch(`/api/${restaurantId}/bells/${bellId}/ack`);
       await fetchBellsList();
-      console.log('[ACK] refetch complete');
     } catch (err: any) {
-      console.error('ackBell error:', err?.response?.status, err?.response?.data || err?.message);
+      console.error('ackBell error:', err?.response?.status);
       setError(err?.response?.data?.message || 'Failed to acknowledge bell');
-      // refetch to recover
       await fetchBellsList();
     }
   }
@@ -374,7 +368,6 @@ export default function StaffDashboard() {
                 !!b?.acknowledged ||
                 b?.status === 'ACKED' ||
                 b?.status === 'acknowledged';
-              console.log('[BELL_RENDER]', b.id, '- acked:', acked, 'full bell:', b);
               return (
                 <div key={b.id} className="border p-3 rounded flex justify-between items-start">
                   <div>

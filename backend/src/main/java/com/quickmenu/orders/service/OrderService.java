@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class OrderService {
@@ -100,8 +101,17 @@ public class OrderService {
         }
 
         // Send WebSocket event to staff subscribers: /topic/restaurants/{restaurantId}/orders
-        messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders",
-                new OrderEvent(saved.getId(), saved.getTableId(), "ORDER_CREATED"));
+        var orderPayload = Map.of(
+                "id", saved.getId(),
+                "tableId", saved.getTableId(),
+                "status", saved.getStatus().toString(),
+                "placedAt", saved.getPlacedAt().toString(),
+                "customerName", saved.getCustomerName() != null ? saved.getCustomerName() : "",
+                "customerPhone", saved.getCustomerPhone() != null ? saved.getCustomerPhone() : "",
+                "totalAmount", saved.getTotalAmount(),
+                "items", saved.getItems() != null ? saved.getItems() : List.of()
+        );
+        messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
 
         return saved;
     }
