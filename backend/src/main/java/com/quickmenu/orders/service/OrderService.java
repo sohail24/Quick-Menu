@@ -20,8 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -48,7 +50,7 @@ public class OrderService {
     }
 
     @Transactional
-    public Order placeOrder(String restaurantId, OrderDto.CreateOrderRequest req) {
+    public Map<String, Object> placeOrder(String restaurantId, OrderDto.CreateOrderRequest req) {
         // find table row with pessimistic lock (for concurrency) or check occupied flag
         TableEntity table = tableRepository.findByIdForUpdate(req.getTableId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid table"));
@@ -100,20 +102,10 @@ public class OrderService {
             orderItemRepository.save(it);
         }
 
-        // Send WebSocket event to staff subscribers: /topic/restaurants/{restaurantId}/orders
-        var orderPayload = Map.of(
-                "id", saved.getId(),
-                "tableId", saved.getTableId(),
-                "status", saved.getStatus().toString(),
-                "placedAt", saved.getPlacedAt().toString(),
-                "customerName", saved.getCustomerName() != null ? saved.getCustomerName() : "",
-                "customerPhone", saved.getCustomerPhone() != null ? saved.getCustomerPhone() : "",
-                "totalAmount", saved.getTotalAmount(),
-                "items", saved.getItems() != null ? saved.getItems() : List.of()
-        );
+        Map<String, Object> orderPayload = enrichOrderForResponse(order);
         messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
 
-        return saved;
+        return orderPayload;
     }
 
     public List<Order> listOrders(String restaurantId, Order.Status status) {
@@ -131,6 +123,16 @@ public class OrderService {
         ord.setStatus(status);
         Order updated = orderRepository.save(ord);
 
+        // Free the table if order is SERVED
+        if (Order.Status.SERVED.equals(status)) {
+            TableEntity table = tableRepository.findById(updated.getTableId())
+                    .orElse(null);
+            if (table != null) {
+                table.setOccupied(false);
+                tableRepository.save(table);
+            }
+        }
+
         messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders",
                 new OrderEvent(updated.getId(), updated.getTableId(), "ORDER_UPDATED"));
 
@@ -139,4 +141,39 @@ public class OrderService {
 
     // Simple event DTO
     public static record OrderEvent(String orderId, String tableId, String type) { }
+
+
+    /**
+     * Enrich order with item details (dishName, etc.)
+     * Used for API responses and STOMP messages
+     */
+    public Map<String, Object> enrichOrderForResponse(Order order) {
+        List<Map<String, Object>> itemsWithDetails = order.getItems() != null
+                ? order.getItems().stream()
+                .map(item -> {
+                    Dish dish = dishRepository.findById(item.getDishId()).orElse(null);
+                    Map<String, Object> itemMap = new HashMap<>();
+                    itemMap.put("id", item.getId());
+                    itemMap.put("orderId", item.getOrderId());
+                    itemMap.put("dishId", item.getDishId());
+                    itemMap.put("dishName", dish != null ? dish.getName() : "Unknown Dish");
+                    itemMap.put("quantity", item.getQuantity());
+                    itemMap.put("priceAtOrder", item.getPriceAtOrder());
+                    itemMap.put("note", item.getNote() != null ? item.getNote() : "");
+                    return itemMap;
+                })
+                .collect(Collectors.toList())
+                : List.of();
+
+        return Map.of(
+                "id", order.getId(),
+                "tableId", order.getTableId(),
+                "status", order.getStatus().toString(),
+                "placedAt", order.getPlacedAt().toString(),
+                "customerName", order.getCustomerName() != null ? order.getCustomerName() : "",
+                "customerPhone", order.getCustomerPhone() != null ? order.getCustomerPhone() : "",
+                "totalAmount", order.getTotalAmount(),
+                "items", itemsWithDetails
+        );
+    }
 }

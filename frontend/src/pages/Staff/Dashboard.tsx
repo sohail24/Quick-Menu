@@ -209,7 +209,11 @@ export default function StaffDashboard() {
         const res = await api.get(`/api/${restaurantId}/orders/${orderId}`);
         const updated = res.data;
         if (updated && updated.id) {
-          setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+          // Preserve items if backend response doesn't include them
+          const preservedItems = updated.items || 
+            orders.find(o => o.id === orderId)?.items || [];
+          const enriched = { ...updated, items: preservedItems };
+          setOrders((prev) => prev.map((o) => (o.id === updated.id ? enriched : o)));
           return;
         }
       } catch (e) {

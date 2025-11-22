@@ -49,7 +49,7 @@ public class OrderController {
 
         // Check table availability — do this atomically in service layer
         try {
-            Order saved = orderService.placeOrder(restaurantId, req);
+            Map<String, Object> saved = orderService.placeOrder(restaurantId, req);
             return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (TableOccupiedException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Selected table is currently occupied"));
