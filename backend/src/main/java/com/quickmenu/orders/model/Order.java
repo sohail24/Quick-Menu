@@ -17,7 +17,7 @@ import java.util.List;
 @Builder
 public class Order {
     public enum Status {
-        PLACED, PENDING, IN_PROGRESS, READY, SERVED, CANCELLED
+        PLACED, PENDING, IN_PROGRESS, READY, SERVED, CANCELLED, PREPARING
     }
 
     @Id

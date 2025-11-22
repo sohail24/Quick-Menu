@@ -88,7 +88,7 @@ public class OrderService {
                 .customerPhone(req.getCustomerPhone())
                 .customerNote(req.getCustomerNote())
                 .totalAmount(total)
-                .status(Order.Status.PENDING)
+                .status(Order.Status.PLACED)
                 .items(items)
                 .build();
 

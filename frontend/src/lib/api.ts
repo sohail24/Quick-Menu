@@ -1,6 +1,5 @@
 // src/lib/api.ts
 import axios from 'axios';
-import { useAuthStore } from '../app/store';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
@@ -9,6 +8,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // timeout? optional
 });
 
 // Attach token automatically
@@ -20,15 +20,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor to handle 401 globally
+// Response interceptor: DO NOT auto-redirect on 401.
+// Instead, clear token locally and allow callers to handle the error.
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error?.response?.status === 401) {
-      // Use simple localStorage removal; don't import store here (circular)
+    const status = error?.response?.status;
+    if (status === 401) {
+      // remove token to avoid repeated invalid auth headers
       localStorage.removeItem('qm_token');
-      // Reload to force react-router to pick login route (or let app handle)
-      window.location.href = '/login';
+      // dispatch an event that other parts of the app may listen to if desired
+      try {
+        window.dispatchEvent(new CustomEvent('qm:unauthorized', { detail: { status } }));
+      } catch {}
+      // Important: do NOT navigate here. Let caller handle.
     }
     return Promise.reject(error);
   },

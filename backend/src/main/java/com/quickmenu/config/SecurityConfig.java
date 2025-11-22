@@ -50,13 +50,14 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/*/menu", "/api/*/menu/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/demo/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/*/menu", "/api/*/menu/**", "/api/orders/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/restaurants/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/demo/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/*/orders").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/*/orders", "/api/restaurants/*/tables/*/bell").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants/*/tables/available").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/openapi.yaml").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/websocket/**", "/ws/**").permitAll()
                         .anyRequest().permitAll()
@@ -97,14 +98,16 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:5173"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true); // optional, if using cookies or Authorization headers
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+        source.registerCorsConfiguration("/api/**", config);
         return source;
     }
+
 
 
 }

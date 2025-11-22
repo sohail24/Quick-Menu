@@ -1,25 +1,36 @@
 // src/pages/Menu/RestaurantMenu.tsx
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import DishCard from '../../components/DishCard';
 import CartFloating from '../../components/CartFloating';
 import OrderSummaryModal from '../../components/OrderSummaryModal';
+import OrderStatusFloating from '../../components/OrderStatusFloating';
+import BellButton from '../../components/BellButton';
 
-type CartItem = { dishId: string; name: string; price: number; quantity: number };
+type CartItem = {
+  dishId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  note?: string;
+};
 
 export default function RestaurantMenu() {
   const params = useParams<{ restaurantId?: string }>();
   const { restaurantId: paramRestaurantId } = params;
   const [searchParams] = useSearchParams();
   const queryTableId = searchParams.get('tableId') ?? undefined;
+  const navigate = useNavigate();
 
   const [effectiveRestaurantId, setEffectiveRestaurantId] = useState<string | null>(
     paramRestaurantId ?? null,
   );
   const [effectiveTableId, setEffectiveTableId] = useState<string | null>(queryTableId ?? null);
 
+  const [demoInfo, setDemoInfo] = useState<any>(null);
   const [loadingDemo, setLoadingDemo] = useState(false);
+  const [loadingMenu, setLoadingMenu] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [dishes, setDishes] = useState<any[]>([]);
@@ -32,9 +43,9 @@ export default function RestaurantMenu() {
     }
   });
 
-  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
 
-  // If the route param is "demo", fetch mapping info
   useEffect(() => {
     async function resolveDemo() {
       if (!paramRestaurantId) return;
@@ -42,35 +53,29 @@ export default function RestaurantMenu() {
         setEffectiveRestaurantId(paramRestaurantId);
         return;
       }
-
       setLoadingDemo(true);
       setError(null);
       try {
-        const res = await api.get('/api/demo/info');
+        const res = await api.get('/api/demo/info', { headers: { 'x-skip-401-redirect': '1' } });
         const data = res.data;
-        if (data && data.restaurantId) {
-          setEffectiveRestaurantId(data.restaurantId);
-          // prefer query param tableId if present, otherwise use demo table id returned
-          if (queryTableId) setEffectiveTableId(queryTableId);
-          else if (data.tableId) setEffectiveTableId(data.tableId);
-        } else {
-          setError('Demo info not available');
-        }
+        setDemoInfo(data);
+        if (data?.restaurantId) setEffectiveRestaurantId(data.restaurantId);
+        if (queryTableId) setEffectiveTableId(queryTableId);
+        else if (data?.tableId) setEffectiveTableId(data.tableId);
       } catch (err: any) {
-        console.error('Failed to resolve demo info', err);
-        setError(err?.response?.data?.message || 'Failed to load demo info');
+        console.error('Failed to fetch demo info:', err);
+        setError(err?.response?.data?.message || 'Failed to resolve demo restaurant');
       } finally {
         setLoadingDemo(false);
       }
     }
-
     resolveDemo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramRestaurantId]);
 
-  // Fetch menu once we have an effective restaurant id
   useEffect(() => {
     if (!effectiveRestaurantId) return;
+    setLoadingMenu(true);
     setError(null);
     api
       .get(
@@ -81,15 +86,19 @@ export default function RestaurantMenu() {
         setDishes(ds);
       })
       .catch((err) => {
-        console.error(err);
+        console.error('Failed loading menu:', err);
         setError('Failed to load menu');
-      });
+      })
+      .finally(() => setLoadingMenu(false));
   }, [effectiveRestaurantId, effectiveTableId]);
 
   useEffect(() => {
-    localStorage.setItem('qm_cart', JSON.stringify(cart));
+    try {
+      localStorage.setItem('qm_cart', JSON.stringify(cart));
+    } catch {}
   }, [cart]);
 
+  // cart operations
   function addToCart(dish: any) {
     setCart((prev) => {
       const found = prev.find((p) => p.dishId === dish.id);
@@ -99,64 +108,97 @@ export default function RestaurantMenu() {
     });
   }
 
-  function handlePlaceOrderClick() {
-    if (cart.length === 0) {
-      alert('Cart empty');
+  function handleIncrement(dishId: string) {
+    setCart((prev) =>
+      prev.map((p) => (p.dishId === dishId ? { ...p, quantity: p.quantity + 1 } : p)),
+    );
+  }
+  function handleDecrement(dishId: string) {
+    setCart((prev) =>
+      prev.map((p) => (p.dishId === dishId ? { ...p, quantity: Math.max(1, p.quantity - 1) } : p)),
+    );
+  }
+  function handleRemove(dishId: string) {
+    setCart((prev) => prev.filter((p) => p.dishId !== dishId));
+  }
+
+  function onCheckoutClick() {
+    if (!cart.length) {
+      alert('Your cart is empty');
       return;
     }
-    setShowOrderModal(true);
+    setOrderModalOpen(true);
   }
 
   function handleOrderPlaced(responseData: any) {
-    // responseData could be { id: "order-uuid" } — show confirmation
-    alert('Order placed successfully: ' + JSON.stringify(responseData));
+    const id = responseData?.id ?? (responseData && responseData.orderId) ?? null;
+    setLastOrderId(id);
     setCart([]);
-    localStorage.removeItem('qm_cart');
-  }
-
-  // async function placeOrder() {
-  //   if (!cart.length) return alert('Cart empty');
-  //   if (!effectiveRestaurantId) return alert('Restaurant not resolved');
-  //   const payload = {
-  //     tableId: effectiveTableId ?? 'unknown-table',
-  //     customerNote: '',
-  //     items: cart.map((c) => ({ dishId: c.dishId, quantity: c.quantity })),
-  //   };
-  //   try {
-  //     const res = await api.post(`/api/${effectiveRestaurantId}/orders`, payload);
-  //     alert('Order placed: ' + res.data.id);
-  //     setCart([]);
-  //     localStorage.removeItem('qm_cart');
-  //   } catch (err: any) {
-  //     console.error(err);
-  //     alert(err?.response?.data?.message || 'Order failed');
-  //   }
-  // }
-
-  if (loadingDemo) {
-    return <div className="p-4">Resolving demo restaurant...</div>;
-  }
-  if (error) {
-    return <div className="p-4 text-red-600">Error: {error}</div>;
+    try {
+      localStorage.removeItem('qm_cart');
+    } catch {}
+    if (id) {
+      localStorage.setItem('qm_last_order_id', id);
+      navigate(`/order/success/${id}`);
+    } else alert('Order placed');
   }
 
   return (
     <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">
-        Restaurant Menu ({paramRestaurantId ?? effectiveRestaurantId})
-      </h1>
-      {!effectiveRestaurantId && <div className="text-gray-600">No restaurant selected</div>}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <header className="mb-4">
+        <h1 className="text-2xl font-bold">
+          Restaurant Menu {paramRestaurantId ? `(${paramRestaurantId})` : ''}
+        </h1>
+        {demoInfo && (
+          <div className="mt-2 text-sm text-gray-600">
+            Demo: <strong>{demoInfo.restaurantName}</strong>
+          </div>
+        )}
+      </header>
+      <BellButton
+        restaurantId={effectiveRestaurantId}
+        tableId={effectiveTableId}
+        onSuccess={(id) => {
+          /* optionally show toast */
+        }}
+      />
+      <OrderStatusFloating />
+      <div className="mb-4">
+        {loadingDemo && <div className="text-sm text-gray-600">Resolving demo restaurant...</div>}
+        {loadingMenu && <div className="text-sm text-gray-600">Loading menu...</div>}
+        {error && <div className="text-sm text-red-600">Error: {error}</div>}
+        {lastOrderId && <div className="text-sm text-green-700">Last order id: {lastOrderId}</div>}
+      </div>
+
+      {demoInfo && (
+        <div className="mb-4 p-3 bg-white rounded shadow">
+          <div className="text-xs text-gray-500">Demo info</div>
+          <pre className="text-xs mt-2 overflow-auto max-h-28">
+            {JSON.stringify(demoInfo, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {dishes.length === 0 && !loadingMenu && (
+          <div className="text-gray-600">No dishes available.</div>
+        )}
         {dishes.map((d) => (
           <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
         ))}
       </div>
 
-      <CartFloating items={cart} onCheckout={handlePlaceOrderClick} />
+      <CartFloating
+        items={cart}
+        onCheckout={onCheckoutClick}
+        onIncrement={handleIncrement}
+        onDecrement={handleDecrement}
+        onRemove={handleRemove}
+      />
 
       <OrderSummaryModal
-        isOpen={showOrderModal}
-        onClose={() => setShowOrderModal(false)}
+        isOpen={orderModalOpen}
+        onClose={() => setOrderModalOpen(false)}
         cart={cart}
         restaurantId={effectiveRestaurantId}
         onOrderPlaced={handleOrderPlaced}

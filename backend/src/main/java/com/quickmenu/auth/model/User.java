@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -43,4 +44,13 @@ public class User {
             createdAt = Instant.now();
         }
     }
+
+    @Column(name = "assigned_restaurant_id")
+    private String assignedRestaurantId;
+
+    // Optional future-proofing
+    @ElementCollection
+    @CollectionTable(name = "user_restaurants", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "restaurant_id")
+    private List<String> assignedRestaurantIds;
 }

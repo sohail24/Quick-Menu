@@ -73,21 +73,6 @@ public class DataInitializer implements CommandLineRunner {
         } else {
             System.out.println("Admin already exists: " + adminEmail);
         }
-
-        // create staff
-        String staffEmail = "staff@quickmenu.local";
-        if (!userRepo.existsByEmail(staffEmail)) {
-            User staff = new User();
-            staff.setEmail(staffEmail);
-            staff.setName("Demo Staff");
-            staff.setRole(Role.ROLE_STAFF);
-            staff.setPasswordHash(passwordEncoder.encode("Staff123!"));
-            staff.setCreatedAt(Instant.now());
-            userRepo.save(staff);
-            System.out.println("Seeded staff -> email: " + staffEmail + " password: Staff123!");
-        } else {
-            System.out.println("Staff already exists: " + staffEmail);
-        }
     }
     private void seedDemoRestaurant() {
         String demoName = "Demo Bistro";
@@ -131,6 +116,16 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
             table = tableRepo.save(table);
             System.out.println("Created demo table: id=" + table.getId() + " qrUrl=" + qrUrl);
+            // saving one more table
+            TableEntity table2 = TableEntity.builder()
+                    .restaurantId(r.getId())
+                    .name("Table 2")
+                    .qrUrl( "/menu/" + r.getId() + "?tableId=table-2")
+                    .createdAt(Instant.now())
+                    .occupied(false)
+                    .build();
+            table2 = tableRepo.save(table2);
+            System.out.println("Created demo table: id=" + table2.getId() + " qrUrl=" +  "/menu/" + r.getId() + "?tableId=table-2");
         }
 
         // Create categories if missing
@@ -207,6 +202,22 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("Seeded " + dishes.size() + " demo dishes for restaurant: " + r.getId());
         } else {
             System.out.println("Dishes already present for restaurant: " + r.getId());
+        }
+
+        // create seed staff
+        String staffEmail = "staff@quickmenu.local";
+        if (!userRepo.existsByEmail(staffEmail)) {
+            User staff = new User();
+            staff.setEmail(staffEmail);
+            staff.setName("Demo Staff");
+            staff.setRole(Role.ROLE_STAFF);
+            staff.setPasswordHash(passwordEncoder.encode("Staff123!"));
+            staff.setCreatedAt(Instant.now());
+            staff.setAssignedRestaurantId(r.getId()); //demo restaurant
+            userRepo.save(staff);
+            System.out.println("Seeded staff -> email: " + staffEmail + " password: Staff123!");
+        } else {
+            System.out.println("Staff already exists: " + staffEmail);
         }
 
         // Print summary for quick testing

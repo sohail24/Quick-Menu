@@ -1,3 +1,4 @@
+// src/components/OrderSummaryModal.tsx
 import React, { useEffect, useState } from 'react';
 import api from '../lib/api';
 
@@ -24,9 +25,9 @@ export default function OrderSummaryModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    // fetch available tables for this restaurant
     if (!restaurantId) return;
     setLoadingTables(true);
+    setError(null);
     api
       .get(`/api/restaurants/${restaurantId}/tables/available`)
       .then((res) => {
@@ -35,6 +36,8 @@ export default function OrderSummaryModal({
       })
       .catch((err) => {
         console.error('Failed to fetch tables', err);
+        setError(err?.response?.data?.message || 'Failed to fetch available tables');
+        setTables([]);
       })
       .finally(() => setLoadingTables(false));
   }, [isOpen, restaurantId]);
@@ -66,15 +69,26 @@ export default function OrderSummaryModal({
 
     try {
       const res = await api.post(`/api/${restaurantId}/orders`, payload);
+      // important: persist last order id so OrderStatusFloating and other UI can pick it up
+      const id = res.data?.id ?? res.data?.orderId ?? null;
+      if (id) {
+        try {
+          localStorage.setItem('qm_last_order_id', id);
+        } catch (e) {}
+      }
+      // call parent (which will navigate to success page or show toast)
       onOrderPlaced(res.data);
       onClose();
     } catch (err: any) {
       console.error('Order error', err);
-      // if 409 conflict => table occupied
       const status = err?.response?.status;
-      if (status === 409)
+      if (status === 409) {
         setError('Selected table was just occupied. Please choose another table.');
-      else setError(err?.response?.data?.message || 'Order failed');
+      } else if (status === 401) {
+        setError('Session expired. Please login or retry.');
+      } else {
+        setError(err?.response?.data?.message || 'Order failed');
+      }
     } finally {
       setSubmitting(false);
     }

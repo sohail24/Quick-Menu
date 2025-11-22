@@ -7,6 +7,7 @@ import RestaurantMenu from '../pages/Menu/RestaurantMenu';
 import StaffDashboard from '../pages/Staff/Dashboard';
 import NavBar from '../components/NavBar';
 import ProtectedRoute from '../components/ProtectedRoutes';
+import OrderSuccess from '../pages/Order/OrderSuccess';
 
 export default function AppRoutes() {
   return (
@@ -16,9 +17,13 @@ export default function AppRoutes() {
         <Route path="/" element={<Navigate to="/menu/demo" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+
+        {/* public menu */}
         <Route path="/menu/:restaurantId" element={<RestaurantMenu />} />
+        <Route path="/menu" element={<Navigate to="/menu/demo" replace />} />
         {/* <Route path="/menu/demo" element={<RestaurantMenu />} /> */}
 
+        {/* staff (protected) */}
         <Route
           path="/staff"
           element={
@@ -27,6 +32,9 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+        {/* order success */}
+        <Route path="/order/success/:id" element={<OrderSuccess />} />
 
         <Route path="*" element={<div className="p-6">404 - Not Found</div>} />
       </Routes>
