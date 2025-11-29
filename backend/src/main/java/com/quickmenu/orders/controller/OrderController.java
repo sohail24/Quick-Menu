@@ -1,6 +1,7 @@
 package com.quickmenu.orders.controller;
 
 import com.quickmenu.config.customExceptions.TableOccupiedException;
+import com.quickmenu.menu.mapper.OrderMapper;
 import com.quickmenu.orders.dto.OrderRequest;
 import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.repo.OrderRepository;
@@ -64,7 +65,7 @@ public class OrderController {
     @GetMapping
     @Operation(summary = "List orders", description = "List orders for staff (paginated, filterable by status).")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
-    public ResponseEntity<Page<Order>> listOrders(@PathVariable String restaurantId,
+    public ResponseEntity<Page<OrderDto.OrderResponse>> listOrders(@PathVariable String restaurantId,
                                                   @RequestParam(required = false) Order.Status status,
                                                   @RequestParam(defaultValue = "0") int page,
                                                   @RequestParam(defaultValue = "20") int size,
@@ -76,27 +77,28 @@ public class OrderController {
                 ? orderRepository.findByRestaurantId(restaurantId, pageable)
                 : orderRepository.findByRestaurantIdAndStatus(restaurantId, status, pageable);
 
-        return ResponseEntity.ok(p);
+        Page<OrderDto.OrderResponse> dtoPage = p.map(OrderMapper::toResponse);
+        return ResponseEntity.ok(dtoPage);
     }
 
     @GetMapping("/{orderId}")
     @Operation(summary = "Get order", description = "Get order details (staff).")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
-    public ResponseEntity<Order> getOrder(@PathVariable String restaurantId, @PathVariable String orderId) {
+    public ResponseEntity<OrderDto.OrderResponse> getOrder(@PathVariable String restaurantId, @PathVariable String orderId) {
         return orderRepository.findById(orderId)
                 .filter(o -> restaurantId.equals(o.getRestaurantId()))
-                .map(ResponseEntity::ok)
+                .map(order -> ResponseEntity.ok(OrderMapper.toResponse(order)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{orderId}")
     @Operation(summary = "Update order", description = "Update order status (staff).")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
-    public ResponseEntity<Order> updateStatus(@PathVariable String restaurantId,
+    public ResponseEntity<OrderDto.OrderResponse> updateStatus(@PathVariable String restaurantId,
                                               @PathVariable String orderId,
                                               @RequestBody Order req) {
         Order updated = orderService.updateOrderStatus(restaurantId, orderId, req.getStatus());
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(OrderMapper.toResponse(updated));
     }
 
     private Sort.Order[] parseSort(String[] sort) {

@@ -3,6 +3,7 @@ package com.quickmenu.orders.dto;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -34,11 +35,13 @@ public class OrderDto {
         private String status;
         private BigDecimal totalAmount;
         private List<OrderItemResponse> items;
+        private Instant placedAt;
     }
 
     @Data
     public static class OrderItemResponse {
         private String dishId;
+        private String dishName;
         private Integer quantity;
         private BigDecimal priceAtOrder;
         private String note;

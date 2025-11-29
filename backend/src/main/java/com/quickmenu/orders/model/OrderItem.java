@@ -1,5 +1,7 @@
 package com.quickmenu.orders.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.quickmenu.menu.model.Dish;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -14,17 +16,22 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class OrderItem {
+
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name="uuid2", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(length = 36)
     private String id;
 
-    @Column(nullable = false)
-    private String orderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    @JsonIgnore   // prevent recursion
+    private Order order;   // JPA will manage the FK column "order_id"
 
-    @Column(nullable = false)
-    private String dishId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dish_id", nullable = false)
+    private Dish dish;
 
     @Column(nullable = false)
     private Integer quantity;

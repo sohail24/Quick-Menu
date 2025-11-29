@@ -59,7 +59,7 @@ public class OrderService {
             throw new TableOccupiedException();
         }
 
-        // mark table occupied (optional: you may mark occupied only when order is accepted/paid)
+        // mark table occupied
         table.setOccupied(true);
         tableRepository.save(table);
 
@@ -76,7 +76,7 @@ public class OrderService {
             total = total.add(itemTotal);
 
             OrderItem oi = OrderItem.builder()
-                    .dishId(dish.getId())
+                    .dish(dish)
                     .quantity(it.getQuantity())
                     .priceAtOrder(dish.getPrice())
                     .note(it.getNote())
@@ -84,6 +84,7 @@ public class OrderService {
             items.add(oi);
         }
 
+        // build order and set back-reference on items
         Order order = Order.builder()
                 .restaurantId(restaurantId)
                 .tableId(req.getTableId())
@@ -95,18 +96,20 @@ public class OrderService {
                 .items(items)
                 .build();
 
-        Order saved = orderRepository.save(order);
-
+        // set the parent reference on each item
         for (OrderItem it : items) {
-            it.setOrderId(saved.getId());
-            orderItemRepository.save(it);
+            it.setOrder(order);
         }
 
-        Map<String, Object> orderPayload = enrichOrderForResponse(order);
+        // save order; cascade will save items automatically
+        Order saved = orderRepository.save(order);
+
+        Map<String, Object> orderPayload = enrichOrderForResponse(saved);
         messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
 
         return orderPayload;
     }
+
 
     public List<Order> listOrders(String restaurantId, Order.Status status) {
         if (status == null) {
@@ -151,11 +154,10 @@ public class OrderService {
         List<Map<String, Object>> itemsWithDetails = order.getItems() != null
                 ? order.getItems().stream()
                 .map(item -> {
-                    Dish dish = dishRepository.findById(item.getDishId()).orElse(null);
+                    Dish dish = dishRepository.findById(item.getDish().getId()).orElse(null);
                     Map<String, Object> itemMap = new HashMap<>();
                     itemMap.put("id", item.getId());
-                    itemMap.put("orderId", item.getOrderId());
-                    itemMap.put("dishId", item.getDishId());
+                    itemMap.put("dishId", item.getDish().getId());
                     itemMap.put("dishName", dish != null ? dish.getName() : "Unknown Dish");
                     itemMap.put("quantity", item.getQuantity());
                     itemMap.put("priceAtOrder", item.getPriceAtOrder());

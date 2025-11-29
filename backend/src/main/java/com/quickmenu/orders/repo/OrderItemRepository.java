@@ -9,22 +9,24 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
-    List<OrderItem> findByOrderId(String orderId);
+    List<OrderItem> findByOrder_Id(String orderId);
 
     @Query("""
-      SELECT oi.dishId AS dishId,
+      SELECT oi.dish.id AS dishId,
+             oi.dish.name AS dishName,
              SUM(oi.quantity) AS totalQty,
              SUM(oi.priceAtOrder * oi.quantity) AS totalRevenue
       FROM OrderItem oi
-      JOIN Order o ON oi.orderId = o.id
+      JOIN oi.order o
       WHERE o.restaurantId = :restaurantId
-      GROUP BY oi.dishId
+      GROUP BY oi.dish.id, oi.dish.name
       ORDER BY SUM(oi.quantity) DESC
     """)
     List<TopDishProjection> findTopDishesByRestaurant(@Param("restaurantId") String restaurantId);
 
     interface TopDishProjection {
         String getDishId();
+        String getDishName();      // add dishName to projection
         Long getTotalQty();
         java.math.BigDecimal getTotalRevenue();
     }

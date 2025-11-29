@@ -1,5 +1,7 @@
 package com.quickmenu.orders.controller;
 
+import com.quickmenu.menu.mapper.OrderMapper;
+import com.quickmenu.orders.dto.OrderDto;
 import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.repo.OrderRepository;
 import com.quickmenu.orders.service.OrderService;
@@ -17,9 +19,9 @@ public class GlobalOrderController {
     }
 
     @GetMapping("/api/orders/{orderId}")
-    public ResponseEntity<Order> getOrderById(@PathVariable String orderId) {
+    public ResponseEntity<OrderDto.OrderResponse> getOrderById(@PathVariable String orderId) {
         return orderRepository.findById(orderId)
-                .map(ResponseEntity::ok)
+                .map(order -> ResponseEntity.ok(OrderMapper.toResponse(order)))
                 .orElse(ResponseEntity.notFound().build());
     }
 

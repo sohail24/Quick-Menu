@@ -16,6 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Order {
+
     public enum Status {
         PLACED, PENDING, IN_PROGRESS, READY, SERVED, CANCELLED, PREPARING
     }
@@ -56,7 +57,6 @@ public class Order {
         }
     }
 
-    // Not mapped; kept for DTO mapping convenience
-    @Transient
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items;
 }
