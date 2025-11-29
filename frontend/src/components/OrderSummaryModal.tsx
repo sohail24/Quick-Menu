@@ -140,6 +140,10 @@ export default function OrderSummaryModal({
   function stopTracking() {
     if (!restaurantId || !selectedTable) return;
     removeActiveOrder(restaurantId, selectedTable);
+    // Also clear the last order ID from localStorage
+    try {
+      localStorage.removeItem('qm_last_order_id');
+    } catch {}
     setExistingOrderId(null);
     // Reset selectedTable so available tables will be fetched again
     setSelectedTable(null);

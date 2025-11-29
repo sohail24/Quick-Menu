@@ -7,7 +7,7 @@ import CartFloating from '../../components/CartFloating';
 import OrderSummaryModal from '../../components/OrderSummaryModal';
 import OrderStatusFloating from '../../components/OrderStatusFloating';
 import BellButton from '../../components/BellButton';
-import { getActiveOrderFor, setActiveOrder } from '../../lib/orderStorage';
+import { getActiveOrderFor } from '../../lib/orderStorage';
 
 type CartItem = {
   dishId: string;
@@ -179,19 +179,8 @@ export default function RestaurantMenu() {
       try {
         localStorage.setItem('qm_last_order_id', id);
       } catch {}
-      // persist active order mapping (minimum-effort client side)
-      if (effectiveRestaurantId && effectiveTableId) {
-        try {
-          setActiveOrder(
-            effectiveRestaurantId,
-            effectiveTableId,
-            id,
-            responseData?.placedAt ?? new Date().toISOString(),
-          );
-        } catch (e) {
-          // ignore
-        }
-      }
+      // Note: setActiveOrder is already called in OrderSummaryModal.submitNewOrder
+      // so we don't duplicate it here to avoid creating multiple entries
       navigate(`/order/success/${id}`);
     } else alert('Order placed');
   }
@@ -199,6 +188,8 @@ export default function RestaurantMenu() {
   function handleStopTracking() {
     // Clear the existing order banner when user stops tracking
     setExistingOrderForTable(null);
+    // Also clear the last order ID display
+    setLastOrderId(null);
   }
 
   return (
