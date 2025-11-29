@@ -7,6 +7,7 @@ import CartFloating from '../../components/CartFloating';
 import OrderSummaryModal from '../../components/OrderSummaryModal';
 import OrderStatusFloating from '../../components/OrderStatusFloating';
 import BellButton from '../../components/BellButton';
+import { getActiveOrderFor, setActiveOrder } from '../../lib/orderStorage';
 
 type CartItem = {
   dishId: string;
@@ -45,7 +46,10 @@ export default function RestaurantMenu() {
 
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const [existingOrderForTable, setExistingOrderForTable] = useState<string | null>(null);
+  const [orderComplete, setOrderComplete] = useState(false);
 
+  // resolve demo restaurant (if paramRestaurantId === 'demo')
   useEffect(() => {
     async function resolveDemo() {
       if (!paramRestaurantId) return;
@@ -73,13 +77,16 @@ export default function RestaurantMenu() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramRestaurantId]);
 
+  // load menu
   useEffect(() => {
     if (!effectiveRestaurantId) return;
     setLoadingMenu(true);
     setError(null);
     api
       .get(
-        `/api/${effectiveRestaurantId}/menu?includeUnavailable=false${effectiveTableId ? '&tableId=' + effectiveTableId : ''}`,
+        `/api/${effectiveRestaurantId}/menu?includeUnavailable=false${
+          effectiveTableId ? '&tableId=' + effectiveTableId : ''
+        }`,
       )
       .then((res) => {
         const ds = res.data?.dishes ?? res.data ?? [];
@@ -92,11 +99,22 @@ export default function RestaurantMenu() {
       .finally(() => setLoadingMenu(false));
   }, [effectiveRestaurantId, effectiveTableId]);
 
+  // persist cart to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('qm_cart', JSON.stringify(cart));
     } catch {}
   }, [cart]);
+
+  // track active order for the current restaurant+table
+  useEffect(() => {
+    if (!effectiveRestaurantId || !effectiveTableId) {
+      setExistingOrderForTable(null);
+      return;
+    }
+    const ao = getActiveOrderFor(effectiveRestaurantId, effectiveTableId);
+    setExistingOrderForTable(ao?.orderId ?? null);
+  }, [effectiveRestaurantId, effectiveTableId]);
 
   // cart operations
   function addToCart(dish: any) {
@@ -127,6 +145,24 @@ export default function RestaurantMenu() {
       alert('Your cart is empty');
       return;
     }
+
+    // prevent checkout if order already placed
+    if (orderComplete) {
+      alert('You have already placed an order. Wait for it to be completed.');
+      return;
+    }
+
+    // if there is already an active order for this table, open the modal (it will show existing-order view)
+    if (effectiveRestaurantId && effectiveTableId) {
+      const ao = getActiveOrderFor(effectiveRestaurantId, effectiveTableId);
+      if (ao?.orderId) {
+        // open modal — modal will show the "existing order" message
+        setOrderModalOpen(true);
+        return;
+      }
+    }
+
+    // otherwise open modal for normal new order flow
     setOrderModalOpen(true);
   }
 
@@ -134,13 +170,35 @@ export default function RestaurantMenu() {
     const id = responseData?.id ?? (responseData && responseData.orderId) ?? null;
     setLastOrderId(id);
     setCart([]);
+    setOrderComplete(true);
     try {
       localStorage.removeItem('qm_cart');
     } catch {}
+
     if (id) {
-      localStorage.setItem('qm_last_order_id', id);
+      try {
+        localStorage.setItem('qm_last_order_id', id);
+      } catch {}
+      // persist active order mapping (minimum-effort client side)
+      if (effectiveRestaurantId && effectiveTableId) {
+        try {
+          setActiveOrder(
+            effectiveRestaurantId,
+            effectiveTableId,
+            id,
+            responseData?.placedAt ?? new Date().toISOString(),
+          );
+        } catch (e) {
+          // ignore
+        }
+      }
       navigate(`/order/success/${id}`);
     } else alert('Order placed');
+  }
+
+  function handleStopTracking() {
+    // Clear the existing order banner when user stops tracking
+    setExistingOrderForTable(null);
   }
 
   return (
@@ -155,6 +213,7 @@ export default function RestaurantMenu() {
           </div>
         )}
       </header>
+
       <BellButton
         restaurantId={effectiveRestaurantId}
         tableId={effectiveTableId}
@@ -162,12 +221,22 @@ export default function RestaurantMenu() {
           /* optionally show toast */
         }}
       />
+
       <OrderStatusFloating />
+
       <div className="mb-4">
         {loadingDemo && <div className="text-sm text-gray-600">Resolving demo restaurant...</div>}
         {loadingMenu && <div className="text-sm text-gray-600">Loading menu...</div>}
         {error && <div className="text-sm text-red-600">Error: {error}</div>}
         {lastOrderId && <div className="text-sm text-green-700">Last order id: {lastOrderId}</div>}
+        {existingOrderForTable && (
+          <div className="mt-2 p-2 bg-yellow-50 border rounded text-sm">
+            You already placed an order for this table: <strong>#{existingOrderForTable}</strong>.
+            <button className="ml-3 text-blue-600" onClick={() => setOrderModalOpen(true)}>
+              View / Manage
+            </button>
+          </div>
+        )}
       </div>
 
       {demoInfo && (
@@ -194,6 +263,7 @@ export default function RestaurantMenu() {
         onIncrement={handleIncrement}
         onDecrement={handleDecrement}
         onRemove={handleRemove}
+        isOrderComplete={orderComplete}
       />
 
       <OrderSummaryModal
@@ -201,7 +271,9 @@ export default function RestaurantMenu() {
         onClose={() => setOrderModalOpen(false)}
         cart={cart}
         restaurantId={effectiveRestaurantId}
+        tableId={effectiveTableId}
         onOrderPlaced={handleOrderPlaced}
+        onStopTracking={handleStopTracking}
       />
     </div>
   );

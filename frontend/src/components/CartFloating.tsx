@@ -16,6 +16,7 @@ type Props = {
   onDecrement?: (dishId: string) => void;
   onRemove?: (dishId: string) => void;
   className?: string;
+  isOrderComplete?: boolean;
 };
 
 export default function CartFloating({
@@ -25,6 +26,7 @@ export default function CartFloating({
   onDecrement,
   onRemove,
   className = '',
+  isOrderComplete = false,
 }: Props) {
   const total = items.reduce((s, it) => s + it.quantity * it.price, 0);
 
@@ -83,10 +85,10 @@ export default function CartFloating({
 
           <button
             onClick={onCheckout}
-            disabled={items.length === 0}
-            className={`w-full py-2 rounded text-white ${items.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+            disabled={items.length === 0 || isOrderComplete}
+            className={`w-full py-2 rounded text-white ${items.length === 0 || isOrderComplete ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
           >
-            Checkout
+            {isOrderComplete ? 'Order Placed' : 'Checkout'}
           </button>
         </div>
       </div>
