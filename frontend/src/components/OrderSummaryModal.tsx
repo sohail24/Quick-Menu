@@ -41,6 +41,7 @@ export default function OrderSummaryModal({
   const [error, setError] = useState<string | null>(null);
 
   const [existingOrderId, setExistingOrderId] = useState<string | null>(null);
+  const [existingOrderTableId, setExistingOrderTableId] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalCart(cart.map((c) => ({ ...c, note: c.note ?? '' })));
@@ -55,10 +56,12 @@ export default function OrderSummaryModal({
   useEffect(() => {
     if (!restaurantId || !selectedTable) {
       setExistingOrderId(null);
+      setExistingOrderTableId(null);
       return;
     }
     const ao = getActiveOrderFor(restaurantId, selectedTable);
     setExistingOrderId(ao?.orderId ?? null);
+    setExistingOrderTableId(ao?.tableId ?? null);
   }, [restaurantId, selectedTable]);
 
   // fetch available tables for selection (always fetch, don't skip if selectedTable exists)
@@ -145,6 +148,7 @@ export default function OrderSummaryModal({
       localStorage.removeItem('qm_last_order_id');
     } catch {}
     setExistingOrderId(null);
+    setExistingOrderTableId(null);
     // Reset selectedTable so available tables will be fetched again
     setSelectedTable(null);
     // Clear tables to force fresh fetch
@@ -178,7 +182,7 @@ export default function OrderSummaryModal({
         {existingOrderId ? (
           <div>
             <div className="mb-3 text-sm">
-              You already placed an order for this table: <strong>#{existingOrderId}</strong>
+              You already placed an order for this table: <strong>#{existingOrderTableId}</strong>
             </div>
             <div className="flex gap-2">
               <button
@@ -279,7 +283,7 @@ export default function OrderSummaryModal({
                   >
                     {tables.map((t: any) => (
                       <option key={t.id} value={t.id}>
-                        {t.name}
+                        {t.name} (ID: {t.id})
                       </option>
                     ))}
                   </select>

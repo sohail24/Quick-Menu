@@ -3,6 +3,7 @@ const KEY = 'qm_active_orders_v1';
 
 export type ActiveOrderItem = {
   orderId: string;
+  tableId: string;
   placedAt?: string;
   lastSeenAt?: number;
 };
@@ -34,7 +35,7 @@ export function setActiveOrder(
 ) {
   const key = `${restaurantId}_${tableId}`;
   const map = getActiveOrders();
-  map[key] = { orderId, placedAt, lastSeenAt: Date.now() };
+  map[key] = { orderId, tableId, placedAt, lastSeenAt: Date.now() };
   saveActiveOrders(map);
 }
 

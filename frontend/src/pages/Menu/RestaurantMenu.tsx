@@ -47,6 +47,7 @@ export default function RestaurantMenu() {
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [existingOrderForTable, setExistingOrderForTable] = useState<string | null>(null);
+  const [existingOrderTableId, setExistingOrderTableId] = useState<string | null>(null);
   const [orderComplete, setOrderComplete] = useState(false);
 
   // resolve demo restaurant (if paramRestaurantId === 'demo')
@@ -110,10 +111,12 @@ export default function RestaurantMenu() {
   useEffect(() => {
     if (!effectiveRestaurantId || !effectiveTableId) {
       setExistingOrderForTable(null);
+      setExistingOrderTableId(null);
       return;
     }
     const ao = getActiveOrderFor(effectiveRestaurantId, effectiveTableId);
     setExistingOrderForTable(ao?.orderId ?? null);
+    setExistingOrderTableId(ao?.tableId ?? null);
   }, [effectiveRestaurantId, effectiveTableId]);
 
   // cart operations
@@ -188,6 +191,7 @@ export default function RestaurantMenu() {
   function handleStopTracking() {
     // Clear the existing order banner when user stops tracking
     setExistingOrderForTable(null);
+    setExistingOrderTableId(null);
     // Also clear the last order ID display
     setLastOrderId(null);
   }
@@ -222,7 +226,7 @@ export default function RestaurantMenu() {
         {lastOrderId && <div className="text-sm text-green-700">Last order id: {lastOrderId}</div>}
         {existingOrderForTable && (
           <div className="mt-2 p-2 bg-yellow-50 border rounded text-sm">
-            You already placed an order for this table: <strong>#{existingOrderForTable}</strong>.
+            You placed an order for this table: <strong>#{existingOrderTableId}</strong>.
             <button className="ml-3 text-blue-600" onClick={() => setOrderModalOpen(true)}>
               View / Manage
             </button>
