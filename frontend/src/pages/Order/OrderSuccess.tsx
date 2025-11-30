@@ -47,15 +47,20 @@ export default function OrderSuccess() {
             <div>
               <strong>Status:</strong> {order.status}
             </div>
-
+            <div>
+              <strong>Customer note:</strong> {order.customerNote}
+            </div>
             <div>
               <strong>Items</strong>
               <ul className="mt-2 space-y-1">
                 {order.items?.map((it: any) => (
                   <li key={it.id} className="flex justify-between">
-                    <span>
-                      {it.quantity} x {it.dishName ?? it.dishId}
-                    </span>
+                    <div>
+                      <p>
+                        {it.quantity} x {it.dishName ?? it.dishId}
+                      </p>
+                      <p className="text-sm text-gray-500">note: {it.note}</p>
+                    </div>
                     <span>₹ {((it.priceAtOrder ?? it.price) * it.quantity).toFixed(2)}</span>
                   </li>
                 ))}
