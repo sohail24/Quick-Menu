@@ -10,7 +10,6 @@ type Stats = {
   activeTables?: number;
   topDishes?: any[];
   hourly?: number[];
-  raw?: any;
 };
 
 export default function AdminOverview() {
@@ -18,118 +17,58 @@ export default function AdminOverview() {
   const [selectedRest, setSelectedRest] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats>({});
   const [loading, setLoading] = useState(false);
-  const [loadingRestaurants, setLoadingRestaurants] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // load restaurants for admin select
   useEffect(() => {
     let mounted = true;
-    setLoadingRestaurants(true);
     api
       .get('/api/restaurants')
       .then((res) => {
         if (!mounted) return;
-        // backend returns pageable with 'content' array (Spring Data style)
-        const data = res.data ?? {};
-        const arr = Array.isArray(data)
-          ? data
-          : Array.isArray(data.content)
-            ? data.content
-            : (data?.items ?? data?.restaurants ?? []);
-        setRestaurants(arr);
-
-        // preselect first restaurant if available
-        if (arr.length > 0) {
-          // ensure we set after restaurants are loaded so stats won't call prematurely
-          setSelectedRest((prev) => prev ?? arr[0].id);
-        } else {
-          setSelectedRest(null);
+        // Handle both direct array and paginated response
+        const data = Array.isArray(res.data) ? res.data : res.data?.content || [];
+        setRestaurants(data);
+        // preselect first if available
+        if (data.length > 0) {
+          setSelectedRest((prev) => prev ?? data[0].id);
         }
       })
       .catch((err) => {
         console.warn('Failed to load restaurants for admin overview', err);
-        setError('Failed to load restaurants');
-      })
-      .finally(() => {
-        if (mounted) setLoadingRestaurants(false);
       });
-
     return () => {
       mounted = false;
     };
   }, []);
 
-  // fetch stats only when a restaurant is selected (backend requires restaurantId)
+  // fetch stats when selectedRest changes
   useEffect(() => {
     let mounted = true;
-    if (!selectedRest) {
-      // Clear stats if none selected
-      setStats({});
-      return;
-    }
     setLoading(true);
     setError(null);
 
-    const timezone = 'Asia/Kolkata';
-    const params = `?restaurantId=${selectedRest}&timezone=${encodeURIComponent(timezone)}`;
-
+    // call backend with restaurantId + timezone per your backend signature
+    const params = selectedRest ? `?restaurantId=${selectedRest}&timezone=Asia/Kolkata` : '';
     api
       .get(`/api/admin/stats${params}`)
       .then((res) => {
         if (!mounted) return;
-        const d = res.data ?? {};
-        // Defensive mapping of likely keys
-        const topDishes =
-          d.topDishes ??
-          d.top5 ??
-          d.top_5 ??
-          d.top_dishes ??
-          d.data?.topDishes ??
-          d.stats?.topDishes ??
-          [];
-
-        const hourly =
-          d.hourly ??
-          d.hourlyBreakdown ??
-          d.hourly_breakdown ??
-          d.data?.hourly ??
-          d.stats?.hourly ??
-          [];
-
-        const orders =
-          d.ordersToday ??
-          d.ordersCount ??
-          d.totalOrders ??
-          d.orders ??
-          d.data?.ordersCount ??
-          d.stats?.orders;
-
-        const revenue =
-          d.revenueToday ?? d.revenue ?? d.totalRevenue ?? d.revenueAmount ?? d.data?.revenue;
-
-        const activeTables = d.activeTables ?? d.tablesActive ?? d.data?.activeTables;
-
+        const d = res.data || {};
         setStats({
           restaurants: d.restaurantsCount ?? d.totalRestaurants ?? undefined,
-          orders: orders,
-          revenue: revenue,
-          activeTables: activeTables,
-          topDishes: Array.isArray(topDishes) ? topDishes : [],
-          hourly: Array.isArray(hourly) ? hourly : [],
-          raw: d,
+          orders: d.ordersCount ?? d.totalOrders ?? d.orders,
+          revenue: d.revenue ?? d.totalRevenue ?? undefined,
+          activeTables: d.activeTables ?? d.tablesActive ?? undefined,
+          topDishes: d.topDishes ?? d.top5 ?? undefined,
+          hourly: d.hourly ?? d.hourlyBreakdown ?? undefined,
         });
-
-        // helpful console log for debugging actual backend shape
-        console.debug('AdminOverview: /api/admin/stats response', d);
       })
-      .catch((err: any) => {
+      .catch((err) => {
         console.warn('Failed to load admin stats', err);
-        setError(
-          err?.response?.data?.message
-            ? `Failed to load stats: ${err.response.data.message}`
-            : 'Failed to load stats (see console/network)',
-        );
-        setStats({ raw: err?.response?.data ?? err });
+        setError('Failed to load stats');
+        // reset stats on error
+        setStats({});
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -141,7 +80,7 @@ export default function AdminOverview() {
   }, [selectedRest]);
 
   return (
-    <div className="p-12 space-y-6">
+    <div className="space-y-6">
       <div className="mb-2 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Admin Overview</h1>
         <div>
@@ -155,22 +94,18 @@ export default function AdminOverview() {
         <div className="flex items-center gap-3">
           <div>
             <label className="text-sm block">Select restaurant</label>
-            {loadingRestaurants ? (
-              <div className="text-sm text-gray-600">Loading restaurants...</div>
-            ) : (
-              <select
-                value={selectedRest ?? ''}
-                onChange={(e) => setSelectedRest(e.target.value || null)}
-                className="p-2 border rounded"
-              >
-                <option value="">-- select a restaurant --</option>
-                {restaurants.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name ?? r.restaurantName ?? r.id}
-                  </option>
-                ))}
-              </select>
-            )}
+            <select
+              value={selectedRest ?? ''}
+              onChange={(e) => setSelectedRest(e.target.value || null)}
+              className="p-2 border rounded"
+            >
+              <option value="">-- all / global --</option>
+              {restaurants.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name ?? r.restaurantName ?? r.id}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="ml-auto text-sm text-gray-500">{loading ? 'Loading stats...' : ''}</div>
@@ -181,9 +116,7 @@ export default function AdminOverview() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
           <div className="p-4 bg-white rounded shadow">
             <div className="text-sm text-gray-500">Restaurants</div>
-            <div className="text-2xl font-bold">
-              {stats.restaurants ?? restaurants.length ?? '—'}
-            </div>
+            <div className="text-2xl font-bold">{stats.restaurants ?? '—'}</div>
             <div className="text-xs mt-2">
               <Link to="/admin/restaurants" className="text-blue-600">
                 Manage
@@ -220,24 +153,20 @@ export default function AdminOverview() {
           </div>
         </div>
 
+        {/* small top-dishes preview */}
         <div className="mt-6 bg-white p-4 rounded shadow">
           <h3 className="font-medium mb-2">Top dishes (preview)</h3>
-          {Array.isArray(stats.topDishes) && stats.topDishes.length > 0 ? (
+          {stats.topDishes && stats.topDishes.length > 0 ? (
             <ol className="list-decimal list-inside">
               {stats.topDishes.map((d: any, i: number) => (
                 <li key={i} className="flex justify-between">
-                  <span>{d.name ?? d.dishName ?? d.title ?? 'Unknown'}</span>
-                  <span className="text-sm text-gray-500">{d.sold ?? d.count ?? d.qty ?? '-'}</span>
+                  <span>{d.name ?? d.dishName}</span>
+                  <span className="text-sm text-gray-500">{d.sold ?? d.count ?? '-'}</span>
                 </li>
               ))}
             </ol>
           ) : (
-            <div className="text-sm text-gray-500">
-              No top dishes yet. (If your backend returned data, check console for raw payload.)
-              <pre className="mt-2 text-xs max-h-40 overflow-auto bg-gray-50 p-2 rounded">
-                {JSON.stringify(stats.raw ?? {}, null, 2)}
-              </pre>
-            </div>
+            <div className="text-sm text-gray-500">No top dishes yet</div>
           )}
         </div>
       </div>

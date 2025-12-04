@@ -93,7 +93,7 @@ export default function AdminCreateRestaurant() {
     <div className="p-12">
       <h2 className="text-2xl font-semibold mb-4">Admin — Create Restaurant & QR</h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
         <section className="bg-white rounded shadow">
           <form onSubmit={handleCreate} className="space-y-4 bg-white p-4 rounded shadow">
             <div>

@@ -14,6 +14,7 @@ import AdminOverview from '../pages/Admin/AdminOverview';
 import AdminRestaurants from '../pages/Admin/AdminRestaurants';
 import AdminOrders from '../pages/Admin/AdminOrders';
 import AdminAnalytics from '../pages/Admin/AdminAnalytics';
+import AdminRestaurantDetail from '../pages/Admin/AdminRestaurantDetail';
 
 export default function AppRoutes() {
   return (
@@ -62,6 +63,7 @@ export default function AppRoutes() {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="analytics" element={<AdminAnalytics />} />
           {/* add more nested routes as needed */}
+          <Route path="restaurants/:id" element={<AdminRestaurantDetail />} />
         </Route>
       </Routes>
     </>
