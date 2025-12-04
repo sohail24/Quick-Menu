@@ -9,6 +9,11 @@ import NavBar from '../components/NavBar';
 import ProtectedRoute from '../components/ProtectedRoutes';
 import OrderSuccess from '../pages/Order/OrderSuccess';
 import AdminCreateRestaurant from '../pages/Admin/AdminCreateRestaurant';
+import AdminLayout from '../layouts/AdminLayout';
+import AdminOverview from '../pages/Admin/AdminOverview';
+import AdminRestaurants from '../pages/Admin/AdminRestaurants';
+import AdminOrders from '../pages/Admin/AdminOrders';
+import AdminAnalytics from '../pages/Admin/AdminAnalytics';
 
 export default function AppRoutes() {
   return (
@@ -43,6 +48,21 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminOverview />} />
+          <Route path="restaurants" element={<AdminRestaurants />} />
+          <Route path="restaurants/create" element={<AdminCreateRestaurant />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
+          {/* add more nested routes as needed */}
+        </Route>
       </Routes>
     </>
   );
