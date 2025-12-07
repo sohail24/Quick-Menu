@@ -44,20 +44,6 @@ export default function AdminOrders() {
     };
   }, [searchQ]);
 
-  // Client-side filtering (for search since backend may not filter)
-  const filteredOrders = useMemo(() => {
-    if (!debouncedSearchQ.trim()) return orders;
-    const query = debouncedSearchQ.toLowerCase();
-    return orders.filter((o: any) => {
-      const orderId = (o.id ?? o.orderId ?? '').toLowerCase();
-      const customerName = (o.customerName ?? '').toLowerCase();
-      const customerPhone = (o.customerPhone ?? '').toLowerCase();
-      return (
-        orderId.includes(query) || customerName.includes(query) || customerPhone.includes(query)
-      );
-    });
-  }, [orders, debouncedSearchQ]);
-
   // load restaurants
   useEffect(() => {
     let mounted = true;
@@ -112,9 +98,9 @@ export default function AdminOrders() {
       try {
         // try restaurant-scoped endpoints in priority order (same approach as before)
         const tryList = [
+          `/api/${selectedRest}/orders/search?restaurantId=${selectedRest}&page=${page}&size=${size}${statusFilter && statusFilter !== 'ALL' ? `&status=${statusFilter}` : ''}${debouncedSearchQ ? `&search=${encodeURIComponent(debouncedSearchQ)}` : ''}`,
           `/api/${selectedRest}/orders${queryParams}`,
           `/api/restaurants/${selectedRest}/orders${queryParams}`,
-          `/api/orders/search?restaurantId=${selectedRest}&page=${page}&size=${size}${statusFilter && statusFilter !== 'ALL' ? `&status=${statusFilter}` : ''}${debouncedSearchQ ? `&search=${encodeURIComponent(debouncedSearchQ)}` : ''}`,
         ];
         let got = false;
         for (const url of tryList) {
@@ -296,7 +282,7 @@ export default function AdminOrders() {
             onChange={(e) => setSize(Number(e.target.value))}
             className="p-2 border rounded w-full"
           >
-            {[10, 20, 50, 100].map((s) => (
+            {[3, 5, 8, 10, 15, 20, 50, 100].map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
@@ -341,10 +327,10 @@ export default function AdminOrders() {
       {error && <div className="text-red-600">{error}</div>}
 
       <div className="space-y-2">
-        {filteredOrders.length === 0 && !loading ? (
+        {orders.length === 0 && !loading ? (
           <div className="text-gray-600">No orders found.</div>
         ) : (
-          filteredOrders.map((o: any) => {
+          orders.map((o: any) => {
             const id = o.id ?? o.orderId;
             const status = o.status ?? o.orderStatus;
             return (
