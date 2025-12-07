@@ -101,6 +101,30 @@ public class OrderController {
         return ResponseEntity.ok(OrderMapper.toResponse(updated));
     }
 
+    @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public ResponseEntity<Page<OrderDto.OrderResponse>> searchOrders(
+            @PathVariable String restaurantId,
+            @RequestParam String search,
+            @RequestParam(required = false) Order.Status status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "placedAt"));
+
+        Page<Order> orders;
+        if (status != null && search != null) {
+            orders = orderRepository.findByRestaurantIdAndStatusAndSearch(restaurantId, status, search, pageable);
+        } else if (status != null) {
+            orders = orderRepository.findByRestaurantIdAndStatus(restaurantId, status, pageable);
+        } else  {
+            orders = orderRepository.findByRestaurantIdAndSearch(restaurantId, search, pageable);
+        }
+
+        Page<OrderDto.OrderResponse> dtoPage = orders.map(OrderMapper::toResponse);
+        return ResponseEntity.ok(dtoPage);
+    }
+
     private Sort.Order[] parseSort(String[] sort) {
         return java.util.Arrays.stream(sort)
                 .map(s -> {

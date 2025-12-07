@@ -18,6 +18,26 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     Page<Order> findByRestaurantId(String restaurantId, Pageable pageable);
     Page<Order> findByRestaurantIdAndStatus(String restaurantId, Order.Status status, Pageable pageable);
 
+    @Query("SELECT o FROM Order o WHERE o.restaurantId = :restaurantId " +
+            "AND (LOWER(o.id) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(o.customerName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(o.customerPhone) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Order> findByRestaurantIdAndSearch(
+            @Param("restaurantId") String restaurantId,
+            @Param("search") String search,
+            Pageable pageable);
+
+    @Query("SELECT o FROM Order o WHERE o.restaurantId = :restaurantId " +
+            "AND o.status = :status " +
+            "AND (LOWER(o.id) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(o.customerName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(o.customerPhone) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Order> findByRestaurantIdAndStatusAndSearch(
+            @Param("restaurantId") String restaurantId,
+            @Param("status") Order.Status status,
+            @Param("search") String search,
+            Pageable pageable);
+
 
     long countByRestaurantIdAndPlacedAtBetween(String restaurantId, Instant start, Instant end);
 

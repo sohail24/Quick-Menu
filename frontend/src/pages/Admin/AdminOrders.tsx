@@ -30,6 +30,20 @@ export default function AdminOrders() {
 
   const navigate = useNavigate();
 
+  // Client-side filtering (for search since backend may not filter)
+  const filteredOrders = useMemo(() => {
+    if (!searchQ.trim()) return orders;
+    const query = searchQ.toLowerCase();
+    return orders.filter((o: any) => {
+      const orderId = (o.id ?? o.orderId ?? '').toLowerCase();
+      const customerName = (o.customerName ?? '').toLowerCase();
+      const customerPhone = (o.customerPhone ?? '').toLowerCase();
+      return (
+        orderId.includes(query) || customerName.includes(query) || customerPhone.includes(query)
+      );
+    });
+  }, [orders, searchQ]);
+
   // load restaurants
   useEffect(() => {
     let mounted = true;
@@ -86,7 +100,7 @@ export default function AdminOrders() {
         const tryList = [
           `/api/${selectedRest}/orders${queryParams}`,
           `/api/restaurants/${selectedRest}/orders${queryParams}`,
-          `/api/orders?restaurantId=${selectedRest}&page=${page}&size=${size}${statusFilter && statusFilter !== 'ALL' ? `&status=${statusFilter}` : ''}${searchQ ? `&search=${encodeURIComponent(searchQ)}` : ''}`,
+          `/api/orders/search?restaurantId=${selectedRest}&page=${page}&size=${size}${statusFilter && statusFilter !== 'ALL' ? `&status=${statusFilter}` : ''}${searchQ ? `&search=${encodeURIComponent(searchQ)}` : ''}`,
         ];
         let got = false;
         for (const url of tryList) {
@@ -248,7 +262,10 @@ export default function AdminOrders() {
           <input
             placeholder="order id or customer"
             value={searchQ}
-            onChange={(e) => setSearchQ(e.target.value)}
+            onChange={(e) => {
+              setSearchQ(e.target.value);
+              setPage(0);
+            }}
             className="p-2 border rounded w-full"
           />
         </div>
@@ -305,10 +322,10 @@ export default function AdminOrders() {
       {error && <div className="text-red-600">{error}</div>}
 
       <div className="space-y-2">
-        {orders.length === 0 && !loading ? (
+        {filteredOrders.length === 0 && !loading ? (
           <div className="text-gray-600">No orders found.</div>
         ) : (
-          orders.map((o: any) => {
+          filteredOrders.map((o: any) => {
             const id = o.id ?? o.orderId;
             const status = o.status ?? o.orderStatus;
             return (
