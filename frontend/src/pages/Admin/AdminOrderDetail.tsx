@@ -96,6 +96,7 @@ export default function AdminOrderDetail() {
         .items td { padding: 14px 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
         .items tbody tr:hover { background: #f9fafb; }
         .items .item-name { font-weight: 500; color: black; }
+        .items .item-note { font-size: 12px; color: #555; margin-top: 4px; }
         .items .qty { text-align: center; color: black; }
         .items .price { text-align: right; color: black; }
         .items .subtotal { text-align: right; font-weight: 600; color: black; }
@@ -115,6 +116,7 @@ export default function AdminOrderDetail() {
           <div class="table-number">Table ID: #${order?.tableId ?? 'N/A'}</div>
           <div class="customer-info">
             <strong>${order?.customerName ?? 'Customer'}</strong> • ${order?.customerPhone ?? ''}
+            <p class="text-gray-600 mt-1">Customer note: ${order?.customerNote ?? 'N/A'}</p>
           </div>
         </div>
         <table class="items">
@@ -127,7 +129,7 @@ export default function AdminOrderDetail() {
             </tr>
           </thead>
           <tbody>
-            ${(order?.items ?? []).map((it: LineItem) => `<tr><td class="item-name">${it.name ?? it.dishName}</td><td class="qty">${it.quantity ?? 1}</td><td class="price">₹ ${(it.priceAtOrder ?? 0).toFixed(2)}</td><td class="subtotal">₹ ${((it.priceAtOrder ?? 0) * (it.quantity ?? 1)).toFixed(2)}</td></tr>`).join('')}
+            ${(order?.items ?? []).map((it: LineItem) => `<tr><td class="item-name">${it.name ?? it.dishName} ${it.note ? `<div class="item-note">(Note: ${it.note})</div>` : ''}</td><td class="qty">${it.quantity ?? 1}</td><td class="price">₹ ${(it.priceAtOrder ?? 0).toFixed(2)}</td><td class="subtotal">₹ ${((it.priceAtOrder ?? 0) * (it.quantity ?? 1)).toFixed(2)}</td></tr>`).join('')}
           </tbody>
         </table>
         <div class="totals">
@@ -239,6 +241,7 @@ export default function AdminOrderDetail() {
             <p className="text-gray-900">
               <strong>{order?.customerName ?? 'Customer'}</strong> • {order?.customerPhone ?? ''}
             </p>
+            <p className="text-gray-600 mt-1">Customer note: {order?.customerNote ?? 'N/A'}</p>
           </div>
 
           {/* Items Table */}
@@ -264,7 +267,8 @@ export default function AdminOrderDetail() {
                 {(order?.items ?? []).map((it: LineItem, idx: number) => (
                   <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="py-4 px-4 text-gray-900 font-medium">
-                      {it.name ?? it.dishName}
+                      {it.name ?? it.dishName}{' '}
+                      {it.note && <div className="text-xs text-gray-500 mt-1">Note: {it.note}</div>}
                     </td>
                     <td className="py-4 px-4 text-center text-gray-700">{it.quantity ?? 1}</td>
                     <td className="py-4 px-4 text-right text-gray-700">
@@ -280,24 +284,19 @@ export default function AdminOrderDetail() {
           </div>
 
           {/* Totals */}
-          <div className="border-t-2 border-b-2 border-gray-900 py-4 mb-6">
-            <div className="flex justify-between mb-3">
+          <div className="">
+            <div className="flex justify-between pb-3">
               <span className="text-gray-700">Subtotal</span>
               <span className="text-gray-700">
                 ₹ {order?.total ?? order?.amount ?? order?.grandTotal ?? order?.totalAmount ?? 0}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between border-t-4 border-gray-900 pt-4">
               <span className="text-xl font-bold text-gray-900">Total Amount</span>
               <span className="text-xl font-bold text-gray-900">
                 ₹ {order?.total ?? order?.amount ?? order?.grandTotal ?? order?.totalAmount ?? 0}
               </span>
             </div>
-          </div>
-
-          {/* Footer */}
-          <div className="text-center text-gray-600 text-sm">
-            <p>Placed: {order?.placedAt ?? order?.createdAt ?? 'N/A'}</p>
           </div>
         </div>
 
