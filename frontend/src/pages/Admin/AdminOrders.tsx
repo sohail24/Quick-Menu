@@ -1,5 +1,5 @@
 // src/pages/Admin/AdminOrders.tsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../../lib/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { downloadCsv } from '../../lib/csv';
@@ -20,9 +20,11 @@ export default function AdminOrders() {
   // filtering & pagination
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchQ, setSearchQ] = useState<string>('');
+  const [debouncedSearchQ, setDebouncedSearchQ] = useState<string>('');
   const [page, setPage] = useState<number>(0);
   const [size, setSize] = useState<number>(20);
   const [total, setTotal] = useState<number | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // selection for bulk actions
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -30,10 +32,22 @@ export default function AdminOrders() {
 
   const navigate = useNavigate();
 
+  // Debounce search: only update debouncedSearchQ after 300ms of inactivity
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearchQ(searchQ);
+      setPage(0);
+    }, 300);
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [searchQ]);
+
   // Client-side filtering (for search since backend may not filter)
   const filteredOrders = useMemo(() => {
-    if (!searchQ.trim()) return orders;
-    const query = searchQ.toLowerCase();
+    if (!debouncedSearchQ.trim()) return orders;
+    const query = debouncedSearchQ.toLowerCase();
     return orders.filter((o: any) => {
       const orderId = (o.id ?? o.orderId ?? '').toLowerCase();
       const customerName = (o.customerName ?? '').toLowerCase();
@@ -42,7 +56,7 @@ export default function AdminOrders() {
         orderId.includes(query) || customerName.includes(query) || customerPhone.includes(query)
       );
     });
-  }, [orders, searchQ]);
+  }, [orders, debouncedSearchQ]);
 
   // load restaurants
   useEffect(() => {
@@ -73,16 +87,16 @@ export default function AdminOrders() {
     };
   }, []);
 
-  // build query params
+  // build query params (use debounced search)
   const queryParams = useMemo(() => {
     const params: string[] = [];
     if (statusFilter && statusFilter !== 'ALL')
       params.push(`status=${encodeURIComponent(statusFilter)}`);
-    if (searchQ) params.push(`search=${encodeURIComponent(searchQ)}`);
+    if (debouncedSearchQ) params.push(`search=${encodeURIComponent(debouncedSearchQ)}`);
     params.push(`page=${page}`);
     params.push(`size=${size}`);
     return params.length ? `?${params.join('&')}` : '';
-  }, [statusFilter, searchQ, page, size]);
+  }, [statusFilter, debouncedSearchQ, page, size]);
 
   useEffect(() => {
     let mounted = true;
@@ -100,7 +114,7 @@ export default function AdminOrders() {
         const tryList = [
           `/api/${selectedRest}/orders${queryParams}`,
           `/api/restaurants/${selectedRest}/orders${queryParams}`,
-          `/api/orders/search?restaurantId=${selectedRest}&page=${page}&size=${size}${statusFilter && statusFilter !== 'ALL' ? `&status=${statusFilter}` : ''}${searchQ ? `&search=${encodeURIComponent(searchQ)}` : ''}`,
+          `/api/orders/search?restaurantId=${selectedRest}&page=${page}&size=${size}${statusFilter && statusFilter !== 'ALL' ? `&status=${statusFilter}` : ''}${debouncedSearchQ ? `&search=${encodeURIComponent(debouncedSearchQ)}` : ''}`,
         ];
         let got = false;
         for (const url of tryList) {
@@ -140,7 +154,7 @@ export default function AdminOrders() {
     return () => {
       mounted = false;
     };
-  }, [selectedRest, queryParams, page, size, statusFilter, searchQ]);
+  }, [selectedRest, queryParams, page, size, statusFilter, debouncedSearchQ]);
 
   // selection helpers
   function toggleSelect(id: string) {
@@ -212,9 +226,14 @@ export default function AdminOrders() {
           <button
             onClick={() => {
               setPage(0);
-              setSelectedRest((s) => (s ? s + '' : s));
+              setSearchQ('');
+              setDebouncedSearchQ('');
+              setStatusFilter('ALL');
+              if (selectedRest) {
+                setSelectedRest((s) => (s ? s + '' : s));
+              }
             }}
-            className="px-3 py-1 border rounded"
+            className="px-3 py-1 border rounded hover:bg-gray-100"
           >
             Refresh
           </button>
