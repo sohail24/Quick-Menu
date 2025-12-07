@@ -191,7 +191,7 @@ export default function AdminOrders() {
   }
 
   return (
-    <div>
+    <div className="p-12">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-semibold">Orders</h1>
         <div className="flex items-center gap-2">
