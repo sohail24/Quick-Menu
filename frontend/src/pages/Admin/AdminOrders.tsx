@@ -86,61 +86,64 @@ export default function AdminOrders() {
 
   useEffect(() => {
     let mounted = true;
-    async function fetchOrders() {
-      if (!selectedRest) {
-        setOrders([]);
-        return;
-      }
-      setLoading(true);
-      setError(null);
-      setOrders([]);
-      setSelected({});
-      try {
-        // try restaurant-scoped endpoints in priority order (same approach as before)
-        const tryList = [
-          `/api/${selectedRest}/orders/search?restaurantId=${selectedRest}&page=${page}&size=${size}${statusFilter && statusFilter !== 'ALL' ? `&status=${statusFilter}` : ''}${debouncedSearchQ ? `&search=${encodeURIComponent(debouncedSearchQ)}` : ''}`,
-          `/api/${selectedRest}/orders${queryParams}`,
-          `/api/restaurants/${selectedRest}/orders${queryParams}`,
-        ];
-        let got = false;
-        for (const url of tryList) {
-          try {
-            const res = await api.get(url);
-            if (!mounted) return;
-            const payload = res.data ?? {};
-            // server could be pageable: { content: [], totalElements }
-            const items = Array.isArray(payload)
-              ? payload
-              : Array.isArray(payload.content)
-                ? payload.content
-                : (payload?.items ?? payload?.orders ?? payload?.data ?? []);
-            setOrders(items);
-            // try to infer total
-            if (payload.totalElements !== undefined) setTotal(payload.totalElements);
-            else if (payload.total !== undefined) setTotal(payload.total);
-            else setTotal(null);
-            got = true;
-            break;
-          } catch (e) {
-            // try next
-          }
-        }
-        if (!got) {
-          setError('Failed to fetch orders for selected restaurant');
-        }
-      } catch (err) {
-        console.error('Unexpected error fetching orders', err);
-        setError('Failed to load orders');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-
-    fetchOrders();
+    fetchOrders(mounted);
     return () => {
       mounted = false;
     };
   }, [selectedRest, queryParams, page, size, statusFilter, debouncedSearchQ]);
+
+  async function fetchOrders(mounted: boolean = true) {
+    if (!selectedRest) {
+      setOrders([]);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setOrders([]);
+    setSelected({});
+    //if (debouncedSearchQ !== '') {
+    try {
+      // try restaurant-scoped endpoints in priority order (same approach as before)
+      const tryList = [
+        `/api/${selectedRest}/orders/search?restaurantId=${selectedRest}&page=${page}&size=${size}${statusFilter && statusFilter !== 'ALL' ? `&status=${statusFilter}` : ''}${debouncedSearchQ ? `&search=${encodeURIComponent(debouncedSearchQ)}` : ''}`,
+        `/api/${selectedRest}/orders${queryParams}`,
+        `/api/restaurants/${selectedRest}/orders${queryParams}`,
+      ];
+      let got = false;
+      for (let url of tryList) {
+        if (debouncedSearchQ === '') url = `/api/${selectedRest}/orders${queryParams}`; // skip search endpoint if no search
+        try {
+          const res = await api.get(url);
+          if (!mounted) return;
+          const payload = res.data ?? {};
+          // server could be pageable: { content: [], totalElements }
+          const items = Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload.content)
+              ? payload.content
+              : (payload?.items ?? payload?.orders ?? payload?.data ?? []);
+          setOrders(items);
+          // try to infer total
+          if (payload.totalElements !== undefined) setTotal(payload.totalElements);
+          else if (payload.total !== undefined) setTotal(payload.total);
+          else setTotal(null);
+          got = true;
+          break;
+        } catch (e) {
+          // try next
+        }
+      }
+      if (!got) {
+        setError('Failed to fetch orders for selected restaurant');
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching orders', err);
+      setError('Failed to load orders');
+    } finally {
+      if (mounted) setLoading(false);
+      //}
+    }
+  }
 
   // selection helpers
   function toggleSelect(id: string) {
@@ -211,13 +214,7 @@ export default function AdminOrders() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              setPage(0);
-              setSearchQ('');
-              setDebouncedSearchQ('');
-              setStatusFilter('ALL');
-              if (selectedRest) {
-                setSelectedRest((s) => (s ? s + '' : s));
-              }
+              fetchOrders();
             }}
             className="px-3 py-1 border rounded hover:bg-gray-100"
           >
