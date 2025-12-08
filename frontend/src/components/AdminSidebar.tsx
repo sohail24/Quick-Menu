@@ -2,12 +2,21 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
-const LinkItem = ({ to, children }: { to: string; children: React.ReactNode }) => (
+const LinkItem = ({
+  to,
+  end,
+  children,
+}: {
+  to: string;
+  end: boolean;
+  children: React.ReactNode;
+}) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
       `block px-3 py-2 rounded hover:bg-gray-100 ${isActive ? 'bg-gray-100 font-semibold' : 'text-gray-700'}`
     }
+    end={end}
   >
     {children}
   </NavLink>
@@ -22,14 +31,38 @@ export default function AdminSidebar() {
       </div>
 
       <nav className="p-2 space-y-1">
-        <LinkItem to="/admin">Overview</LinkItem>
-        <LinkItem to="/admin/restaurants">Restaurants</LinkItem>
-        <LinkItem to="/admin/restaurants/create">Create restaurant</LinkItem>
-        <LinkItem to="/admin/orders">Orders</LinkItem>
-        <LinkItem to="/admin/analytics">Analytics</LinkItem>
-        <LinkItem to="/admin/uploads">Uploads</LinkItem>
+        <LinkItem to="/admin" end>
+          Overview
+        </LinkItem>
+        <LinkItem to="/admin/restaurants" end>
+          Restaurants
+        </LinkItem>
+        <LinkItem to="/admin/orders" end>
+          Orders
+        </LinkItem>
+        <LinkItem to="/admin/analytics" end>
+          Analytics
+        </LinkItem>
+        <LinkItem to="/admin/uploads" end>
+          Uploads
+        </LinkItem>
+        <div className="mt-3 border-t pt-2 text-xs text-gray-500 px-2">Management</div>
+        <LinkItem to="/admin/restaurants/create" end>
+          Create restaurant
+        </LinkItem>
+        <LinkItem to="/admin/tables" end>
+          Tables
+        </LinkItem>
+        <LinkItem to="/admin/categories" end>
+          Categories
+        </LinkItem>
+        <LinkItem to="/admin/dishes" end>
+          Dishes
+        </LinkItem>
         <div className="mt-3 border-t pt-2 text-xs text-gray-500 px-2">Settings</div>
-        <LinkItem to="/admin/settings">Account & Plans</LinkItem>
+        <LinkItem to="/admin/settings" end>
+          Account & Plans
+        </LinkItem>
       </nav>
     </aside>
   );
