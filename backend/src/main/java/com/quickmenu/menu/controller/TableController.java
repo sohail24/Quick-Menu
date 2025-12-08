@@ -5,6 +5,7 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import com.quickmenu.menu.model.Category;
 import com.quickmenu.menu.model.TableEntity;
 import com.quickmenu.menu.repo.TableRepository;
 import com.quickmenu.menu.service.TableService;
@@ -109,6 +110,21 @@ public class TableController {
     public ResponseEntity<List<TableEntity>> listAvailableTables(@PathVariable String restaurantId) {
         List<TableEntity> tables = tableRepository.findByRestaurantIdAndOccupiedFalse(restaurantId);
         return ResponseEntity.ok(tables);
+    }
+
+    @PatchMapping("/{tableId}")
+    @Operation(summary = "Update Table", description = "Partially update table property properties (admin/staff).")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public ResponseEntity<TableEntity> updateTable(@PathVariable String restaurantId,
+                                               @PathVariable String tableId,
+                                               @RequestBody TableEntity req) {
+        return tableRepository.findById(tableId)
+                .filter(c -> restaurantId.equals(c.getRestaurantId()))
+                .map(existing -> {
+                    if (req.getName() != null) existing.setName(req.getName());
+                    if (req.getOccupied() != null) existing.setOccupied(req.getOccupied());
+                    return ResponseEntity.ok(tableRepository.save(existing));
+                }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 

@@ -1,6 +1,7 @@
 package com.quickmenu.menu.controller;
 
 import com.quickmenu.menu.model.Category;
+import com.quickmenu.menu.model.Dish;
 import com.quickmenu.menu.repo.CategoryRepository;
 import com.quickmenu.menu.service.MenuService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,7 +43,21 @@ public class CategoryController {
         return ResponseEntity.ok(p);
     }
 
-    // helper
+    @PatchMapping("/{categoryId}")
+    @Operation(summary = "Update dish", description = "Partially update category property properties (admin/staff).")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public ResponseEntity<Category> updateDish(@PathVariable String restaurantId,
+                                           @PathVariable String categoryId,
+                                           @RequestBody Category req) {
+        return categoryRepository.findById(categoryId)
+                .filter(c -> restaurantId.equals(c.getRestaurantId()))
+                .map(existing -> {
+                            if (req.getName() != null) existing.setName(req.getName());
+                            if (req.getOrderIndex() != null) existing.setOrderIndex(req.getOrderIndex());
+                            return ResponseEntity.ok(categoryRepository.save(existing));
+                        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+                    // helper
     private Sort.Order[] parseSort(String[] sort) {
         return java.util.Arrays.stream(sort)
                 .map(s -> {

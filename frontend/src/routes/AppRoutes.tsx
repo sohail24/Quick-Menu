@@ -18,6 +18,8 @@ import AdminRestaurantDetail from '../pages/Admin/AdminRestaurantDetail';
 import AdminOrderDetail from '../pages/Admin/AdminOrderDetail';
 import AdminDishEditor from '../pages/Admin/AdminDishEditor';
 import AdminDishList from '../pages/Admin/AdminDishList';
+import AdminCategories from '../pages/Admin/AdminCategories';
+import AdminTables from '../pages/Admin/AdminTables';
 
 export default function AppRoutes() {
   return (
@@ -72,6 +74,8 @@ export default function AppRoutes() {
           <Route path="dishes" element={<AdminDishList />} />
           <Route path="dishes/create" element={<AdminDishEditor />} />
           <Route path="dishes/:dishId" element={<AdminDishEditor />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route path="tables" element={<AdminTables />} />
         </Route>
       </Routes>
     </>
