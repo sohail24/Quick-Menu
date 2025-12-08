@@ -1,5 +1,7 @@
 package com.quickmenu.menu.controller;
 
+import com.quickmenu.menu.dto.MenuDto;
+import com.quickmenu.menu.mapper.DishMapper;
 import com.quickmenu.menu.model.Dish;
 import com.quickmenu.menu.repo.DishRepository;
 import com.quickmenu.menu.service.MenuService;
@@ -50,6 +52,17 @@ public class DishController {
         return ResponseEntity.ok(p);
     }
 
+    @GetMapping("/{dishId}")
+    @Operation(summary = "Get dish", description = "Get the details of the dish based on the dish id and restaurant id")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public ResponseEntity<MenuDto.DishDto> getDish(@PathVariable String restaurantId,
+                                                   @PathVariable String dishId) {
+        return dishRepository.findById(dishId)
+                .filter(d -> restaurantId.equals(d.getRestaurantId()))
+                .map(dish -> ResponseEntity.ok(DishMapper.toResponse(dish)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @PatchMapping("/{dishId}")
     @Operation(summary = "Update dish", description = "Partially update dish properties (admin/staff).")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
@@ -64,6 +77,7 @@ public class DishController {
                     if (req.getPrice() != null) existing.setPrice(req.getPrice());
                     if (req.getImageUrl() != null) existing.setImageUrl(req.getImageUrl());
                     if (req.getIsAvailable() != null) existing.setIsAvailable(req.getIsAvailable());
+                    if (req.getCategoryId() != null) existing.setCategoryId(req.getCategoryId());
                     return ResponseEntity.ok(dishRepository.save(existing));
                 }).orElseGet(() -> ResponseEntity.notFound().build());
     }

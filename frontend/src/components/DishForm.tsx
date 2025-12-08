@@ -87,7 +87,7 @@ export default function DishForm({
       description,
       price: Number(price),
       categoryId,
-      available,
+      isAvailable: available,
       imageUrl,
       tags: tagsRaw
         .split(',')
