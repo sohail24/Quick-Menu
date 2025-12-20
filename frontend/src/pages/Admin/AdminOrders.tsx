@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../../lib/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { downloadCsv } from '../../lib/csv';
+import { useAuthStore } from '../../app/store';
 
 type Order = any;
 
@@ -29,6 +30,7 @@ export default function AdminOrders() {
   // selection for bulk actions
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [bulkBusy, setBulkBusy] = useState(false);
+  const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
 
   const navigate = useNavigate();
 
@@ -49,7 +51,7 @@ export default function AdminOrders() {
     let mounted = true;
     setLoadingRestaurants(true);
     api
-      .get('/api/restaurants')
+      .get('/api/restaurants/owner/' + loggedInUserEmail)
       .then((res) => {
         if (!mounted) return;
         const data = res.data ?? {};

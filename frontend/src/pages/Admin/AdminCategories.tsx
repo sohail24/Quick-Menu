@@ -2,17 +2,20 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import CategoryManager from '../../components/CategoryManager';
+import { useAuthStore } from '../../app/store';
 
 export default function AdminCategories() {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [selectedRest, setSelectedRest] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
+
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     api
-      .get('/api/restaurants')
+      .get('/api/restaurants/owner/' + loggedInUserEmail)
       .then((res) => {
         if (!mounted) return;
         const d = res.data ?? {};

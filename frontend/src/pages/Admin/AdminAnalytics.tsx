@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import api from '../../lib/api';
 import { downloadCsv } from '../../lib/csv';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { useAuthStore } from '../../app/store';
 
 /* ---------------- Small UI helpers ---------------- */
 
@@ -41,9 +42,11 @@ export default function AdminAnalytics() {
   const [topDishes, setTopDishes] = useState<any[]>([]);
   const [hourly, setHourly] = useState<any[]>([]);
 
+  const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
+
   /* -------- load restaurants -------- */
   useEffect(() => {
-    api.get('/api/restaurants').then((res) => {
+    api.get('/api/restaurants/owner/' + loggedInUserEmail).then((res) => {
       const list = res.data?.content ?? [];
       setRestaurants(list);
       if (list.length > 0) setRestaurantId(list[0].id);

@@ -4,6 +4,7 @@ import api from '../../lib/api';
 import { useNavigate } from 'react-router-dom';
 import DishCardAdmin from '../../components/DishCardAdmin';
 import { downloadCsv } from '../../lib/csv';
+import { useAuthStore } from '../../app/store';
 
 type Dish = any;
 type Category = any;
@@ -29,13 +30,15 @@ export default function AdminDishList() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [bulkBusy, setBulkBusy] = useState(false);
 
+  const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
+
   const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
     setLoadingRestaurants(true);
     api
-      .get('/api/restaurants')
+      .get('/api/restaurants/owner/' + loggedInUserEmail)
       .then((res) => {
         if (!mounted) return;
         const data = res.data ?? {};

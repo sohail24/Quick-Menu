@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import { Link } from 'react-router-dom';
+import { useAuthStore } from '../../app/store';
 
 type Stats = {
   restaurants?: number;
@@ -20,13 +21,14 @@ export default function AdminOverview() {
   const [loading, setLoading] = useState(false);
   const [loadingRestaurants, setLoadingRestaurants] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
 
   // load restaurants for admin select
   useEffect(() => {
     let mounted = true;
     setLoadingRestaurants(true);
     api
-      .get('/api/restaurants')
+      .get('/api/restaurants/owner/' + loggedInUserEmail)
       .then((res) => {
         if (!mounted) return;
         // backend returns pageable with 'content' array (Spring Data style)

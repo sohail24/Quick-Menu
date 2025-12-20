@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import QRCode from 'qrcode';
+import { useAuthStore } from '../../app/store';
 
 type TableItem = {
   id: string;
@@ -18,11 +19,11 @@ export default function AdminTables() {
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState('');
   const [bulkCount, setBulkCount] = useState<number>(5);
-
+  const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
   useEffect(() => {
     let mounted = true;
     api
-      .get('/api/restaurants')
+      .get('/api/restaurants/owner/' + loggedInUserEmail)
       .then((res) => {
         if (!mounted) return;
         const d = res.data ?? {};

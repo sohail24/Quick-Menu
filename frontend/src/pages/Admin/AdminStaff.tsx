@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
+import { useAuthStore } from '../../app/store';
 
 export default function AdminStaff() {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [restaurantId, setRestaurantId] = useState('');
   const [staff, setStaff] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+
+  const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
 
   const [form, setForm] = useState({
     name: '',
@@ -15,7 +18,7 @@ export default function AdminStaff() {
 
   // load restaurants
   useEffect(() => {
-    api.get('/api/restaurants').then((res) => {
+    api.get('/api/restaurants/owner/' + loggedInUserEmail).then((res) => {
       const list = res.data?.content ?? [];
       setRestaurants(list);
       if (list.length > 0) setRestaurantId(list[0].id);
