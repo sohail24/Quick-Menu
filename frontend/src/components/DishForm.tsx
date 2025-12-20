@@ -140,7 +140,7 @@ export default function DishForm({
           <label className="block text-sm">Category</label>
           <div className="flex gap-2 mt-1">
             <select
-              value={categories[0]?.id ?? ''}
+              value={categoryId ?? categories[0]?.id ?? ''}
               onChange={(e) => setCategoryId(e.target.value || null)}
               className="p-2 border rounded flex-1"
             >

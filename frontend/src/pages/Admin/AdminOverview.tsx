@@ -202,7 +202,7 @@ export default function AdminOverview() {
       {/* Restaurant profile */}
       {selectedRestaurant && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex flex-col md:flex-row gap-6 items-start">
+          <div className="flex flex-col md:flex-row gap-6 items-center">
             {/* Banner */}
             {selectedRestaurant.bannerUrl && (
               <div className="w-full md:w-1/3">

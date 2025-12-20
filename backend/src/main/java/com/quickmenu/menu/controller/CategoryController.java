@@ -57,6 +57,20 @@ public class CategoryController {
                             return ResponseEntity.ok(categoryRepository.save(existing));
                         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @DeleteMapping("/{categoryId}")
+    @Operation(summary = "Delete category", description = "Delete a category under the restaurant (admin/staff).")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public ResponseEntity<?> deleteCategory(@PathVariable String restaurantId,
+                                               @PathVariable String categoryId) {
+        return categoryRepository.findById(categoryId)
+                .filter(c -> restaurantId.equals(c.getRestaurantId()))
+                .map(existing -> {
+                    categoryRepository.delete(existing);
+                    return ResponseEntity.noContent().build(); // 204 No Content
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
                     // helper
     private Sort.Order[] parseSort(String[] sort) {
         return java.util.Arrays.stream(sort)

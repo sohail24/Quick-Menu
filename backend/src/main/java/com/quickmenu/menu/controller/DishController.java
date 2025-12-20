@@ -106,6 +106,20 @@ public class DishController {
         return ResponseEntity.ok(Map.of("dishId", dish.getId(), "isAvailable", dish.getIsAvailable()));
     }
 
+    @DeleteMapping("/{dishId}")
+    @Operation(summary = "Delete dish", description = "Delete a dish under the restaurant (admin/staff).")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public ResponseEntity<?> deleteDish(@PathVariable String restaurantId,
+                                           @PathVariable String dishId) {
+        return dishRepository.findById(dishId)
+                .filter(d -> restaurantId.equals(d.getRestaurantId()))
+                .map(existing -> {
+                    dishRepository.delete(existing);
+                    return ResponseEntity.noContent().build(); // 204 No Content
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     private Sort.Order[] parseSort(String[] sort) {
         return java.util.Arrays.stream(sort)
                 .map(s -> {
