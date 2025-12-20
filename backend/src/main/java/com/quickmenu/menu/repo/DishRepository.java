@@ -16,4 +16,8 @@ public interface DishRepository extends JpaRepository<Dish, String> {
     Page<Dish> findByRestaurantIdAndIsAvailableTrue(String restaurantId, Pageable pageable);
 
     int countByRestaurantId(String restaurantId);
+
+    Page<Dish> findByRestaurantIdAndCategoryId(String restaurantId, String categoryId, Pageable pageable);
+
+    Page<Dish> findByRestaurantIdAndCategoryIdAndIsAvailableTrue(String restaurantId, String categoryId, Pageable pageable);
 }

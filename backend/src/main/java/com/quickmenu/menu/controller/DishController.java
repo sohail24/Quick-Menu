@@ -37,17 +37,28 @@ public class DishController {
     }
 
     @GetMapping
-    @Operation(summary = "List dishes", description = "List dishes for a restaurant (supports includeUnavailable & pagination).")
+    @Operation(summary = "List dishes", description = "List dishes for a restaurant (supports includeUnavailable, category filter & pagination).")
     public ResponseEntity<Page<Dish>> listDishes(@PathVariable String restaurantId,
                                                  @RequestParam(defaultValue = "false") boolean includeUnavailable,
                                                  @RequestParam(defaultValue = "0") int page,
                                                  @RequestParam(defaultValue = "20") int size,
-                                                 @RequestParam(defaultValue = "name") String[] sort) {
+                                                 @RequestParam(defaultValue = "name") String[] sort,
+                                                 @RequestParam(required = false) String categoryId) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(parseSort(sort)));
 
-        Page<Dish> p = includeUnavailable
-                ? dishRepository.findByRestaurantId(restaurantId, pageable)
-                : dishRepository.findByRestaurantIdAndIsAvailableTrue(restaurantId, pageable);
+        Page<Dish> p;
+
+        if (categoryId != null && !categoryId.isBlank()) {
+            // Filter by category
+            p = includeUnavailable
+                    ? dishRepository.findByRestaurantIdAndCategoryId(restaurantId, categoryId, pageable)
+                    : dishRepository.findByRestaurantIdAndCategoryIdAndIsAvailableTrue(restaurantId, categoryId, pageable);
+        } else {
+            // Default behavior (all categories)
+            p = includeUnavailable
+                    ? dishRepository.findByRestaurantId(restaurantId, pageable)
+                    : dishRepository.findByRestaurantIdAndIsAvailableTrue(restaurantId, pageable);
+        }
 
         return ResponseEntity.ok(p);
     }
