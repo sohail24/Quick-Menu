@@ -32,7 +32,7 @@ export default function ImageUploader({
   onProgress,
   autoUpload = true,
   uploadUrl = '/api/uploads',
-  maxSizeBytes = 2 * 1024 * 1024,
+  maxSizeBytes = 10 * 1024 * 1024,
   accept = 'image/*',
   fieldName = 'file',
   className = '',
