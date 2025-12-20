@@ -170,7 +170,7 @@ export default function AdminOrderDetail() {
     ];
 
   return (
-    <div className="p-12 bg-gray-50 min-h-screen">
+    <div className="p-4 bg-gray-50 min-h-screen">
       <div className=" mx-auto">
         {/* Header with Back and Print buttons */}
         <div className="flex items-center justify-between mb-6">

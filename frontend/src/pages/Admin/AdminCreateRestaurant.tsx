@@ -95,7 +95,7 @@ export default function AdminCreateRestaurant() {
   }
 
   return (
-    <div className="p-12">
+    <div className="p-4">
       <h2 className="text-2xl font-semibold mb-4">Admin — Create Restaurant & QR</h2>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">

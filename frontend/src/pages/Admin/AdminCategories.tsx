@@ -37,7 +37,7 @@ export default function AdminCategories() {
   }, []);
 
   return (
-    <div className="p-12">
+    <div className="p-4">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Categories</h1>
       </div>

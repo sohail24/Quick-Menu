@@ -179,7 +179,7 @@ export default function AdminTables() {
   }
 
   return (
-    <div className="p-12">
+    <div className="p-4">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Tables</h1>
       </div>
