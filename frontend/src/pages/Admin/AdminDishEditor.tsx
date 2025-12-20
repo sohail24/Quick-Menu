@@ -79,7 +79,7 @@ export default function AdminDishEditor() {
   }
 
   return (
-    <div>
+    <div className="p-12">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-semibold">{dishId ? 'Edit Dish' : 'Create Dish'}</h1>
       </div>
