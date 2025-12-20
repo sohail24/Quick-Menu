@@ -1,5 +1,6 @@
 package com.quickmenu.auth.service;
 
+import com.quickmenu.auth.dto.SignUpRequest;
 import com.quickmenu.auth.model.Role;
 import com.quickmenu.auth.model.User;
 import com.quickmenu.auth.repo.UserRepository;
@@ -26,15 +27,16 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User registerUser(String name, String email, String rawPassword, String role) {
-        if (userRepository.existsByEmail(email)) {
+    public User registerUser(SignUpRequest signUpRequest) {
+        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
             throw new IllegalArgumentException("Email already in use");
         }
         User user = User.builder()
-                .name(name)
-                .email(email)
-                .passwordHash(passwordEncoder.encode(rawPassword))
-                .role(roleMap.get(role != null ? role.toUpperCase() : "CUSTOMER"))
+                .name(signUpRequest.getName())
+                .email(signUpRequest.getEmail())
+                .passwordHash(passwordEncoder.encode(signUpRequest.getPassword()))
+                .role(roleMap.get(signUpRequest.getRole() != null ? signUpRequest.getRole().toUpperCase() : "CUSTOMER"))
+                .enabled(signUpRequest.getEnable() != null ? signUpRequest.getEnable() : false) // by default disabled
                 .build();
         return userRepository.save(user);
     }

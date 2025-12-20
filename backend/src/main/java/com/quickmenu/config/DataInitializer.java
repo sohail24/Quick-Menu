@@ -86,9 +86,13 @@ public class DataInitializer implements CommandLineRunner {
             r = Restaurant.builder()
                     //.id("demoID12345678910111213141516171") // manually setting 32 length ID
                     .name(demoName)
+                    .description("This is a demo/test restaurant for the quick menu.")
+                    .address("Pune, India")
+                    .planId("Free")
+                    .bannerUrl("http://localhost:8080/uploads/Restaurant_Demo_Bistro.png")
                     .timezone("Asia/Kolkata")
                     .currency("INR")
-                    .ownerUserId(null)
+                    .ownerUserId("admin@quickmenu.local") // admin is the owner
                     .createdAt(Instant.now())
                     .build();
             r = restaurantRepo.save(r);

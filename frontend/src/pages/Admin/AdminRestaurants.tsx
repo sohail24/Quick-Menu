@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import ImageUploader from '../../components/ImageUploader';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../app/store';
 
 type Restaurant = {
   id: string;
@@ -32,6 +33,8 @@ export default function AdminRestaurants() {
   const [deleting, setDeleting] = useState<Restaurant | null>(null);
   const [deletingBusy, setDeletingBusy] = useState(false);
 
+  const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
+
   // form state for create/edit
   const emptyForm = {
     id: '',
@@ -42,7 +45,7 @@ export default function AdminRestaurants() {
     planId: 'free',
     bannerUrl: '',
     address: '',
-    ownerUserId: null,
+    ownerUserId: loggedInUserEmail || null,
   };
   const [form, setForm] = useState<Restaurant>(emptyForm as Restaurant);
 
@@ -54,7 +57,7 @@ export default function AdminRestaurants() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/api/restaurants');
+      const res = await api.get('/api/restaurants/owner/' + loggedInUserEmail);
       // Handle both direct array and paginated response
       const data = Array.isArray(res.data) ? res.data : res.data?.content || [];
       setList(data);
@@ -95,12 +98,13 @@ export default function AdminRestaurants() {
           currency: form.currency,
           planId: form.planId,
           bannerUrl: form.bannerUrl,
+          address: form.address,
         };
         const res = await api.patch(`/api/restaurants/${editing.id}`, payload);
         // update list
-        setList((prev) =>
-          prev.map((p) => (p.id === editing.id ? res.data || { ...p, ...payload } : p)),
-        );
+        // setList((prev) =>
+        //   prev.map((p) => (p.id === editing.id ? res.data || { ...p, ...payload } : p)),
+        // );
       } else {
         // POST create
         const payload: Partial<Restaurant> = {
@@ -110,11 +114,14 @@ export default function AdminRestaurants() {
           currency: form.currency,
           planId: form.planId,
           bannerUrl: form.bannerUrl,
+          address: form.address,
+          ownerUserId: form.ownerUserId,
         };
         const res = await api.post('/api/restaurants', payload);
-        setList((prev) => [res.data, ...prev]);
+        // setList((prev) => [res.data, ...prev]);
       }
       setIsModalOpen(false);
+      load();
     } catch (err: any) {
       console.error('Save restaurant failed', err);
       setError(err?.response?.data?.message || 'Failed to save restaurant');
@@ -183,6 +190,7 @@ export default function AdminRestaurants() {
                 <div>
                   <div className="font-medium">{r.name}</div>
                   <div className="text-xs text-gray-500">{r.description}</div>
+                  <div className="text-xs text-gray-500">{r.address}</div>
                 </div>
               </div>
 
@@ -249,7 +257,7 @@ export default function AdminRestaurants() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium">Address</label>
+                <label className="grid grid-cols-2 gap-2">Address</label>
                 <input
                   value={form.address ?? ''}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
@@ -258,11 +266,14 @@ export default function AdminRestaurants() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium">Owner User ID (optional)</label>
+                <label className="text-sm font-medium">
+                  Owner User ID {editing ? '(Readonly once assigned)' : ''}
+                </label>
                 <input
                   value={form.ownerUserId ?? ''}
                   onChange={(e) => setForm({ ...form, ownerUserId: e.target.value || null })}
                   className="mt-1 p-2 border rounded w-full"
+                  disabled={!!editing}
                 />
               </div>
 
@@ -291,6 +302,7 @@ export default function AdminRestaurants() {
                   value={form.planId}
                   onChange={(e) => setForm({ ...form, planId: e.target.value })}
                   className="mt-1 p-2 border rounded"
+                  disabled={!!editing}
                 >
                   <option value="free">Free</option>
                   <option value="pro">Pro</option>

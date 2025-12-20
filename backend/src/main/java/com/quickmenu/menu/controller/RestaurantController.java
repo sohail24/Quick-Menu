@@ -42,6 +42,19 @@ public class RestaurantController {
         return ResponseEntity.ok(p);
     }
 
+    @GetMapping("/owner/{ownerUserId}")
+    @Operation(summary = "List restaurants by ownerId", description = "List restaurants by ownerId (paginated).")
+    public ResponseEntity<Page<Restaurant>> listAllByOwnerId(
+            @PathVariable String ownerUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String[] sort) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(parseSort(sort)));
+        Page<Restaurant> p = restaurantRepository.findAllByOwnerUserId(ownerUserId ,pageable);
+        return ResponseEntity.ok(p);
+    }
+
     @GetMapping("/{restaurantId}")
     @Operation(summary = "Get restaurant details", description = "Get details for a restaurant by id.")
     public ResponseEntity<Restaurant> getOne(@PathVariable String restaurantId) {
@@ -60,6 +73,9 @@ public class RestaurantController {
                     existing.setTimezone(req.getTimezone() != null ? req.getTimezone() : existing.getTimezone());
                     existing.setCurrency(req.getCurrency() != null ? req.getCurrency() : existing.getCurrency());
                     existing.setAddress(req.getAddress() != null ? req.getAddress() : existing.getAddress());
+                    existing.setDescription(req.getDescription() != null ? req.getDescription() : existing.getDescription());
+                    existing.setBannerUrl(req.getBannerUrl() != null ? req.getBannerUrl() : existing.getBannerUrl());
+                    //existing.setOwnerUserId(req.getOwnerUserId() != null ? req.getOwnerUserId() : existing.getOwnerUserId()); // owner userid and plan can only be changed from backend for security
                     return ResponseEntity.ok(restaurantRepository.save(existing));
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());

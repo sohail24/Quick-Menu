@@ -18,5 +18,7 @@ public class SignUpRequest {
 
     private String role;
 
+    private Boolean enable;
+
     // optional / future: planId, restaurantName for onboarding
 }
