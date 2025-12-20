@@ -22,6 +22,8 @@ export default function AdminOverview() {
   const [loadingRestaurants, setLoadingRestaurants] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
+  const selectedRestaurant = restaurants.find((r) => r.id === selectedRest);
+  const [staffList, setStaffList] = useState<any[]>([]);
 
   // load restaurants for admin select
   useEffect(() => {
@@ -137,6 +139,15 @@ export default function AdminOverview() {
         if (mounted) setLoading(false);
       });
 
+    api
+      .get('/api/admin/staff' + `?restaurantId=${selectedRest}`) // or your actual endpoint
+      .then((res) => {
+        const allStaff = Array.isArray(res.data) ? res.data : [];
+        const filtered = allStaff.filter((s) => s.assignedRestaurantId === selectedRest);
+        setStaffList(filtered);
+      })
+      .catch((err) => console.warn('Failed to load staff', err));
+
     return () => {
       mounted = false;
     };
@@ -222,23 +233,89 @@ export default function AdminOverview() {
           </div>
         </div>
 
-        <div className="mt-6 bg-white p-4 rounded shadow">
-          <h3 className="font-medium mb-2">Top dishes (preview)</h3>
-          {Array.isArray(stats.topDishes) && stats.topDishes.length > 0 ? (
-            <ol className="list-decimal list-inside">
-              {stats.topDishes.map((d: any, i: number) => (
-                <li key={i} className="flex justify-between">
-                  <span>{d.name ?? d.dishName ?? d.title ?? 'Unknown'}</span>
-                  <span className="text-sm text-gray-500">{d.sold ?? d.count ?? d.qty ?? '-'}</span>
-                </li>
+        {selectedRestaurant && (
+          <div className="mt-6 bg-white rounded-lg shadow border p-4">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              {/* Banner */}
+              {selectedRestaurant.bannerUrl && (
+                <div className="w-full md:w-1/3">
+                  <img
+                    src={selectedRestaurant.bannerUrl}
+                    alt="Restaurant banner"
+                    className="w-full h-40 object-cover rounded-md border"
+                  />
+                </div>
+              )}
+
+              {/* Info */}
+              <div className="flex-1 space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">{selectedRestaurant.name}</h3>
+                  <Link
+                    to={`/admin/restaurants/${selectedRestaurant.id}/edit`}
+                    className="text-sm px-3 py-1 bg-blue-600 text-white rounded"
+                  >
+                    Edit
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-500">Plan:</span> {selectedRestaurant.planId}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Timezone:</span> {selectedRestaurant.timezone}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Currency:</span> {selectedRestaurant.currency}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Address:</span> {selectedRestaurant.address}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Created At:</span>{' '}
+                    {new Date(selectedRestaurant.createdAt).toLocaleString()}
+                  </div>
+                </div>
+
+                {selectedRestaurant.description && (
+                  <div className="text-sm text-gray-700">
+                    <span className="text-gray-500">Description:</span>{' '}
+                    {selectedRestaurant.description}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-2">Staff Summary</h3>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div>
+              <div className="text-sm text-gray-500">Total Staff</div>
+              <div className="text-xl font-bold">{staffList.length}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500">Active Staff</div>
+              <div className="text-xl font-bold">{staffList.filter((s) => s.enabled).length}</div>
+            </div>
+          </div>
+
+          {staffList.length > 0 && (
+            <div className="mt-4 space-y-1 text-sm">
+              {staffList.slice(0, 5).map((s) => (
+                <div key={s.id} className="flex justify-between border-b py-1">
+                  <span>{s.name}</span>
+                  <span className="text-gray-500">{s.email}</span>
+                </div>
               ))}
-            </ol>
-          ) : (
-            <div className="text-sm text-gray-500">
-              No top dishes yet. (If your backend returned data, check console for raw payload.)
-              <pre className="mt-2 text-xs max-h-40 overflow-auto bg-gray-50 p-2 rounded">
-                {JSON.stringify(stats.raw ?? {}, null, 2)}
-              </pre>
+              {staffList.length > 5 && (
+                <div className="text-xs text-blue-600 mt-2">
+                  <Link to="/admin/staff">View all staff</Link>
+                </div>
+              )}
             </div>
           )}
         </div>
