@@ -20,6 +20,8 @@ import AdminDishEditor from '../pages/Admin/AdminDishEditor';
 import AdminDishList from '../pages/Admin/AdminDishList';
 import AdminCategories from '../pages/Admin/AdminCategories';
 import AdminTables from '../pages/Admin/AdminTables';
+import AdminQrPage from '../pages/Admin/AdminQrPage';
+import RestaurantLanding from '../pages/Public/RestaurantLanding';
 
 export default function AppRoutes() {
   return (
@@ -32,6 +34,7 @@ export default function AppRoutes() {
         {/* public menu */}
         <Route path="/menu/:restaurantId" element={<RestaurantMenu />} />
         <Route path="/menu" element={<Navigate to="/menu/demo" replace />} />
+        <Route path="/r/:restaurantId" element={<RestaurantLanding />} />
         {/* <Route path="/menu/demo" element={<RestaurantMenu />} /> */}
         {/* staff (protected) */}
         <Route
@@ -76,6 +79,7 @@ export default function AppRoutes() {
           <Route path="dishes/:dishId" element={<AdminDishEditor />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="tables" element={<AdminTables />} />
+          <Route path="restaurants/:id/qr" element={<AdminQrPage />} />
         </Route>
       </Routes>
     </>

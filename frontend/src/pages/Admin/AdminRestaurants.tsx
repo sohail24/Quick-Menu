@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import ImageUploader from '../../components/ImageUploader';
+import { useNavigate } from 'react-router-dom';
 
 type Restaurant = {
   id: string;
@@ -15,6 +16,7 @@ type Restaurant = {
 };
 
 export default function AdminRestaurants() {
+  const navigate = useNavigate();
   const [list, setList] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -183,6 +185,12 @@ export default function AdminRestaurants() {
               <div className="flex items-center gap-2">
                 <button className="px-2 py-1 border rounded text-sm" onClick={() => openEdit(r)}>
                   Edit
+                </button>
+                <button
+                  onClick={() => navigate(`/admin/restaurants/${r.id}/qr`)}
+                  className="px-2 py-1 border rounded text-blue-600"
+                >
+                  QR / Landing
                 </button>
                 <button
                   className="px-2 py-1 border rounded text-sm"
