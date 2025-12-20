@@ -10,7 +10,9 @@ import com.quickmenu.auth.security.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -44,19 +46,28 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Login Endpoint", description = "Used for loging existing User to the application (ADMIN/STAFF/CUSTOMER")
+    @Operation(summary = "Login Endpoint", description = "Used for logging existing User to the application (ADMIN/STAFF/CUSTOMER)")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
+        if (currentAuth != null && currentAuth.isAuthenticated()
+                && !(currentAuth instanceof AnonymousAuthenticationToken)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Already logged in. Please logout first.");
+        }
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserDetails principal = (UserDetails) authentication.getPrincipal();
+        if (!principal.isEnabled()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Account is disabled. Contact administrator.");
+        }
         String userId = (principal instanceof CustomUserDetails) ? ((CustomUserDetails) principal).getUserId() : null;
-        // role extraction not strictly necessary here
         String role = principal.getAuthorities().iterator().next().getAuthority();
-        // generate token
         String token = tokenProvider.generateToken(userId, principal.getUsername(), com.quickmenu.auth.model.Role.valueOf(role));
         long expiresIn = tokenProvider.parseClaims(token).getBody().getExpiration().getTime();
         return ResponseEntity.ok(new AuthResponse(token, "Bearer", expiresIn));
     }
+
 }

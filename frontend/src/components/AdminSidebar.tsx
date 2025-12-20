@@ -59,6 +59,10 @@ export default function AdminSidebar() {
         <LinkItem to="/admin/dishes" end>
           Dishes
         </LinkItem>
+        <div className="mt-3 border-t pt-2 text-xs text-gray-500 px-2">Staff Management</div>
+        <LinkItem to="/admin/staff" end>
+          Staff Management
+        </LinkItem>
         <div className="mt-3 border-t pt-2 text-xs text-gray-500 px-2">Settings</div>
         <LinkItem to="/admin/settings" end>
           Account & Plans

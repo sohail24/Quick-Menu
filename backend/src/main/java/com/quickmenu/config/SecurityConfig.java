@@ -60,6 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/websocket/**", "/ws/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex

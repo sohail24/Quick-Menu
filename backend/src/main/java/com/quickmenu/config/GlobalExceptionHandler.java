@@ -4,6 +4,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -45,6 +48,22 @@ public class GlobalExceptionHandler {
         ex.printStackTrace(); // log to console; replace with logger in prod
         return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
     }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<?> handleDisabled(DisabledException ex) {
+        return buildError(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<?> handleBadCredentials(BadCredentialsException ex) {
+        return buildError(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+    }
+
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<?> handleLocked(LockedException ex) {
+        return buildError(HttpStatus.FORBIDDEN, "Account is locked");
+    }
+
 
     private ResponseEntity<Map<String, Object>> buildError(HttpStatus status, String message) {
         Map<String, Object> body = new HashMap<>();

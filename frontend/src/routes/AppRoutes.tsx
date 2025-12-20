@@ -22,6 +22,7 @@ import AdminCategories from '../pages/Admin/AdminCategories';
 import AdminTables from '../pages/Admin/AdminTables';
 import AdminQrPage from '../pages/Admin/AdminQrPage';
 import RestaurantLanding from '../pages/Public/RestaurantLanding';
+import AdminStaff from '../pages/Admin/AdminStaff';
 
 export default function AppRoutes() {
   return (
@@ -80,6 +81,7 @@ export default function AppRoutes() {
           <Route path="categories" element={<AdminCategories />} />
           <Route path="tables" element={<AdminTables />} />
           <Route path="restaurants/:id/qr" element={<AdminQrPage />} />
+          <Route path="staff" element={<AdminStaff />} />
         </Route>
       </Routes>
     </>

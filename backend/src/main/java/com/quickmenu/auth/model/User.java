@@ -45,6 +45,9 @@ public class User {
         }
     }
 
+    @Column(name = "account_enabled")
+    private Boolean enabled;
+
     @Column(name = "assigned_restaurant_id")
     private String assignedRestaurantId;
 

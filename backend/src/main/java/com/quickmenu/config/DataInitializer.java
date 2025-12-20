@@ -68,6 +68,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setRole(Role.ROLE_ADMIN);
             admin.setPasswordHash(passwordEncoder.encode("Admin123!"));
             admin.setCreatedAt(Instant.now());
+            admin.setEnabled(true);
             userRepo.save(admin);
             System.out.println("Seeded admin -> email: " + adminEmail + " password: Admin123!");
         } else {
@@ -214,6 +215,7 @@ public class DataInitializer implements CommandLineRunner {
             staff.setPasswordHash(passwordEncoder.encode("Staff123!"));
             staff.setCreatedAt(Instant.now());
             staff.setAssignedRestaurantId(r.getId()); //demo restaurant
+            staff.setEnabled(true);
             userRepo.save(staff);
             System.out.println("Seeded staff -> email: " + staffEmail + " password: Staff123!");
         } else {
