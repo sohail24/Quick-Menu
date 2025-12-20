@@ -27,8 +27,11 @@ public class Restaurant {
     private String currency;
     private String address;
     private String ownerUserId;
+    private String description;
+    private String planId;   // e.g. "free", "premium"
+    private String bannerUrl;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @PrePersist

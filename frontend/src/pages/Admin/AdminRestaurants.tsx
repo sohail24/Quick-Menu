@@ -13,6 +13,8 @@ type Restaurant = {
   planId?: string;
   bannerUrl?: string | null;
   tables?: any[];
+  address?: string;
+  ownerUserId?: string | null;
 };
 
 export default function AdminRestaurants() {
@@ -39,6 +41,8 @@ export default function AdminRestaurants() {
     currency: 'INR',
     planId: 'free',
     bannerUrl: '',
+    address: '',
+    ownerUserId: null,
   };
   const [form, setForm] = useState<Restaurant>(emptyForm as Restaurant);
 
@@ -183,8 +187,11 @@ export default function AdminRestaurants() {
               </div>
 
               <div className="flex items-center gap-2">
-                <button className="px-2 py-1 border rounded text-sm" onClick={() => openEdit(r)}>
-                  Edit
+                <button
+                  className="px-2 py-1 border rounded text-sm"
+                  onClick={() => window.open(`${window.location.origin}/menu/${r.id}`, '_blank')}
+                >
+                  Open
                 </button>
                 <button
                   onClick={() => navigate(`/admin/restaurants/${r.id}/qr`)}
@@ -192,11 +199,8 @@ export default function AdminRestaurants() {
                 >
                   QR / Landing
                 </button>
-                <button
-                  className="px-2 py-1 border rounded text-sm"
-                  onClick={() => window.open(`${window.location.origin}/menu/${r.id}`, '_blank')}
-                >
-                  Open
+                <button className="px-2 py-1 border rounded text-sm" onClick={() => openEdit(r)}>
+                  Edit
                 </button>
                 <button
                   className="px-2 py-1 border rounded text-sm text-red-600"
@@ -241,6 +245,24 @@ export default function AdminRestaurants() {
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   className="mt-1 p-2 border rounded w-full"
                   rows={2}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium">Address</label>
+                <input
+                  value={form.address ?? ''}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  className="mt-1 p-2 border rounded w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium">Owner User ID (optional)</label>
+                <input
+                  value={form.ownerUserId ?? ''}
+                  onChange={(e) => setForm({ ...form, ownerUserId: e.target.value || null })}
+                  className="mt-1 p-2 border rounded w-full"
                 />
               </div>
 

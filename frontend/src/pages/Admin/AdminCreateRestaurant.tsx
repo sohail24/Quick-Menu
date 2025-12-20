@@ -13,6 +13,7 @@ type CreateReq = {
   planId?: string;
   description?: string;
   bannerUrl?: string | null;
+  address?: string;
 };
 
 export default function AdminCreateRestaurant() {
@@ -25,6 +26,8 @@ export default function AdminCreateRestaurant() {
   const [currency, setCurrency] = useState('INR');
   const [planId, setPlanId] = useState('free');
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const [address, setAddress] = useState('');
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -47,6 +50,8 @@ export default function AdminCreateRestaurant() {
         currency,
         planId,
         bannerUrl: bannerUrl ?? null,
+        address,
+        ownerUserId: ownerUserId ?? null,
       };
 
       const res = await api.post('/api/restaurants', payload);
@@ -113,6 +118,24 @@ export default function AdminCreateRestaurant() {
                 onChange={(e) => setDescription(e.target.value)}
                 className="mt-1 p-2 border rounded w-full"
                 rows={2}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium">Address</label>
+              <input
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="mt-1 p-2 border rounded w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium">Owner User ID (optional)</label>
+              <input
+                value={ownerUserId ?? ''}
+                onChange={(e) => setOwnerUserId(e.target.value || null)}
+                className="mt-1 p-2 border rounded w-full"
               />
             </div>
 
