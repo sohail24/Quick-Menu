@@ -4,6 +4,7 @@ import api from '../../lib/api';
 import ImageUploader from '../../components/ImageUploader';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../app/store';
+import RestaurantEditModal from '../../components/RestaurantEditModal';
 
 type Restaurant = {
   id: string;
@@ -222,7 +223,7 @@ export default function AdminRestaurants() {
         )}
       </div>
 
-      {/* Create / Edit Modal */}
+      {/* Create / Edit Modal
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <form onSubmit={submitModal} className="bg-white rounded max-w-xl w-full p-4 shadow">
@@ -354,7 +355,19 @@ export default function AdminRestaurants() {
             </div>
           </form>
         </div>
-      )}
+      )} */}
+
+      <RestaurantEditModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={submitModal}
+        form={form}
+        setForm={setForm}
+        editing={editing ? true : false}
+        modalSubmitting={modalSubmitting}
+        onBannerUploaded={onBannerUploaded}
+        setError={setError}
+      />
 
       {/* Delete confirmation */}
       {deleting && (

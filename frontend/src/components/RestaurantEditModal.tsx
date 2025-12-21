@@ -38,73 +38,84 @@ export default function RestaurantEditModal({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-3">
-          <div>
-            <label className="block text-sm">Name</label>
-            <input
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              required
-              className="mt-1 p-2 border rounded w-full"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm">Short description</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="mt-1 p-2 border rounded w-full"
-              rows={2}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm">Address</label>
-            <input
-              value={form.address ?? ''}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-              className="mt-1 p-2 border rounded w-full"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">
-              Owner User ID {editing ? '(Readonly once assigned)' : ''}
-            </label>
-            <input
-              value={form.ownerUserId ?? ''}
-              onChange={(e) => setForm({ ...form, ownerUserId: e.target.value || null })}
-              className="mt-1 p-2 border rounded w-full"
-              disabled={!!editing}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-6 text-sm">
+          {/* Row 1: Name + Short description */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm">Timezone</label>
+              <label className="block text-gray-700">Name</label>
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                required
+                placeholder="Enter restaurant name"
+                className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700">Short description</label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Brief description"
+                className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                rows={2}
+              />
+            </div>
+          </div>
+
+          {/* Row 2: Address + Owner User ID */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-700">Address</label>
+              <input
+                value={form.address ?? ''}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                placeholder="Street, city, country"
+                className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700">
+                Owner User ID {editing ? '(Readonly once assigned)' : ''}
+              </label>
+              <input
+                value={form.ownerUserId ?? ''}
+                onChange={(e) => setForm({ ...form, ownerUserId: e.target.value || null })}
+                className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                disabled={!!editing}
+              />
+            </div>
+          </div>
+
+          {/* Row 3: Timezone + Currency */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-700">Timezone</label>
               <input
                 value={form.timezone}
                 onChange={(e) => setForm({ ...form, timezone: e.target.value })}
-                className="mt-1 p-2 border rounded w-full"
+                placeholder="e.g. Asia/Kolkata"
+                className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm">Currency</label>
+              <label className="block text-gray-700">Currency</label>
               <input
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
-                className="mt-1 p-2 border rounded w-full"
+                placeholder="e.g. INR"
+                className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
           </div>
 
+          {/* Row 4: Plan (single column) */}
           <div>
-            <label className="block text-sm">Plan</label>
+            <label className="block text-gray-700">Plan</label>
             <select
               value={form.planId}
               onChange={(e) => setForm({ ...form, planId: e.target.value })}
-              className="mt-1 p-2 border rounded"
+              className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
               disabled={!!editing}
             >
               <option value="free">Free</option>
@@ -112,8 +123,9 @@ export default function RestaurantEditModal({
             </select>
           </div>
 
+          {/* Row 5: Banner uploader (single column) */}
           <div>
-            <label className="block text-sm">Banner / logo (optional)</label>
+            <label className="block text-gray-700">Banner / logo (optional)</label>
             <div className="mt-1">
               <ImageUploader
                 value={form.bannerUrl ?? null}
@@ -129,7 +141,7 @@ export default function RestaurantEditModal({
                     href={form.bannerUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-blue-600"
+                    className="text-blue-600 underline"
                   >
                     {form.bannerUrl}
                   </a>

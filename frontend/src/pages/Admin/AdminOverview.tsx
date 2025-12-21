@@ -237,6 +237,7 @@ export default function AdminOverview() {
                       timezone: selectedRestaurant.timezone,
                       currency: selectedRestaurant.currency,
                       bannerUrl: selectedRestaurant.bannerUrl,
+                      ownerUserId: selectedRestaurant.ownerUserId,
                     }); // preload form with restaurant data
                     setIsEditModalOpen(true);
                   }}
