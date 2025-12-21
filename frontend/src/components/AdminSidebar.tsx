@@ -35,14 +35,14 @@ export default function AdminSidebar() {
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-[50] md:hidden"
           onClick={closeSidebar}
           aria-hidden="true"
         />
       )}
 
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-white border-r transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-[60] md:z-40 w-64 bg-white border-r transform transition-transform duration-300 ease-in-out
         md:relative md:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
