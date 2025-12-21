@@ -164,6 +164,7 @@ public class DataInitializer implements CommandLineRunner {
                     .imageUrl("http://localhost:8080/uploads/Dish_Paneer_Tikka.png")
                     .isAvailable(true)
                     .prepTimeMins(10)
+                    .tags("Spicy,Tandoori,Soft,Paneer")
                     .createdAt(Instant.now())
                     .build());
 
@@ -176,6 +177,7 @@ public class DataInitializer implements CommandLineRunner {
                     .imageUrl("http://localhost:8080/uploads/Dish_Spring_Roll.png")
                     .isAvailable(true)
                     .prepTimeMins(8)
+                    .tags("Crispy,Fried,Onions,Cabbage,DeepFried")
                     .createdAt(Instant.now())
                     .build());
 
@@ -188,6 +190,7 @@ public class DataInitializer implements CommandLineRunner {
                     .imageUrl("http://localhost:8080/uploads/Dish_Butter_Chicken.png")
                     .isAvailable(true)
                     .prepTimeMins(20)
+                    .tags("Creamy,Tomatao,Butter,Chicken,ButterChicken")
                     .createdAt(Instant.now())
                     .build());
 
@@ -200,6 +203,7 @@ public class DataInitializer implements CommandLineRunner {
                     .imageUrl("http://localhost:8080/uploads/Dish_Jeera_Rice.png")
                     .isAvailable(true)
                     .prepTimeMins(5)
+                    .tags("Plain,Jeera,Rice")
                     .createdAt(Instant.now())
                     .build());
 

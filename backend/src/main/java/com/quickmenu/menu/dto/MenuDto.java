@@ -17,6 +17,7 @@ public class MenuDto {
         private String imageUrl;
         private Boolean isAvailable;
         private Integer prepTimeMins;
+        private String tags;
     }
 
     @Data

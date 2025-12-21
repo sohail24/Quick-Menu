@@ -4,10 +4,12 @@ import com.quickmenu.menu.dto.MenuDto;
 import com.quickmenu.menu.mapper.DishMapper;
 import com.quickmenu.menu.model.Dish;
 import com.quickmenu.menu.repo.DishRepository;
+import com.quickmenu.menu.repo.DishSpecifications;
 import com.quickmenu.menu.service.MenuService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -46,40 +48,21 @@ public class DishController {
                                                  @RequestParam(required = false) String categoryId,
                                                  @RequestParam(required = false) String search) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(parseSort(sort)));
-
-        Page<Dish> p;
-
-        // If categoryId is provided
+        // jpa specification
+        Specification<Dish> spec = DishSpecifications.belongsToRestaurant(restaurantId);
         if (categoryId != null && !categoryId.isBlank()) {
-            if (search != null && !search.isBlank()) {
-                // category + search
-                p = includeUnavailable
-                        ? dishRepository.findByRestaurantIdAndCategoryIdAndNameContainingIgnoreCase(
-                        restaurantId, categoryId, search, pageable)
-                        : dishRepository.findByRestaurantIdAndCategoryIdAndIsAvailableTrueAndNameContainingIgnoreCase(
-                        restaurantId, categoryId, search, pageable);
-            } else {
-                // category only
-                p = includeUnavailable
-                        ? dishRepository.findByRestaurantIdAndCategoryId(restaurantId, categoryId, pageable)
-                        : dishRepository.findByRestaurantIdAndCategoryIdAndIsAvailableTrue(restaurantId, categoryId, pageable);
-            }
-        } else {
-            if (search != null && !search.isBlank()) {
-                // search only
-                p = includeUnavailable
-                        ? dishRepository.findByRestaurantIdAndNameContainingIgnoreCase(restaurantId, search, pageable)
-                        : dishRepository.findByRestaurantIdAndIsAvailableTrueAndNameContainingIgnoreCase(restaurantId, search, pageable);
-            } else {
-                // default (all dishes)
-                p = includeUnavailable
-                        ? dishRepository.findByRestaurantId(restaurantId, pageable)
-                        : dishRepository.findByRestaurantIdAndIsAvailableTrue(restaurantId, pageable);
-            }
+            spec = spec.and(DishSpecifications.inCategory(categoryId));
         }
-
+        if (search != null && !search.isBlank()) {
+            spec = spec.and(DishSpecifications.nameOrTagsContains(search));
+        }
+        if (!includeUnavailable) {
+            spec = spec.and(DishSpecifications.isAvailable(false));
+        }
+        Page<Dish> p = dishRepository.findAll(spec, pageable);
         return ResponseEntity.ok(p);
     }
+
 
     @GetMapping("/{dishId}")
     @Operation(summary = "Get dish", description = "Get the details of the dish based on the dish id and restaurant id")
@@ -107,6 +90,7 @@ public class DishController {
                     if (req.getImageUrl() != null) existing.setImageUrl(req.getImageUrl());
                     if (req.getIsAvailable() != null) existing.setIsAvailable(req.getIsAvailable());
                     if (req.getCategoryId() != null) existing.setCategoryId(req.getCategoryId());
+                    if(req.getTags() != null) existing.setTags(req.getTags());
                     return ResponseEntity.ok(dishRepository.save(existing));
                 }).orElseGet(() -> ResponseEntity.notFound().build());
     }

@@ -15,6 +15,7 @@ public class DishMapper {
         dto.setImageUrl(dish.getImageUrl());
         dto.setPrice(dish.getPrice());
         dto.setPrepTimeMins(dish.getPrepTimeMins());
+        dto.setTags(dish.getTags());
         return dto;
     }
 }

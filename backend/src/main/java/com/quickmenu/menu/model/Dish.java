@@ -43,6 +43,8 @@ public class Dish {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    private String tags;
+
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
