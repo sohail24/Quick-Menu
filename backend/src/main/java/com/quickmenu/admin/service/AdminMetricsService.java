@@ -1,8 +1,9 @@
 package com.quickmenu.admin.service;
 
+import com.quickmenu.admin.dto.MetricDtos;
 import com.quickmenu.admin.dto.MetricDtos.HourlyDto;
 import com.quickmenu.admin.dto.MetricDtos.TopDishDto;
-import com.quickmenu.admin.dto.MetricDtos.AdminMetricsResponse;
+import com.quickmenu.admin.dto.MetricDtos.CategoryStatDto;
 import com.quickmenu.menu.repo.DishRepository;
 import com.quickmenu.orders.repo.OrderItemRepository;
 import com.quickmenu.orders.repo.OrderRepository;
@@ -29,7 +30,7 @@ public class AdminMetricsService {
         this.orderRepository = orderRepository;
     }
 
-    public AdminMetricsResponse getMetrics(String restaurantId, ZoneId zoneId) {
+    public MetricDtos.AdminMetricsResponse getMetrics(String restaurantId, ZoneId zoneId) {
         // Top dishes (limit 5)
         List<TopDishDto> topDishes = orderItemRepository.findTopDishesByRestaurant(restaurantId).stream()
                 .map(proj -> {
@@ -74,7 +75,16 @@ public class AdminMetricsService {
             hourly = buildHourlyListSince(map, now.toInstant(), zoneId);
         }
 
-        return new AdminMetricsResponse(topDishes, hourly);
+        // Category breakdown
+        List<CategoryStatDto> catStats = orderItemRepository.findCategoryStatsByRestaurant(restaurantId).stream()
+                .map(p -> new CategoryStatDto(
+                        p.getCategoryId() == null ? "uncategorized" : p.getCategoryId(),
+                        p.getCategoryName() == null ? "Others" : p.getCategoryName(),
+                        p.getTotalQty() == null ? 0L : p.getTotalQty()
+                ))
+                .collect(Collectors.toList());
+
+        return new MetricDtos.AdminMetricsResponse(topDishes, hourly, catStats);
     }
 
     private List<HourlyDto> buildHourlyListSince(Map<Instant, Long> map, Instant nowHourInstant, ZoneId zoneId) {

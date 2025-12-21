@@ -10,5 +10,7 @@ public class MetricDtos {
 
     public static record HourlyDto(Instant hourStart, long ordersCount) {}
 
-    public static record AdminMetricsResponse(List<TopDishDto> topDishes, List<HourlyDto> hourlyOrders) {}
+    public static record CategoryStatDto(String categoryId, String categoryName, long count) {}
+
+    public static record AdminMetricsResponse(List<TopDishDto> topDishes, List<HourlyDto> hourlyOrders, List<CategoryStatDto> categoryBreakdown) {}
 }

@@ -142,11 +142,17 @@ export default function AdminCreateRestaurant() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm">Timezone</label>
-                <input
+                <select
                   value={timezone}
                   onChange={(e) => setTimezone(e.target.value)}
                   className="mt-1 p-2 border rounded w-full"
-                />
+                >
+                  <option value="Asia/Kolkata">India (Asia/Kolkata)</option>
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">USA Eastern (New York)</option>
+                  <option value="America/Los_Angeles">USA Pacific (Los Angeles)</option>
+                  <option value="Europe/London">UK (London)</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm">Currency</label>

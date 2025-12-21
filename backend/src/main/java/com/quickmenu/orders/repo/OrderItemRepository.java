@@ -24,10 +24,30 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
     """)
     List<TopDishProjection> findTopDishesByRestaurant(@Param("restaurantId") String restaurantId);
 
+    @Query("""
+      SELECT c.id AS categoryId,
+             c.name AS categoryName,
+             SUM(oi.quantity) AS totalQty
+      FROM OrderItem oi
+      JOIN oi.dish d
+      LEFT JOIN Category c ON d.categoryId = c.id
+      JOIN oi.order o
+      WHERE o.restaurantId = :restaurantId
+      GROUP BY c.id, c.name
+      ORDER BY SUM(oi.quantity) DESC
+    """)
+    List<CategoryStatProjection> findCategoryStatsByRestaurant(@Param("restaurantId") String restaurantId);
+
     interface TopDishProjection {
         String getDishId();
-        String getDishName();      // add dishName to projection
+        String getDishName();
         Long getTotalQty();
         java.math.BigDecimal getTotalRevenue();
+    }
+
+    interface CategoryStatProjection {
+        String getCategoryId();
+        String getCategoryName();
+        Long getTotalQty();
     }
 }
