@@ -11,6 +11,9 @@ import com.quickmenu.menu.repo.CategoryRepository;
 import com.quickmenu.menu.repo.DishRepository;
 import com.quickmenu.menu.repo.RestaurantRepository;
 import com.quickmenu.menu.repo.TableRepository;
+import com.quickmenu.orders.model.Order;
+import com.quickmenu.orders.model.OrderItem;
+import com.quickmenu.orders.repo.OrderRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -33,19 +36,22 @@ public class DataInitializer implements CommandLineRunner {
     private final CategoryRepository categoryRepo;
     private final DishRepository dishRepo;
     private final PasswordEncoder passwordEncoder;
+    private final OrderRepository orderRepo;
 
     public DataInitializer(UserRepository userRepo,
                            RestaurantRepository restaurantRepo,
                            TableRepository tableRepo,
                            CategoryRepository categoryRepo,
                            DishRepository dishRepo,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder,
+                           OrderRepository orderRepo) {
         this.userRepo = userRepo;
         this.restaurantRepo = restaurantRepo;
         this.tableRepo = tableRepo;
         this.categoryRepo = categoryRepo;
         this.dishRepo = dishRepo;
         this.passwordEncoder = passwordEncoder;
+        this.orderRepo = orderRepo;
     }
 
     @Override
@@ -70,7 +76,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setCreatedAt(Instant.now());
             admin.setEnabled(true);
             userRepo.save(admin);
-            System.out.println("Seeded admin -> email: " + adminEmail + " password: Admin123!");
+                System.out.println("Seeded admin -> email: " + adminEmail + " password: Admin123!");
         } else {
             System.out.println("Admin already exists: " + adminEmail);
         }
@@ -228,6 +234,81 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("Seeded staff -> email: " + staffEmail + " password: Staff123!");
         } else {
             System.out.println("Staff already exists: " + staffEmail);
+        }
+
+        // After seeding dishes and staff
+        if (orderRepo.findByRestaurantId(r.getId()).isEmpty()) {
+            TableEntity demoTable1 = tableRepo.findByRestaurantIdAndName(r.getId(), "Table 1")
+                    .orElseThrow();
+            TableEntity demoTable2 = tableRepo.findByRestaurantIdAndName(r.getId(), "Table 2")
+                    .orElseThrow();
+            List<Dish> dishes = dishRepo.findByRestaurantId(r.getId());
+
+            // First demo order
+            Order order1 = Order.builder()
+                    .restaurantId(r.getId())
+                    .tableId(demoTable1.getId())
+                    .customerName("John Doe")
+                    .customerPhone("9999999999")
+                    .customerNote("Extra spicy please")
+                    .status(Order.Status.SERVED)
+                    .placedAt(Instant.now().minusSeconds(3600)) // 1 hour ago
+                    .build();
+
+            OrderItem item1 = OrderItem.builder()
+                    .order(order1)
+                    .dish(dishes.get(0))
+                    .quantity(2)
+                    .priceAtOrder(dishes.get(0).getPrice())
+                    .note("No onions")
+                    .build();
+
+            OrderItem item2 = OrderItem.builder()
+                    .order(order1)
+                    .dish(dishes.get(1))
+                    .quantity(1)
+                    .priceAtOrder(dishes.get(1).getPrice())
+                    .build();
+
+            order1.setItems(List.of(item1, item2));
+            order1.setTotalAmount(
+                    dishes.get(0).getPrice().multiply(BigDecimal.valueOf(2))
+                            .add(dishes.get(1).getPrice())
+            );
+
+            // Second demo order
+            Order order2 = Order.builder()
+                    .restaurantId(r.getId())
+                    .tableId(demoTable2.getId())
+                    .customerName("Jane Smith")
+                    .customerPhone("8888888888")
+                    .customerNote("Serve quickly")
+                    .status(Order.Status.SERVED)
+                    .placedAt(Instant.now().minusSeconds(1800)) // 30 mins ago
+                    .build();
+
+            OrderItem item3 = OrderItem.builder()
+                    .order(order2)
+                    .dish(dishes.get(2))
+                    .quantity(1)
+                    .priceAtOrder(dishes.get(2).getPrice())
+                    .build();
+
+            OrderItem item4 = OrderItem.builder()
+                    .order(order2)
+                    .dish(dishes.get(3))
+                    .quantity(2)
+                    .priceAtOrder(dishes.get(3).getPrice())
+                    .build();
+
+            order2.setItems(List.of(item3, item4));
+            order2.setTotalAmount(
+                    dishes.get(2).getPrice()
+                            .add(dishes.get(3).getPrice().multiply(BigDecimal.valueOf(2)))
+            );
+
+            orderRepo.saveAll(List.of(order1, order2));
+            System.out.println("Seeded 2 demo orders in SERVED state for restaurant: " + r.getName());
         }
 
         // Print summary for quick testing
