@@ -50,6 +50,9 @@ export default function RestaurantMenu() {
   const [existingOrderTableId, setExistingOrderTableId] = useState<string | null>(null);
   const [orderComplete, setOrderComplete] = useState(false);
 
+  const [restaurant, setRestaurant] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+
   // resolve demo restaurant (if paramRestaurantId === 'demo')
   useEffect(() => {
     async function resolveDemo() {
@@ -78,6 +81,20 @@ export default function RestaurantMenu() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramRestaurantId]);
 
+  // Fetch Restaurant Details (Name)
+  useEffect(() => {
+    if (!effectiveRestaurantId) return;
+    // If it's the demo restaurant, we already have info in demoInfo (but we can still fetch if we want consistent structure, though demoInfo is usually sufficient)
+    // However, for normal restaurants, we need to fetch info.
+    
+    // Guard: don't fetch if it's strictly a demo ID unless we decide to. 
+    // The previous logic for demo handled it. 
+    
+    api.get(`/api/restaurants/${effectiveRestaurantId}`)
+       .then(res => setRestaurant(res.data))
+       .catch(err => console.warn("Failed to fetch restaurant details", err));
+  }, [effectiveRestaurantId]);
+
   // load menu
   useEffect(() => {
     if (!effectiveRestaurantId) return;
@@ -90,8 +107,13 @@ export default function RestaurantMenu() {
         }`,
       )
       .then((res) => {
-        const ds = res.data?.dishes ?? res.data ?? [];
+        // Handle new structure: { categories: [...], dishes: [...] }
+        const data = res.data || {};
+        const ds = data.dishes ?? (Array.isArray(data) ? data : []);
+        const cats = data.categories ?? [];
+        
         setDishes(ds);
+        setCategories(cats);
       })
       .catch((err) => {
         console.error('Failed loading menu:', err);
@@ -196,15 +218,43 @@ export default function RestaurantMenu() {
     setLastOrderId(null);
   }
 
+  // --- Render Helpers ---
+
+  // Sort categories by orderIndex
+  const sortedCategories = [...categories].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+
+  // If we have categories, we group dishes.
+  // Any dish not in a valid category goes to "Others" or similar? 
+  // For now, let's just dump them at the bottom if we want, OR just show categories.
+  // The user requirement implies we should segregate by category.
+  
+  const dishesByCategoryId = dishes.reduce((acc, dish) => {
+    const cid = dish.categoryId || 'uncategorized';
+    if (!acc[cid]) acc[cid] = [];
+    acc[cid].push(dish);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  // Uncategorized dishes
+  const uncategorizedDishes = dishesByCategoryId['uncategorized'] || [];
+
   return (
-    <div className="p-4">
-      <header className="mb-4">
-        <h1 className="text-2xl font-bold">
-          Restaurant Menu {paramRestaurantId ? `(${paramRestaurantId})` : ''}
+    <div className="p-4 bg-gray-50 min-h-screen"> 
+      <header className="mb-6 bg-white p-4 roundedshadow-sm shadow border-b">
+        <h1 className="text-3xl font-bold text-gray-800">
+          {restaurant?.name ?? demoInfo?.restaurantName ?? 'Restaurant Menu'}
         </h1>
+        {paramRestaurantId && !restaurant && !demoInfo && (
+           <span className="text-xs text-gray-400">ID: {paramRestaurantId}</span>
+        )}
         {demoInfo && (
-          <div className="mt-2 text-sm text-gray-600">
-            Demo: <strong>{demoInfo.restaurantName}</strong>
+          <div className="mt-2 text-sm text-blue-600 bg-blue-50 inline-block px-2 py-1 rounded">
+            Viewing Demo: <strong>{demoInfo.restaurantName}</strong>
+          </div>
+        )}
+         {effectiveTableId && (
+          <div className="mt-1 text-sm text-gray-500">
+             Table: <strong>{effectiveTableId}</strong>
           </div>
         )}
       </header>
@@ -234,23 +284,55 @@ export default function RestaurantMenu() {
         )}
       </div>
 
-      {demoInfo && (
-        <div className="mb-4 p-3 bg-white rounded shadow">
-          <div className="text-xs text-gray-500">Demo info</div>
-          <pre className="text-xs mt-2 overflow-auto max-h-28">
-            {JSON.stringify(demoInfo, null, 2)}
-          </pre>
-        </div>
+      {loadingMenu && dishes.length === 0 && (
+          <div className="text-center py-8 text-gray-500">Loading delicious dishes...</div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {dishes.length === 0 && !loadingMenu && (
-          <div className="text-gray-600">No dishes available.</div>
-        )}
-        {dishes.map((d) => (
-          <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
-        ))}
-      </div>
+      {/* Render Categories */}
+      {categories.length > 0 ? (
+        <div className="space-y-8">
+           {sortedCategories.map(cat => {
+             const catDishes = dishesByCategoryId[cat.id];
+             if (!catDishes || catDishes.length === 0) return null;
+             return (
+               <div key={cat.id}>
+                 <h2 className="text-xl font-bold text-gray-800 mb-3 border-l-4 border-orange-500 pl-3">
+                   {cat.name}
+                 </h2>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                   {catDishes.map((d: any) => (
+                      <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
+                   ))}
+                 </div>
+               </div>
+             )
+           })}
+
+           {/* Uncategorized Section (if any) */}
+           {uncategorizedDishes.length > 0 && (
+              <div>
+                 <h2 className="text-xl font-bold text-gray-800 mb-3 border-l-4 border-gray-400 pl-3">
+                   Other Items
+                 </h2>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                   {uncategorizedDishes.map((d: any) => (
+                      <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
+                   ))}
+                 </div>
+              </div>
+           )}
+        </div>
+      ) : (
+        /* Fallback / Flat list if no categories found */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {dishes.length === 0 && !loadingMenu && (
+            <div className="text-gray-600">No dishes available.</div>
+          )}
+          {dishes.map((d) => (
+            <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
+          ))}
+        </div>
+      )}
 
       <CartFloating
         items={cart}
