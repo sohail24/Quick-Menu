@@ -89,10 +89,7 @@ export default function DishForm({
       categoryId,
       isAvailable: available,
       imageUrl,
-      tags: tagsRaw
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
+      tags: tagsRaw.trim(),
     };
     try {
       await onSubmit(payload);

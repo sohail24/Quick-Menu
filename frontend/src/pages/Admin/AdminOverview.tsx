@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../app/store';
+import RestaurantEditModal from '../../components/RestaurantEditModal';
 
 type Stats = {
   restaurants?: number;
@@ -20,9 +21,12 @@ export default function AdminOverview() {
   const [loadingRestaurants, setLoadingRestaurants] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [staffList, setStaffList] = useState<any[]>([]);
-  const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
   const selectedRestaurant = restaurants.find((r) => r.id === selectedRest);
+  const [form, setForm] = useState<any>(selectedRestaurant ?? {});
+  const [modalSubmitting, setModalSubmitting] = useState(false);
 
   // Load restaurants for admin select
   useEffect(() => {
@@ -52,7 +56,7 @@ export default function AdminOverview() {
     return () => {
       mounted = false;
     };
-  }, [loggedInUserEmail]);
+  }, [loggedInUserEmail, isEditModalOpen]);
 
   // Fetch stats and staff when restaurant changes
   useEffect(() => {
@@ -223,12 +227,47 @@ export default function AdminOverview() {
                   <h3 className="text-lg font-semibold">{selectedRestaurant.name}</h3>
                   <p className="text-xs text-gray-500">{selectedRestaurant.id}</p>
                 </div>
-                <Link
-                  to={`/admin/restaurants/${selectedRestaurant.id}/edit`}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm({
+                      name: selectedRestaurant.name,
+                      description: selectedRestaurant.description,
+                      address: selectedRestaurant.address,
+                      timezone: selectedRestaurant.timezone,
+                      currency: selectedRestaurant.currency,
+                      bannerUrl: selectedRestaurant.bannerUrl,
+                    }); // preload form with restaurant data
+                    setIsEditModalOpen(true);
+                  }}
                   className="text-sm px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                 >
                   Edit
-                </Link>
+                </button>
+                {isEditModalOpen && (
+                  <RestaurantEditModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setModalSubmitting(true);
+                      try {
+                        await api.patch(`/api/restaurants/${selectedRestaurant.id}`, form);
+                        setIsEditModalOpen(false);
+                      } catch (err) {
+                        console.error(err);
+                      } finally {
+                        setModalSubmitting(false);
+                      }
+                    }}
+                    form={form}
+                    setForm={setForm}
+                    editing={true}
+                    modalSubmitting={modalSubmitting}
+                    onBannerUploaded={(url) => setForm({ ...form, bannerUrl: url })}
+                    setError={(msg) => console.error(msg)}
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
