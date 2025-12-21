@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { jwtDecode } from '../lib/jwt';
 
-type User = { sub?: string; name?: string; email?: string; roles?: string[] } | null;
+type User = { sub?: string; name?: string; email?: string; roles?: string[]; role?: string } | null;
 
 type AuthState = {
   token: string | null;
@@ -36,3 +36,15 @@ export const useAuthStore = create<AuthState>((set) => {
     },
   };
 });
+
+type UIState = {
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
+  closeSidebar: () => void;
+};
+
+export const useUIStore = create<UIState>((set) => ({
+  isSidebarOpen: false,
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  closeSidebar: () => set({ isSidebarOpen: false }),
+}));
