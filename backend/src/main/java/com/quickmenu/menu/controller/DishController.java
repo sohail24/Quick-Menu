@@ -37,27 +37,45 @@ public class DishController {
     }
 
     @GetMapping
-    @Operation(summary = "List dishes", description = "List dishes for a restaurant (supports includeUnavailable, category filter & pagination).")
+    @Operation(summary = "List dishes", description = "List dishes for a restaurant (supports includeUnavailable, category filter, search & pagination).")
     public ResponseEntity<Page<Dish>> listDishes(@PathVariable String restaurantId,
                                                  @RequestParam(defaultValue = "false") boolean includeUnavailable,
                                                  @RequestParam(defaultValue = "0") int page,
                                                  @RequestParam(defaultValue = "20") int size,
                                                  @RequestParam(defaultValue = "name") String[] sort,
-                                                 @RequestParam(required = false) String categoryId) {
+                                                 @RequestParam(required = false) String categoryId,
+                                                 @RequestParam(required = false) String search) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(parseSort(sort)));
 
         Page<Dish> p;
 
+        // If categoryId is provided
         if (categoryId != null && !categoryId.isBlank()) {
-            // Filter by category
-            p = includeUnavailable
-                    ? dishRepository.findByRestaurantIdAndCategoryId(restaurantId, categoryId, pageable)
-                    : dishRepository.findByRestaurantIdAndCategoryIdAndIsAvailableTrue(restaurantId, categoryId, pageable);
+            if (search != null && !search.isBlank()) {
+                // category + search
+                p = includeUnavailable
+                        ? dishRepository.findByRestaurantIdAndCategoryIdAndNameContainingIgnoreCase(
+                        restaurantId, categoryId, search, pageable)
+                        : dishRepository.findByRestaurantIdAndCategoryIdAndIsAvailableTrueAndNameContainingIgnoreCase(
+                        restaurantId, categoryId, search, pageable);
+            } else {
+                // category only
+                p = includeUnavailable
+                        ? dishRepository.findByRestaurantIdAndCategoryId(restaurantId, categoryId, pageable)
+                        : dishRepository.findByRestaurantIdAndCategoryIdAndIsAvailableTrue(restaurantId, categoryId, pageable);
+            }
         } else {
-            // Default behavior (all categories)
-            p = includeUnavailable
-                    ? dishRepository.findByRestaurantId(restaurantId, pageable)
-                    : dishRepository.findByRestaurantIdAndIsAvailableTrue(restaurantId, pageable);
+            if (search != null && !search.isBlank()) {
+                // search only
+                p = includeUnavailable
+                        ? dishRepository.findByRestaurantIdAndNameContainingIgnoreCase(restaurantId, search, pageable)
+                        : dishRepository.findByRestaurantIdAndIsAvailableTrueAndNameContainingIgnoreCase(restaurantId, search, pageable);
+            } else {
+                // default (all dishes)
+                p = includeUnavailable
+                        ? dishRepository.findByRestaurantId(restaurantId, pageable)
+                        : dishRepository.findByRestaurantIdAndIsAvailableTrue(restaurantId, pageable);
+            }
         }
 
         return ResponseEntity.ok(p);

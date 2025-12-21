@@ -20,4 +20,12 @@ public interface DishRepository extends JpaRepository<Dish, String> {
     Page<Dish> findByRestaurantIdAndCategoryId(String restaurantId, String categoryId, Pageable pageable);
 
     Page<Dish> findByRestaurantIdAndCategoryIdAndIsAvailableTrue(String restaurantId, String categoryId, Pageable pageable);
+
+    Page<Dish> findByRestaurantIdAndCategoryIdAndNameContainingIgnoreCase(String restaurantId, String categoryId, String search, Pageable pageable);
+
+    Page<Dish> findByRestaurantIdAndCategoryIdAndIsAvailableTrueAndNameContainingIgnoreCase(String restaurantId, String categoryId, String search, Pageable pageable);
+
+    Page<Dish> findByRestaurantIdAndNameContainingIgnoreCase(String restaurantId, String search, Pageable pageable);
+
+    Page<Dish> findByRestaurantIdAndIsAvailableTrueAndNameContainingIgnoreCase(String restaurantId, String search, Pageable pageable);
 }
