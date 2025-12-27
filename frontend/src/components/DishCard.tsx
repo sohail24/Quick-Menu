@@ -1,4 +1,6 @@
 import React from 'react';
+import { Plus } from 'lucide-react';
+import Button from './ui/Button';
 
 interface DishCardProps {
   dish: {
@@ -12,30 +14,52 @@ interface DishCardProps {
 
 export default function DishCard({ dish, onAdd }: DishCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
-      <div className="relative">
+    <div className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full">
+      {/* Image Section */}
+      <div className="relative aspect-[4/3] overflow-hidden">
         {dish.imageUrl ? (
-          <img src={dish.imageUrl} alt={dish.name} className="w-full h-56 object-cover" />
+          <img 
+            src={dish.imageUrl} 
+            alt={dish.name} 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+          />
         ) : (
-          <div className="w-full h-56 bg-gray-300 flex items-center justify-center">
-            <span className="text-gray-600 font-semibold text-lg">{dish.name}</span>
+          <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-400">
+             <span className="text-4xl font-bold opacity-10 uppercase tracking-tighter">{dish.name[0]}</span>
           </div>
         )}
-
-        {/* Gradient fade overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4">
-          <h3 className="text-lg font-semibold text-white">{dish.name}</h3>
-          <p className="text-sm text-gray-200">{dish.description}</p>
-
-          <div className="flex items-center justify-between mt-3">
-            <span className="text-white font-bold text-base drop-shadow">₹ {dish.price}</span>
-            <button
-              onClick={() => onAdd(dish)}
-              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-full hover:bg-green-700 transition"
-            >
-              Add to Cart
-            </button>
+        
+        {/* Price Tag Overlay */}
+        <div className="absolute top-3 right-3">
+          <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border border-white/50 font-bold text-gray-900">
+            ₹{dish.price}
           </div>
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div className="p-4 flex flex-col flex-1">
+        <div className="mb-auto">
+          <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+            {dish.name}
+          </h3>
+          <p className="text-sm text-gray-500 line-clamp-2 mt-1 leading-relaxed">
+            {dish.description}
+          </p>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="flex-1">
+             <div className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-0.5">Classic</div>
+             <div className="text-lg font-black text-gray-900">₹{dish.price}</div>
+          </div>
+          <Button 
+            onClick={() => onAdd(dish)}
+            size="sm"
+            className="shadow-md shadow-blue-600/10 hover:shadow-blue-600/20 active:scale-95 transition-all"
+          >
+            <Plus className="w-4 h-4 mr-1" /> Add
+          </Button>
         </div>
       </div>
     </div>

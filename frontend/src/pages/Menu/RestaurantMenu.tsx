@@ -1,5 +1,5 @@
 // src/pages/Menu/RestaurantMenu.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import DishCard from '../../components/DishCard';
@@ -8,6 +8,8 @@ import OrderSummaryModal from '../../components/OrderSummaryModal';
 import OrderStatusFloating from '../../components/OrderStatusFloating';
 import BellButton from '../../components/BellButton';
 import { getActiveOrderFor } from '../../lib/orderStorage';
+import { Search, ChevronLeft, MapPin, Star, Clock } from 'lucide-react';
+import Button from '../../components/ui/Button';
 
 type CartItem = {
   dishId: string;
@@ -52,6 +54,8 @@ export default function RestaurantMenu() {
 
   const [restaurant, setRestaurant] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  const categoryNavRef = useRef<HTMLDivElement>(null);
 
   // resolve demo restaurant (if paramRestaurantId === 'demo')
   useEffect(() => {
@@ -78,18 +82,11 @@ export default function RestaurantMenu() {
       }
     }
     resolveDemo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramRestaurantId]);
+  }, [paramRestaurantId, queryTableId]);
 
-  // Fetch Restaurant Details (Name)
+  // Fetch Restaurant Details
   useEffect(() => {
     if (!effectiveRestaurantId) return;
-    // If it's the demo restaurant, we already have info in demoInfo (but we can still fetch if we want consistent structure, though demoInfo is usually sufficient)
-    // However, for normal restaurants, we need to fetch info.
-    
-    // Guard: don't fetch if it's strictly a demo ID unless we decide to. 
-    // The previous logic for demo handled it. 
-    
     api.get(`/api/restaurants/${effectiveRestaurantId}`)
        .then(res => setRestaurant(res.data))
        .catch(err => console.warn("Failed to fetch restaurant details", err));
@@ -107,13 +104,13 @@ export default function RestaurantMenu() {
         }`,
       )
       .then((res) => {
-        // Handle new structure: { categories: [...], dishes: [...] }
         const data = res.data || {};
         const ds = data.dishes ?? (Array.isArray(data) ? data : []);
         const cats = data.categories ?? [];
         
         setDishes(ds);
         setCategories(cats);
+        if (cats.length > 0) setActiveCategoryId(cats[0].id);
       })
       .catch((err) => {
         console.error('Failed loading menu:', err);
@@ -122,14 +119,14 @@ export default function RestaurantMenu() {
       .finally(() => setLoadingMenu(false));
   }, [effectiveRestaurantId, effectiveTableId]);
 
-  // persist cart to localStorage
+  // persist cart
   useEffect(() => {
     try {
       localStorage.setItem('qm_cart', JSON.stringify(cart));
     } catch {}
   }, [cart]);
 
-  // track active order for the current restaurant+table
+  // track active order
   useEffect(() => {
     if (!effectiveRestaurantId || !effectiveTableId) {
       setExistingOrderForTable(null);
@@ -140,6 +137,24 @@ export default function RestaurantMenu() {
     setExistingOrderForTable(ao?.orderId ?? null);
     setExistingOrderTableId(ao?.tableId ?? null);
   }, [effectiveRestaurantId, effectiveTableId]);
+
+  // scroll to category
+  function scrollToCategory(id: string) {
+    setActiveCategoryId(id);
+    const element = document.getElementById(`category-${id}`);
+    if (element) {
+      const offset = 140; // Approx height of sticky header + category bar
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  }
 
   // cart operations
   function addToCart(dish: any) {
@@ -166,28 +181,8 @@ export default function RestaurantMenu() {
   }
 
   function onCheckoutClick() {
-    if (!cart.length) {
-      alert('Your cart is empty');
-      return;
-    }
-
-    // prevent checkout if order already placed
-    if (orderComplete) {
-      alert('You have already placed an order. Wait for it to be completed.');
-      return;
-    }
-
-    // if there is already an active order for this table, open the modal (it will show existing-order view)
-    if (effectiveRestaurantId && effectiveTableId) {
-      const ao = getActiveOrderFor(effectiveRestaurantId, effectiveTableId);
-      if (ao?.orderId) {
-        // open modal — modal will show the "existing order" message
-        setOrderModalOpen(true);
-        return;
-      }
-    }
-
-    // otherwise open modal for normal new order flow
+    if (!cart.length) return;
+    if (orderComplete) return;
     setOrderModalOpen(true);
   }
 
@@ -199,34 +194,16 @@ export default function RestaurantMenu() {
     try {
       localStorage.removeItem('qm_cart');
     } catch {}
-
-    if (id) {
-      try {
-        localStorage.setItem('qm_last_order_id', id);
-      } catch {}
-      // Note: setActiveOrder is already called in OrderSummaryModal.submitNewOrder
-      // so we don't duplicate it here to avoid creating multiple entries
-      navigate(`/order/success/${id}`);
-    } else alert('Order placed');
+    if (id) navigate(`/order/success/${id}`);
   }
 
   function handleStopTracking() {
-    // Clear the existing order banner when user stops tracking
     setExistingOrderForTable(null);
     setExistingOrderTableId(null);
-    // Also clear the last order ID display
     setLastOrderId(null);
   }
 
-  // --- Render Helpers ---
-
-  // Sort categories by orderIndex
   const sortedCategories = [...categories].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
-
-  // If we have categories, we group dishes.
-  // Any dish not in a valid category goes to "Others" or similar? 
-  // For now, let's just dump them at the bottom if we want, OR just show categories.
-  // The user requirement implies we should segregate by category.
   
   const dishesByCategoryId = dishes.reduce((acc, dish) => {
     const cid = dish.categoryId || 'uncategorized';
@@ -235,104 +212,178 @@ export default function RestaurantMenu() {
     return acc;
   }, {} as Record<string, any[]>);
 
-  // Uncategorized dishes
   const uncategorizedDishes = dishesByCategoryId['uncategorized'] || [];
 
   return (
-    <div className="p-4 bg-gray-50 min-h-screen"> 
-      <header className="mb-6 bg-white p-4 roundedshadow-sm shadow border-b">
-        <h1 className="text-3xl font-bold text-gray-800">
-          {restaurant?.name ?? demoInfo?.restaurantName ?? 'Restaurant Menu'}
-        </h1>
-        {paramRestaurantId && !restaurant && !demoInfo && (
-           <span className="text-xs text-gray-400">ID: {paramRestaurantId}</span>
-        )}
-        {demoInfo && (
-          <div className="mt-2 text-sm text-blue-600 bg-blue-50 inline-block px-2 py-1 rounded">
-            Viewing Demo: <strong>{demoInfo.restaurantName}</strong>
+    <div className="bg-gray-50 min-h-screen pb-32"> 
+      {/* Premium Hero Header */}
+      <div className="relative h-64 md:h-80 overflow-hidden">
+        {/* Restaurant Cover Image */}
+        <img 
+          src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+          alt="Restaurant" 
+          className="w-full h-full object-cover"
+        />
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+        
+        {/* Top Controls */}
+        <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
+          <button 
+            onClick={() => navigate('/')}
+            className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <div className="flex gap-2">
+             <button className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition">
+               <Search className="w-5 h-5" />
+             </button>
+             <BellButton
+                restaurantId={effectiveRestaurantId}
+                tableId={effectiveTableId}
+                className="!relative !bottom-0 !right-0 !p-2 !bg-white/20 !backdrop-blur-md !rounded-full !text-white hover:!bg-white/40 !shadow-none ring-0 border-0"
+              />
           </div>
-        )}
-         {effectiveTableId && (
-          <div className="mt-1 text-sm text-gray-500">
-             Table: <strong>{effectiveTableId}</strong>
+        </div>
+
+        {/* Restaurant Info */}
+        <div className="absolute bottom-6 left-6 right-6 text-white">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="bg-green-500 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">Open</span>
+            <div className="flex items-center gap-1 text-xs text-yellow-400">
+               <Star className="w-3 h-3 fill-current" />
+               <span className="font-bold underline">4.8 (200+)</span>
+            </div>
           </div>
-        )}
-      </header>
+          <h1 className="text-3xl md:text-5xl font-black mb-2 drop-shadow-lg">
+            {restaurant?.name ?? demoInfo?.restaurantName ?? 'Great Dining'}
+          </h1>
+          <div className="flex flex-wrap items-center gap-4 text-sm opacity-90 font-medium">
+            <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-blue-400" /> Ground Floor, Main Hall</div>
+            <div className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-blue-400" /> 15-20 min</div>
+            {effectiveTableId && (
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-1 rounded-lg">
+                 Table: <span className="text-blue-400 font-bold">{effectiveTableId}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-      <BellButton
-        restaurantId={effectiveRestaurantId}
-        tableId={effectiveTableId}
-        onSuccess={(id) => {
-          /* optionally show toast */
-        }}
-      />
-
-      <OrderStatusFloating />
-
-      <div className="mb-4">
-        {loadingDemo && <div className="text-sm text-gray-600">Resolving demo restaurant...</div>}
-        {loadingMenu && <div className="text-sm text-gray-600">Loading menu...</div>}
-        {error && <div className="text-sm text-red-600">Error: {error}</div>}
-        {lastOrderId && <div className="text-sm text-green-700">Last order id: {lastOrderId}</div>}
-        {existingOrderForTable && (
-          <div className="mt-2 p-2 bg-yellow-50 border rounded text-sm">
-            You placed an order for this table: <strong>#{existingOrderTableId}</strong>.
-            <button className="ml-3 text-blue-600" onClick={() => setOrderModalOpen(true)}>
-              View / Manage
+      {/* Sticky Category Nav */}
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm overflow-hidden">
+        <div 
+          ref={categoryNavRef}
+          className="container mx-auto px-4 py-3 flex gap-4 overflow-x-auto no-scrollbar scroll-smooth"
+        >
+          {sortedCategories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => scrollToCategory(cat.id)}
+              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300 ${
+                activeCategoryId === cat.id 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 scale-105' 
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              {cat.name}
             </button>
+          ))}
+          {uncategorizedDishes.length > 0 && (
+            <button
+              onClick={() => scrollToCategory('uncategorized')}
+              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
+                activeCategoryId === 'uncategorized' 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 scale-105' 
+                : 'bg-gray-100 text-gray-500'
+              }`}
+            >
+              Others
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 pt-6">
+        <OrderStatusFloating />
+
+        {/* Existing Order Alert */}
+        {existingOrderForTable && (
+          <div className="mb-6 bg-blue-600 rounded-2xl p-4 text-white shadow-xl shadow-blue-600/20 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-xl">
+                 <Clock className="w-6 h-6" />
+              </div>
+              <div>
+                 <div className="font-bold">Active order tracking...</div>
+                 <div className="text-xs opacity-80">Table #{existingOrderTableId}</div>
+              </div>
+            </div>
+            <Button 
+              variant="white" 
+              size="sm" 
+              onClick={() => setOrderModalOpen(true)}
+              className="!px-4"
+            >
+              View Status
+            </Button>
+          </div>
+        )}
+
+        {/* Menu Content */}
+        <div className="space-y-12">
+          {sortedCategories.map(cat => {
+            const catDishes = dishesByCategoryId[cat.id];
+            if (!catDishes || catDishes.length === 0) return null;
+            return (
+              <section key={cat.id} id={`category-${cat.id}`} className="scroll-mt-32">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                    {cat.name}
+                  </h2>
+                  <div className="h-0.5 flex-1 bg-gray-100 ml-6 rounded-full"></div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {catDishes.map((d: any) => (
+                    <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+
+          {uncategorizedDishes.length > 0 && (
+            <section id="category-uncategorized" className="scroll-mt-32">
+              <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                    Other Items
+                  </h2>
+                  <div className="h-0.5 flex-1 bg-gray-100 ml-6 rounded-full"></div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {uncategorizedDishes.map((d: any) => (
+                  <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+
+        {loadingMenu && dishes.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 pointer-events-none">
+             <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+             <p className="mt-4 text-gray-500 font-medium italic">Preparing your menu...</p>
+          </div>
+        )}
+
+        {!loadingMenu && dishes.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+             <div className="text-gray-400 mb-4">🍽️</div>
+             <p className="text-gray-500 font-medium">No items available at the moment.</p>
           </div>
         )}
       </div>
-
-      {loadingMenu && dishes.length === 0 && (
-          <div className="text-center py-8 text-gray-500">Loading delicious dishes...</div>
-      )}
-
-      {/* Render Categories */}
-      {categories.length > 0 ? (
-        <div className="space-y-8">
-           {sortedCategories.map(cat => {
-             const catDishes = dishesByCategoryId[cat.id];
-             if (!catDishes || catDishes.length === 0) return null;
-             return (
-               <div key={cat.id}>
-                 <h2 className="text-xl font-bold text-gray-800 mb-3 border-l-4 border-orange-500 pl-3">
-                   {cat.name}
-                 </h2>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                   {catDishes.map((d: any) => (
-                      <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
-                   ))}
-                 </div>
-               </div>
-             )
-           })}
-
-           {/* Uncategorized Section (if any) */}
-           {uncategorizedDishes.length > 0 && (
-              <div>
-                 <h2 className="text-xl font-bold text-gray-800 mb-3 border-l-4 border-gray-400 pl-3">
-                   Other Items
-                 </h2>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                   {uncategorizedDishes.map((d: any) => (
-                      <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
-                   ))}
-                 </div>
-              </div>
-           )}
-        </div>
-      ) : (
-        /* Fallback / Flat list if no categories found */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {dishes.length === 0 && !loadingMenu && (
-            <div className="text-gray-600">No dishes available.</div>
-          )}
-          {dishes.map((d) => (
-            <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
-          ))}
-        </div>
-      )}
 
       <CartFloating
         items={cart}
