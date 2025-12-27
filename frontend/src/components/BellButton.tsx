@@ -45,13 +45,13 @@ export default function BellButton({ restaurantId, tableId, onSuccess, className
       <button
         onClick={ringBell}
         disabled={loading}
-        className={`flex items-center justify-center p-3 rounded-full shadow-lg transition-colors ${
+        className={`flex items-center justify-center rounded-full transition-colors ${
           loading 
             ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
             : 'bg-yellow-400 text-gray-900 hover:bg-yellow-500'
-        }`}
+        } ${className?.includes('!p-') ? '' : 'p-3'} ${className?.includes('shadow-none') ? '' : 'shadow-lg'}`}
       >
-        <Bell className={`w-6 h-6 ${loading ? 'animate-bounce' : ''}`} />
+        <Bell className={`${className?.includes('!w-') ? '' : 'w-6 h-6'} ${loading ? 'animate-bounce' : ''}`} />
       </button>
       {(msg || error) && (
         <div className="absolute right-0 mt-2 whitespace-nowrap">

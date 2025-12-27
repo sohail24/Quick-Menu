@@ -305,6 +305,20 @@ export default function StaffDashboard() {
                  onChange={e => { setEndDate(e.target.value); setPage(0); }}
                />
              </div>
+             <div className="flex flex-col">
+               <label className="text-xs text-gray-500">Show</label>
+               <select 
+                 className="border rounded px-2 py-1 text-sm bg-white"
+                 value={size}
+                 onChange={e => { setSize(Number(e.target.value)); setPage(0); }}
+               >
+                 <option value={5}>5 per page</option>
+                 <option value={10}>10 per page</option>
+                 <option value={20}>20 per page</option>
+                 <option value={50}>50 per page</option>
+                 <option value={100}>100 per page</option>
+               </select>
+             </div>
              {(startDate || endDate) && (
                <button 
                  onClick={() => { setStartDate(''); setEndDate(''); setPage(0); }}

@@ -197,7 +197,7 @@ export default function OrderSummaryModal({
               </div>
               <h4 className="text-2xl font-black text-gray-900 mb-2">Active Order Found!</h4>
               <p className="text-gray-500 max-w-xs mx-auto mb-8 font-medium">
-                You already have an order placed for <span className="text-blue-600 font-bold">Table #{existingOrderTableId}</span>.
+                You already have an order placed for <span className="text-blue-600 font-bold">{tables.find(t => t.id === existingOrderTableId)?.name || 'Table'} ({existingOrderTableId})</span>.
               </p>
               
               <div className="flex flex-col gap-3">
@@ -333,7 +333,7 @@ export default function OrderSummaryModal({
                         }`}
                       >
                         <MapPin className={`w-4 h-4 ${selectedTable === t.id ? 'text-white' : 'text-blue-500'}`} />
-                        <span>{t.name}</span>
+                        <span>{t.name} ({t.id})</span>
                       </button>
                     ))}
                   </div>

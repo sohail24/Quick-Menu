@@ -57,6 +57,9 @@ export default function RestaurantMenu() {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const categoryNavRef = useRef<HTMLDivElement>(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   // resolve demo restaurant (if paramRestaurantId === 'demo')
   useEffect(() => {
     async function resolveDemo() {
@@ -203,14 +206,31 @@ export default function RestaurantMenu() {
     setLastOrderId(null);
   }
 
-  const sortedCategories = [...categories].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+  const sortedCategories = React.useMemo(() => 
+    [...categories].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)),
+    [categories]
+  );
   
-  const dishesByCategoryId = dishes.reduce((acc, dish) => {
+  const filteredDishes = React.useMemo(() => {
+    if (!searchQuery.trim()) return dishes;
+    const q = searchQuery.toLowerCase();
+    return dishes.filter(d => 
+      d.name?.toLowerCase().includes(q) || 
+      d.description?.toLowerCase().includes(q)
+    );
+  }, [dishes, searchQuery]);
+
+  const dishesByCategoryId = React.useMemo(() => filteredDishes.reduce((acc, dish) => {
     const cid = dish.categoryId || 'uncategorized';
     if (!acc[cid]) acc[cid] = [];
     acc[cid].push(dish);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, any[]>), [filteredDishes]);
+
+  const visibleCategories = React.useMemo(() => 
+    sortedCategories.filter(cat => dishesByCategoryId[cat.id]?.length > 0),
+    [sortedCategories, dishesByCategoryId]
+  );
 
   const uncategorizedDishes = dishesByCategoryId['uncategorized'] || [];
 
@@ -231,18 +251,30 @@ export default function RestaurantMenu() {
         <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
           <button 
             onClick={() => navigate('/')}
-            className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition"
+            className="w-12 h-12 flex items-center justify-center bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition-all active:scale-90"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <div className="flex gap-2">
-             <button className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition">
-               <Search className="w-5 h-5" />
-             </button>
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center transition-all duration-500 ease-in-out ${isSearchOpen ? 'w-48 sm:w-64 bg-white/20 backdrop-blur-md rounded-2xl px-4' : 'w-12 bg-white/20 backdrop-blur-md rounded-full justify-center'} h-12`}>
+               <Search 
+                 className="w-6 h-6 text-white cursor-pointer shrink-0" 
+                 onClick={() => setIsSearchOpen(!isSearchOpen)}
+               />
+               {isSearchOpen && (
+                 <input 
+                   autoFocus
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   placeholder="Search dishes..."
+                   className="bg-transparent border-none text-white text-sm placeholder:text-white/60 focus:ring-0 focus:outline-none outline-none w-full ml-3 p-0"
+                 />
+               )}
+            </div>
              <BellButton
                 restaurantId={effectiveRestaurantId}
                 tableId={effectiveTableId}
-                className="!relative !bottom-0 !right-0 !p-2 !bg-white/20 !backdrop-blur-md !rounded-full !text-white hover:!bg-white/40 !shadow-none ring-0 border-0"
+                className="!relative !bottom-0 !right-0 !bg-white/20 !backdrop-blur-md !rounded-full !text-white hover:!bg-white/40 !shadow-none ring-0 border-0 transition-all active:scale-90"
               />
           </div>
         </div>
@@ -260,11 +292,14 @@ export default function RestaurantMenu() {
             {restaurant?.name ?? demoInfo?.restaurantName ?? 'Great Dining'}
           </h1>
           <div className="flex flex-wrap items-center gap-4 text-sm opacity-90 font-medium">
-            <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-blue-400" /> Ground Floor, Main Hall</div>
+            <div className="flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-blue-400" /> 
+              {restaurant?.address ?? demoInfo?.address ?? 'Main Hall, Business District'}
+            </div>
             <div className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-blue-400" /> 15-20 min</div>
             {effectiveTableId && (
               <div className="bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-1 rounded-lg">
-                 Table: <span className="text-blue-400 font-bold">{effectiveTableId}</span>
+                 {restaurant?.tableName || demoInfo?.tableName || 'Table'} <span className="text-blue-400 font-bold">({effectiveTableId})</span>
               </div>
             )}
           </div>
@@ -277,7 +312,7 @@ export default function RestaurantMenu() {
           ref={categoryNavRef}
           className="container mx-auto px-4 py-3 flex gap-4 overflow-x-auto no-scrollbar scroll-smooth"
         >
-          {sortedCategories.map(cat => (
+          {visibleCategories.map(cat => (
             <button
               key={cat.id}
               onClick={() => scrollToCategory(cat.id)}
@@ -296,7 +331,7 @@ export default function RestaurantMenu() {
               className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
                 activeCategoryId === 'uncategorized' 
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 scale-105' 
-                : 'bg-gray-100 text-gray-500'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }`}
             >
               Others
@@ -333,40 +368,58 @@ export default function RestaurantMenu() {
 
         {/* Menu Content */}
         <div className="space-y-12">
-          {sortedCategories.map(cat => {
-            const catDishes = dishesByCategoryId[cat.id];
-            if (!catDishes || catDishes.length === 0) return null;
-            return (
-              <section key={cat.id} id={`category-${cat.id}`} className="scroll-mt-32">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-                    {cat.name}
-                  </h2>
-                  <div className="h-0.5 flex-1 bg-gray-100 ml-6 rounded-full"></div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {catDishes.map((d: any) => (
-                    <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+          {searchQuery && filteredDishes.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20">
+               <div className="text-gray-200 mb-6 flex justify-center">
+                  <Search className="w-16 h-16" />
+               </div>
+               <p className="text-gray-900 font-black text-xl mb-2">No dishes found</p>
+               <p className="text-gray-500 font-medium mb-8">We couldn't find any results for "{searchQuery}"</p>
+               <button 
+                 onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }}
+                 className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:scale-105 transition-all"
+               >
+                 View All Menu
+               </button>
+            </div>
+          ) : (
+            <>
+              {visibleCategories.map(cat => {
+                const catDishes = dishesByCategoryId[cat.id];
+                if (!catDishes || catDishes.length === 0) return null;
+                return (
+                  <section key={cat.id} id={`category-${cat.id}`} className="scroll-mt-32">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                        {cat.name}
+                      </h2>
+                      <div className="h-0.5 flex-1 bg-gray-100 ml-6 rounded-full"></div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {catDishes.map((d: any) => (
+                        <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
 
-          {uncategorizedDishes.length > 0 && (
-            <section id="category-uncategorized" className="scroll-mt-32">
-              <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-                    Other Items
-                  </h2>
-                  <div className="h-0.5 flex-1 bg-gray-100 ml-6 rounded-full"></div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {uncategorizedDishes.map((d: any) => (
-                  <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
-                ))}
-              </div>
-            </section>
+              {uncategorizedDishes.length > 0 && (
+                <section id="category-uncategorized" className="scroll-mt-32">
+                  <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                        Other Items
+                      </h2>
+                      <div className="h-0.5 flex-1 bg-gray-100 ml-6 rounded-full"></div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {uncategorizedDishes.map((d: any) => (
+                      <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
           )}
         </div>
 

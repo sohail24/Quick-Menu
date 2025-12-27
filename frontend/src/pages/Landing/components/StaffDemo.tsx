@@ -38,9 +38,9 @@ export default function StaffDemo() {
 
               <div className="space-y-4">
                 {[
-                  { table: 'Table 04', items: '2x Margherita, 1x Cola', time: '2 mins ago', status: 'Cooking', color: 'text-orange-500 bg-orange-50' },
-                  { table: 'Table 12', items: '1x Pasta, 1x Wine', time: '5 mins ago', status: 'Ready', color: 'text-green-600 bg-green-50' },
-                  { table: 'Table 07', items: '3x Burger Combo', time: 'New', status: 'Placed', color: 'text-blue-600 bg-blue-50' },
+                  { table: 'Table 04 (T4)', items: '2x Margherita, 1x Cola', time: '2 mins ago', status: 'Cooking', color: 'text-orange-500 bg-orange-50' },
+                  { table: 'Table 12 (T12)', items: '1x Pasta, 1x Wine', time: '5 mins ago', status: 'Ready', color: 'text-green-600 bg-green-50' },
+                  { table: 'Table 07 (T7)', items: '3x Burger Combo', time: 'New', status: 'Placed', color: 'text-blue-600 bg-blue-50' },
                 ].map((order, i) => (
                   <div key={i} className="p-5 rounded-3xl border border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
@@ -71,7 +71,7 @@ export default function StaffDemo() {
                   <div className="p-4 bg-indigo-600 text-white rounded-[24px] shadow-lg shadow-indigo-600/30 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Bell className="w-5 h-5 animate-bounce"/>
-                      <span className="text-xs font-bold">Table 05 needs assistance!</span>
+                      <span className="text-xs font-bold">Table 05 (T5) needs assistance!</span>
                     </div>
                     <span className="text-[9px] font-black opacity-60">JUST NOW</span>
                   </div>
