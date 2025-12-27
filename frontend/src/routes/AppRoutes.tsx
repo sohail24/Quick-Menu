@@ -25,6 +25,8 @@ import RestaurantLanding from '../pages/Public/RestaurantLanding';
 import AdminStaff from '../pages/Admin/AdminStaff';
 import LandingPage from '../pages/Landing/LandingPage';
 
+import PublicOnlyRoute from '../components/PublicOnlyRoute';
+
 export default function AppRoutes() {
   const location = useLocation();
   // Hide main navbar on Landing Page, and optionally Login/Signup if desired
@@ -35,8 +37,22 @@ export default function AppRoutes() {
       {!hideNavBar && <NavBar />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route
+          path="/login"
+          element={
+            <PublicOnlyRoute>
+              <Login />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <PublicOnlyRoute>
+              <Signup />
+            </PublicOnlyRoute>
+          }
+        />
         {/* public menu */}
         <Route path="/menu/:restaurantId" element={<RestaurantMenu />} />
         <Route path="/menu" element={<Navigate to="/menu/demo" replace />} />

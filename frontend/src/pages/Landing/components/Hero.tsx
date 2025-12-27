@@ -1,7 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuthStore } from '../../../app/store';
+import Button from '../../../components/ui/Button';
 
 export default function Hero() {
+  const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
+
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN' || user?.roles?.includes('ADMIN') || user?.roles?.includes('ROLE_ADMIN');
+  const dashboardPath = isAdmin ? '/admin' : '/staff';
+
   return (
     <div className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
       {/* Background Gradients */}
@@ -24,11 +32,17 @@ export default function Hero() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/signup" className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-semibold text-lg shadow-xl shadow-blue-600/20 transition transform hover:-translate-y-1">
-            Start Free Trial
-          </Link>
-          <Link to="/menu/demo" className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-full font-semibold text-lg shadow-sm transition">
-            View Demo Menu
+          {token ? (
+            <Link to={dashboardPath} className="w-full sm:w-auto">
+              <Button size="lg" className="w-full">Go to Dashboard</Button>
+            </Link>
+          ) : (
+            <Link to="/signup" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full">Start Free Trial</Button>
+            </Link>
+          )}
+          <Link to="/menu/demo" className="w-full sm:w-auto">
+            <Button variant="white" size="lg" className="w-full">View Demo Menu</Button>
           </Link>
         </div>
 

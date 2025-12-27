@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuthStore } from '../../../app/store';
+import { LogOut, LayoutDashboard } from 'lucide-react';
+import Button from '../../../components/ui/Button';
 
 export default function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false);
+  const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -13,6 +19,9 @@ export default function LandingNavbar() {
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN' || user?.roles?.includes('ADMIN') || user?.roles?.includes('ROLE_ADMIN');
+  const dashboardPath = isAdmin ? '/admin' : '/staff';
 
   return (
     <nav
@@ -26,16 +35,40 @@ export default function LandingNavbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-8">
-          <button onClick={() => scrollTo('howitworks')} className="text-gray-600 hover:text-blue-600 font-medium transition">How it Works</button>
-          <button onClick={() => scrollTo('features')} className="text-gray-600 hover:text-blue-600 font-medium transition">Features</button>
-          <button onClick={() => scrollTo('about')} className="text-gray-600 hover:text-blue-600 font-medium transition">About Us</button>
+          <button onClick={() => scrollTo('howitworks')} className={`${scrolled ? 'text-gray-600' : 'text-gray-700'} hover:text-blue-600 font-medium transition`}>How it Works</button>
+          <button onClick={() => scrollTo('features')} className={`${scrolled ? 'text-gray-600' : 'text-gray-700'} hover:text-blue-600 font-medium transition`}>Features</button>
+          <button onClick={() => scrollTo('about')} className={`${scrolled ? 'text-gray-600' : 'text-gray-700'} hover:text-blue-600 font-medium transition`}>About Us</button>
         </div>
 
         <div className="flex items-center gap-4">
-          <Link to="/login" className="text-gray-600 hover:text-blue-600 font-medium">Log In</Link>
-          <Link to="/signup" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-medium transition shadow-lg shadow-blue-600/20">
-            Get Started
-          </Link>
+          {token ? (
+            <div className="flex items-center gap-3">
+              <Link to={dashboardPath}>
+                <Button size="sm" variant="ghost" className="flex items-center gap-2">
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </Button>
+              </Link>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => logout()}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link to="/login">
+                <Button variant="ghost" size="sm" className={scrolled ? '' : 'text-gray-800'}>Log In</Button>
+              </Link>
+              <Link to="/signup">
+                <Button size="sm">Get Started</Button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </nav>
