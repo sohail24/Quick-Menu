@@ -46,14 +46,6 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Hero Image Mockup */}
-        <div className="mt-16 mx-auto max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-gray-200 bg-white">
-          <img 
-            src="https://images.unsplash.com/photo-1556742031-c6961e8560b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
-            alt="Dashboard" 
-            className="w-full h-auto opacity-90"
-          />
-        </div>
       </div>
     </div>
   );

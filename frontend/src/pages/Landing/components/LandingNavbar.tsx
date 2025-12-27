@@ -42,22 +42,30 @@ export default function LandingNavbar() {
 
         <div className="flex items-center gap-4">
           {token ? (
-            <div className="flex items-center gap-3">
-              <Link to={dashboardPath}>
-                <Button size="sm" variant="ghost" className="flex items-center gap-2">
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span>Dashboard</span>
+            <div className="flex items-center gap-4">
+              <div className="hidden lg:flex flex-col items-end mr-2">
+                <span className="text-[9px] font-black uppercase tracking-widest text-blue-600/60 leading-none mb-1">Welcome back</span>
+                <span className="text-xs font-black text-gray-900 leading-none">
+                  {user?.name || user?.email?.split('@')[0] || 'Member'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link to={dashboardPath}>
+                  <Button size="sm" variant="ghost" className="flex items-center gap-2 border-none">
+                    <LayoutDashboard className="w-4 h-4 text-blue-600" />
+                    <span className="font-bold">{isAdmin ? 'Admin' : 'Staff'} Dashboard</span>
+                  </Button>
+                </Link>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => logout()}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Logout</span>
                 </Button>
-              </Link>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => logout()}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-3">
