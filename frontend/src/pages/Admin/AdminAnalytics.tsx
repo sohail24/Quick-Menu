@@ -20,9 +20,9 @@ import { useAuthStore } from '../../app/store';
 
 function StatCard({ title, value }: { title: string; value: string | number }) {
   return (
-    <div className="bg-white rounded p-4 shadow">
-      <div className="text-sm text-gray-500">{title}</div>
-      <div className="text-2xl font-semibold mt-1">{value}</div>
+    <div className="bg-white rounded-2xl p-6 shadow-lg shadow-gray-200/50 border border-gray-100 hover:scale-[1.02] transition-transform duration-300">
+      <div className="text-sm text-gray-500 font-medium">{title}</div>
+      <div className="text-2xl font-black text-gray-900 mt-2">{value}</div>
     </div>
   );
 }
@@ -153,9 +153,9 @@ export default function AdminAnalytics() {
       </div>
 
       {/* controls */}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-4 bg-white p-6 rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100">
         <select
-          className="border p-2 rounded"
+          className="border border-gray-200 p-2.5 rounded-xl bg-gray-50 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           value={restaurantId}
           onChange={(e) => setRestaurantId(e.target.value)}
         >
@@ -167,7 +167,7 @@ export default function AdminAnalytics() {
         </select>
 
         <select
-          className="border p-2 rounded"
+          className="border border-gray-200 p-2.5 rounded-xl bg-gray-50 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
         >
@@ -179,17 +179,17 @@ export default function AdminAnalytics() {
         </select>
 
         {/* Date Filter */}
-        <div className="flex items-center gap-2 border p-1 rounded bg-white">
+        <div className="flex items-center gap-3 border border-gray-200 p-2 rounded-xl bg-gray-50 shadow-inner">
           <input
             type="datetime-local"
-            className="text-sm px-1 border-r"
+            className="text-sm bg-transparent border-none outline-none p-1"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
-          <span className="text-gray-400">to</span>
+          <span className="text-gray-400 font-bold">→</span>
           <input
             type="datetime-local"
-            className="text-sm px-1"
+            className="text-sm bg-transparent border-none outline-none p-1"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
@@ -199,9 +199,9 @@ export default function AdminAnalytics() {
                 setStartDate('');
                 setEndDate('');
               }}
-              className="ml-2 text-xs text-red-500 hover:text-red-700 font-medium"
+              className="ml-2 p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
             >
-              Clear
+               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           )}
         </div>
@@ -216,8 +216,8 @@ export default function AdminAnalytics() {
       {/* charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top dishes */}
-        <div className="bg-white rounded shadow p-4">
-          <h3 className="font-medium mb-3">Top Dishes (Today)</h3>
+        <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
+          <h3 className="text-lg font-black text-gray-900 tracking-tight mb-6">Top Dishes (Today)</h3>
 
           {topDishes.length === 0 ? (
             <div className="text-sm text-gray-600">No orders yet</div>
@@ -238,8 +238,8 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Hourly orders */}
-        <div className="bg-white rounded shadow p-4">
-          <h3 className="font-medium mb-3">Hourly Orders (Today)</h3>
+        <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
+          <h3 className="text-lg font-black text-gray-900 tracking-tight mb-6">Hourly Orders (Today)</h3>
 
           <div style={{ height: 260 }}>
             <ResponsiveContainer>
@@ -255,8 +255,8 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Category Breakdown (Pie Chart) */}
-        <div className="bg-white rounded shadow p-4 lg:col-span-2">
-          <h3 className="font-medium mb-3">Orders by Category</h3>
+        <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-8 lg:col-span-2">
+          <h3 className="text-lg font-black text-gray-900 tracking-tight mb-6">Orders by Category</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div style={{ height: 300 }}>
               {categoryStats.length > 0 ? (

@@ -174,10 +174,10 @@ export default function AdminRestaurants() {
           list.map((r) => (
             <div
               key={r.id}
-              className="p-3 bg-white rounded shadow flex items-center justify-between"
+              className="p-5 bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20 hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center border border-gray-100 shadow-sm shrink-0">
                   {r.bannerUrl ? (
                     <img
                       src={r.bannerUrl}

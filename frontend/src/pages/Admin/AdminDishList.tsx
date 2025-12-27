@@ -342,7 +342,7 @@ export default function AdminDishList() {
             return (
               <div
                 key={id}
-                className="p-3 bg-white rounded shadow flex items-center justify-between"
+                className="p-5 bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20 hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   <input

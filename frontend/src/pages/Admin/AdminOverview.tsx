@@ -140,7 +140,7 @@ export default function AdminOverview() {
       </div>
 
       {/* Selector */}
-      <div className="bg-white bg-white rounded shadow flex items-center justify-between p-4">
+      <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 flex items-center justify-between p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="w-full sm:w-auto">
             <label className="text-sm text-gray-600 block mb-1">Select restaurant</label>
@@ -205,12 +205,12 @@ export default function AdminOverview() {
 
       {/* Restaurant profile */}
       {selectedRestaurant && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-[40px] shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
           <div className="flex flex-col md:flex-row gap-6 items-center">
             {/* Banner */}
             {selectedRestaurant.bannerUrl && (
               <div className="w-full md:w-1/3">
-                <div className="overflow-hidden rounded-md border border-gray-200">
+                <div className="overflow-hidden rounded-3xl border border-gray-200 shadow-lg shadow-gray-200/50">
                   <img
                     src={selectedRestaurant.bannerUrl}
                     alt="Restaurant banner"
@@ -299,7 +299,7 @@ export default function AdminOverview() {
 
       {/* Staff summary */}
       {selectedRestaurant && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-[40px] shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold">Staff Summary</h3>
             <Link
@@ -371,7 +371,7 @@ function MetricCard({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-start gap-3">
+    <div className="bg-white rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-5 flex items-start gap-4 hover:scale-[1.02] transition-transform duration-300">
       <div className="flex-shrink-0">{icon}</div>
       <div className="flex-1">
         <div className="text-sm text-gray-500">{label}</div>
@@ -393,7 +393,7 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
 
 function SummaryStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="bg-gray-50 rounded-md border border-gray-200 p-3">
+    <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4 shadow-sm">
       <div className="text-xs text-gray-500">{label}</div>
       <div className="text-lg font-semibold">{value}</div>
     </div>

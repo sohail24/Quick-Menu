@@ -226,11 +226,11 @@ export default function AdminTables() {
 
       {loading && <div className="text-sm text-gray-600">Loading tables...</div>}
 
-      <div className="space-y-2">
+      <div className="space-y-4">
         {tables.map((t) => (
-          <div key={t.id} className="p-3 bg-white rounded shadow flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-28 h-28 border rounded overflow-hidden flex items-center justify-center bg-white">
+          <div key={t.id} className="p-5 bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20 hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="w-32 h-32 border border-gray-100 rounded-2xl overflow-hidden flex items-center justify-center bg-white shadow-sm shrink-0">
                 {t.qrPngDataUrl ? (
                   <img
                     src={t.qrPngDataUrl}

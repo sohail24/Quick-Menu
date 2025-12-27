@@ -281,9 +281,14 @@ export default function StaffDashboard() {
         <div className="text-sm text-gray-600">Restaurant: {restaurantId ?? 'Not assigned'}</div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="bg-white p-4 rounded shadow">
-          <h2 className="font-semibold mb-3">Orders</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <section className="bg-white p-8 rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+               Orders
+               <span className="bg-blue-100 text-blue-600 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest">{orders.length}</span>
+            </h2>
+          </div>
           
           {/* Filters */}
           <div className="flex flex-wrap gap-2 mb-3">
@@ -333,13 +338,13 @@ export default function StaffDashboard() {
           {!loading && orders.length === 0 && (
             <div className="text-sm text-gray-500">No orders yet</div>
           )}
-          <div className="space-y-3">
+          <div className="space-y-4">
             {orders.map((o: Order) => {
               const status = (o.status ?? '').toUpperCase();
               const isCompleted =
                 status === 'SERVED' || status === 'COMPLETED' || status === 'DELIVERED';
               return (
-                <div key={o.id} className="border p-3 rounded">
+                <div key={o.id} className="p-5 rounded-2xl border border-gray-100 bg-white shadow-lg shadow-gray-200/20 hover:shadow-xl hover:shadow-gray-200/30 transition-all duration-300">
                   <div className="flex justify-between">
                     <div>
                       <div className="font-medium">#{o.id}</div>
@@ -449,10 +454,15 @@ export default function StaffDashboard() {
           )}
         </section>
 
-        <section className="bg-white p-4 rounded shadow">
-          <h2 className="font-semibold mb-3">Bell Requests</h2>
+        <section className="bg-white p-8 rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+               Bell Requests
+               <span className="bg-yellow-100 text-yellow-600 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest">{bells.length}</span>
+            </h2>
+          </div>
           {bells.length === 0 && <div className="text-sm text-gray-500">No bells</div>}
-          <div className="space-y-3">
+          <div className="space-y-4">
             {bells.map((b: Bell) => {
               const acked =
                 !!b?.acked ||
@@ -460,7 +470,7 @@ export default function StaffDashboard() {
                 b?.status === 'ACKED' ||
                 b?.status === 'acknowledged';
               return (
-                <div key={b.id} className="border p-3 rounded flex justify-between items-start">
+                <div key={b.id} className="p-5 rounded-2xl border border-gray-100 bg-white shadow-lg shadow-gray-200/20 hover:shadow-xl hover:shadow-gray-200/30 transition-all duration-300 flex justify-between items-start">
                   <div>
                     <div className="font-medium">{b.message ?? 'Bell'}</div>
                     <div className="text-xs text-gray-500">

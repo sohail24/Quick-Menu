@@ -197,33 +197,33 @@ export default function AdminOrderDetail() {
         </div>
 
         {/* Status Card */}
-        <div className="bg-white rounded shadow p-3 mb-6">
-          <div className="flex justify-between">
+        <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-8 mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-              <p className="text-sm text-gray-600 font-semibold uppercase tracking-wide">Status</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-xs text-blue-600 font-black uppercase tracking-widest mb-1">Current Status</p>
+              <p className="text-3xl font-black text-gray-900 mt-1">
                 {order.status ?? order.orderStatus}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 disabled={saving}
                 onClick={() => changeStatus('PREPARING')}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition"
+                className="px-6 py-3 border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-all active:scale-95"
               >
                 Start Preparing
               </button>
               <button
                 disabled={saving}
                 onClick={() => changeStatus('READY')}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50 transition"
+                className="px-6 py-3 bg-green-500 text-white rounded-2xl text-sm font-bold hover:bg-green-600 disabled:opacity-50 shadow-lg shadow-green-500/20 transition-all active:scale-95"
               >
                 Mark Ready
               </button>
               <button
                 disabled={saving}
                 onClick={() => changeStatus('SERVED')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 transition"
+                className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
               >
                 Mark Served
               </button>
@@ -232,7 +232,7 @@ export default function AdminOrderDetail() {
         </div>
 
         {/* Order Details Card */}
-        <div className="bg-white rounded shadow p-8">
+        <div className="bg-white rounded-[40px] shadow-xl shadow-gray-200/50 border border-gray-100 p-10">
           {/* Header Section */}
           <div className="border-b-4 border-gray-900 pb-6 mb-8">
             <p className="text-2xl font-bold text-gray-900 mb-2">Restaurant: {restaurantId}</p>
@@ -301,7 +301,7 @@ export default function AdminOrderDetail() {
         </div>
 
         {/* Timeline Card */}
-        <div className="bg-white rounded shadow  p-8 mt-6">
+        <div className="bg-white rounded-[40px] shadow-xl shadow-gray-200/50 border border-gray-100 p-10 mt-8">
           <h3 className="text-lg font-bold text-gray-900 mb-6">Timeline</h3>
           <div className="space-y-4">
             {timeline.map((t: any, i: number) => (
