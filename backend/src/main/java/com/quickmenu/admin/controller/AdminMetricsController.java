@@ -87,7 +87,10 @@ public class AdminMetricsController {
         var dto = statsService.getStats(restaurantId, start, end);
         return ResponseEntity.ok(Map.of(
                 "ordersToday", dto.ordersToday(),
-                "revenueToday", dto.revenueToday()
+                "revenueToday", dto.revenueToday(),
+                "activeTables", dto.activeTables(),
+                "availableTables", dto.availableTables(),
+                "activeOrders", dto.activeOrders()
         ));
     }
 }

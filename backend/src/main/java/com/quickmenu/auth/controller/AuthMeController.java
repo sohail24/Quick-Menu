@@ -30,4 +30,13 @@ public class AuthMeController {
         UserProfileResponse dto = UserProfileResponse.from(user);
         return ResponseEntity.ok(dto);
     }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<?> deleteCurrentUser(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+        userService.deleteUserByEmail(auth.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

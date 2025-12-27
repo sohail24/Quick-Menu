@@ -51,6 +51,8 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             @Param("endDate") Instant endDate,
             Pageable pageable);
 
+    long countByRestaurantIdAndStatusIn(String restaurantId, List<Order.Status> statuses);
+
     long countByRestaurantIdAndPlacedAtBetween(String restaurantId, Instant start, Instant end);
 
     @Query("select coalesce(sum(o.totalAmount), 0) from Order o where o.restaurantId = :rid and o.placedAt between :start and :end")

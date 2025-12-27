@@ -77,7 +77,7 @@ export default function AdminSidebar() {
           
           <SectionLabel label="Operations" />
           <NavItem to="/admin/orders" icon={ShoppingCart} label="Live Orders" onClick={closeSidebar} />
-          <NavItem to="/admin/restaurants" icon={List} label="Restaurants" onClick={closeSidebar} />
+          <NavItem to="/admin/restaurants" icon={List} label="Restaurants" end onClick={closeSidebar} />
           
           <SectionLabel label="Menu Management" />
           <NavItem to="/admin/dishes" icon={UtensilsCrossed} label="Dishes" onClick={closeSidebar} />

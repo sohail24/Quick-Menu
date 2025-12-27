@@ -82,13 +82,13 @@ export default function AdminOverview() {
           d.ordersToday ?? d.ordersCount ?? d.totalOrders ?? d.orders ?? d.data?.ordersCount;
         const revenue =
           d.revenueToday ?? d.revenue ?? d.totalRevenue ?? d.revenueAmount ?? d.data?.revenue;
-        const activeTables = d.activeTables ?? d.tablesActive ?? d.data?.activeTables;
+        const activeTablesCount = d.activeTables ?? d.tablesActive ?? d.data?.activeTables;
 
         setStats({
           restaurants: d.restaurantsCount ?? d.totalRestaurants ?? undefined,
           orders,
           revenue,
-          activeTables,
+          activeTables: activeTablesCount,
           raw: d,
         });
       })
@@ -164,29 +164,29 @@ export default function AdminOverview() {
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <MetricCard
-          label="Restaurants"
-          value={stats.restaurants ?? restaurants.length ?? '—'}
+          label="Active Orders"
+          value={stats.raw?.activeOrders ?? '—'}
           action={
-            <Link to="/admin/restaurants" className="text-blue-600 text-xs">
-              Manage
-            </Link>
+            <div className="text-[10px] text-gray-400 mt-1 uppercase tracking-tighter">
+              Statuses: PLACED, PENDING, PREPARING, READY
+            </div>
           }
-          icon={<IconStore className="w-5 h-5 text-blue-600" />}
+          icon={<IconBox className="w-5 h-5 text-blue-600" />}
         />
         <MetricCard
-          label="Orders (total)"
+          label="Orders (today)"
           value={stats.orders ?? '—'}
           action={
             <Link to="/admin/orders" className="text-blue-600 text-xs">
-              View orders
+              View all orders
             </Link>
           }
           icon={<IconBox className="w-5 h-5 text-green-600" />}
         />
         <MetricCard
-          label="Revenue"
+          label="Revenue (today)"
           value={typeof stats.revenue === 'number' ? `₹ ${stats.revenue.toLocaleString()}` : '—'}
           action={
             <Link to="/admin/analytics" className="text-blue-600 text-xs">
@@ -196,10 +196,26 @@ export default function AdminOverview() {
           icon={<IconCurrency className="w-5 h-5 text-amber-600" />}
         />
         <MetricCard
-          label="Active tables"
+          label="Available Tables"
+          value={stats.raw?.availableTables ?? '—'}
+          action={<span className="text-xs text-green-500 font-medium">Ready for guests</span>}
+          icon={<IconTable className="w-5 h-5 text-green-500" />}
+        />
+        <MetricCard
+          label="Occupied Tables"
           value={stats.activeTables ?? '—'}
-          action={<span className="text-xs text-gray-500">Live</span>}
+          action={<span className="text-xs text-purple-500 font-medium">Currently active</span>}
           icon={<IconTable className="w-5 h-5 text-purple-600" />}
+        />
+        <MetricCard
+          label="Restaurants"
+          value={stats.restaurants ?? restaurants.length ?? '—'}
+          action={
+            <Link to="/admin/restaurants" className="text-blue-600 text-xs">
+              Manage
+            </Link>
+          }
+          icon={<IconStore className="w-5 h-5 text-blue-600" />}
         />
       </div>
 

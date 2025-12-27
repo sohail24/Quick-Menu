@@ -24,6 +24,7 @@ import AdminQrPage from '../pages/Admin/AdminQrPage';
 import RestaurantLanding from '../pages/Public/RestaurantLanding';
 import AdminStaff from '../pages/Admin/AdminStaff';
 import LandingPage from '../pages/Landing/LandingPage';
+import AdminSettings from '../pages/Admin/AdminSettings';
 
 import PublicOnlyRoute from '../components/PublicOnlyRoute';
 
@@ -103,6 +104,7 @@ export default function AppRoutes() {
           <Route path="tables" element={<AdminTables />} />
           <Route path="restaurants/:id/qr" element={<AdminQrPage />} />
           <Route path="staff" element={<AdminStaff />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
     </>

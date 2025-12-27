@@ -23,6 +23,9 @@ public interface TableRepository extends JpaRepository<TableEntity, String> {
     // find tables that are not occupied for a restaurant
     List<TableEntity> findByRestaurantIdAndOccupiedFalse(String restaurantId);
 
+    long countByRestaurantIdAndOccupiedTrue(String restaurantId);
+    long countByRestaurantIdAndOccupiedFalse(String restaurantId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select t from TableEntity t where t.id = :id")
     Optional<TableEntity> findByIdForUpdate(@Param("id") String id);
