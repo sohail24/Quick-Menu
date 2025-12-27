@@ -39,6 +39,13 @@ export default function StaffDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [bells, setBells] = useState<Bell[]>([]);
 
+  // Pagination & Filtering
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(0);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,14 +84,32 @@ export default function StaffDashboard() {
     try {
       setLoading(true);
       setError(null);
-      const res = await api.get(`/api/${restaurantId}/orders?page=0&size=200`);
+
+      // Build query params
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('size', size.toString());
+      if (startDate) params.append('startDate', new Date(startDate).toISOString());
+      if (endDate) params.append('endDate', new Date(endDate).toISOString());
+
+      const res = await api.get(`/api/${restaurantId}/orders?${params.toString()}`);
       const payload = res.data;
       let list: Order[] = [];
-      if (!payload) list = [];
-      else if (Array.isArray(payload)) list = payload;
-      else if (payload.content && Array.isArray(payload.content)) list = payload.content;
-      else if (payload.id) list = [payload];
-      else list = payload.orders ?? payload.items ?? [];
+      
+      if (!payload) {
+        list = [];
+      } else if (payload.content && Array.isArray(payload.content)) {
+        list = payload.content;
+        setTotalPages(payload.totalPages ?? 0);
+      } else if (Array.isArray(payload)) {
+        // Fallback for non-paged response
+        list = payload;
+        setTotalPages(1);
+      } else if (payload.id) {
+        list = [payload];
+      } else {
+        list = payload.orders ?? payload.items ?? [];
+      }
       setOrders(list);
     } catch (e) {
       console.error('fetchOrdersList failed', e);
@@ -113,14 +138,8 @@ export default function StaffDashboard() {
       await fetchOrdersList();
       await fetchBellsList();
     })();
-
-    // TODO: Re-enable polling if STOMP order messages are not being published by backend
-    // const pollInterval = setInterval(() => {
-    //   fetchOrdersList();
-    // }, 2000);
-    // return () => clearInterval(pollInterval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurantId]);
+  }, [restaurantId, page, size, startDate, endDate]);
 
   // safe JSON parse of STOMP message body
   function safeParseMsg(msg: IMessage | null): any | null {
@@ -265,6 +284,37 @@ export default function StaffDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section className="bg-white p-4 rounded shadow">
           <h2 className="font-semibold mb-3">Orders</h2>
+          
+          {/* Filters */}
+          <div className="flex flex-wrap gap-2 mb-3">
+             <div className="flex flex-col">
+               <label className="text-xs text-gray-500">Start</label>
+               <input 
+                 type="datetime-local" 
+                 className="border rounded px-2 py-1 text-sm"
+                 value={startDate}
+                 onChange={e => { setStartDate(e.target.value); setPage(0); }}
+               />
+             </div>
+             <div className="flex flex-col">
+               <label className="text-xs text-gray-500">End</label>
+               <input 
+                 type="datetime-local" 
+                 className="border rounded px-2 py-1 text-sm"
+                 value={endDate}
+                 onChange={e => { setEndDate(e.target.value); setPage(0); }}
+               />
+             </div>
+             {(startDate || endDate) && (
+               <button 
+                 onClick={() => { setStartDate(''); setEndDate(''); setPage(0); }}
+                 className="mt-4 text-sm text-blue-600 underline"
+               >
+                 Clear
+               </button>
+             )}
+          </div>
+
           {loading && <div>Loading...</div>}
           {!loading && orders.length === 0 && (
             <div className="text-sm text-gray-500">No orders yet</div>
@@ -360,6 +410,29 @@ export default function StaffDashboard() {
               );
             })}
           </div>
+
+          {/* Pagination Controls */}
+          {orders.length > 0 && (
+            <div className="flex justify-between items-center mt-4 pt-2 border-t">
+              <button 
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {page + 1} of {totalPages || 1}
+              </span>
+              <button 
+                onClick={() => setPage(p => p + 1)}
+                 disabled={page >= totalPages - 1}
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="bg-white p-4 rounded shadow">
