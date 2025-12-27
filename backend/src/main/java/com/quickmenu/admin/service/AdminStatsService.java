@@ -15,12 +15,7 @@ public class AdminStatsService {
         this.orderRepository = orderRepository;
     }
 
-    public StatsDto getTodayStats(String restaurantId, ZoneId zoneId) {
-        // calculate start/end for "today" in the restaurant timezone
-        LocalDate today = LocalDate.now(zoneId);
-        Instant start = today.atStartOfDay(zoneId).toInstant();
-        Instant end = today.plusDays(1).atStartOfDay(zoneId).toInstant().minusMillis(1);
-
+    public StatsDto getStats(String restaurantId, Instant start, Instant end) {
         long ordersToday = orderRepository.countByRestaurantIdAndPlacedAtBetween(restaurantId, start, end);
         BigDecimal revenueToday = orderRepository.sumTotalAmountByRestaurantIdAndPlacedAtBetween(restaurantId, start, end);
 

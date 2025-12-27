@@ -30,9 +30,9 @@ public class AdminMetricsService {
         this.orderRepository = orderRepository;
     }
 
-    public MetricDtos.AdminMetricsResponse getMetrics(String restaurantId, ZoneId zoneId) {
+    public MetricDtos.AdminMetricsResponse getMetrics(String restaurantId, Instant start, Instant end) {
         // Top dishes (limit 5)
-        List<TopDishDto> topDishes = orderItemRepository.findTopDishesByRestaurant(restaurantId).stream()
+        List<TopDishDto> topDishes = orderItemRepository.findTopDishesByRestaurant(restaurantId, start, end).stream()
                 .map(proj -> {
                     String dishId = proj.getDishId();
                     var dish = dishRepository.findById(dishId);
@@ -44,15 +44,11 @@ public class AdminMetricsService {
                 .limit(5)
                 .collect(Collectors.toList());
 
-        // Hourly orders (last 24 hours)
-        ZonedDateTime now = ZonedDateTime.now(zoneId).withMinute(0).withSecond(0).withNano(0);
-        ZonedDateTime sinceZdt = now.minusHours(23); // include current hour + previous 23 = 24 hours
-        Instant sinceInstant = sinceZdt.toInstant();
-
+        // Hourly orders
         List<HourlyDto> hourly;
         try {
             // try DB-native aggregation (Postgres)
-            List<Object[]> rows = orderRepository.hourlyOrdersSince(restaurantId, sinceInstant);
+            List<Object[]> rows = orderRepository.hourlyOrdersBetween(restaurantId, start, end);
             Map<Instant, Long> map = new HashMap<>();
             for (Object[] row : rows) {
                 // row[0] -> timestamp (depends on DB driver)
@@ -60,23 +56,41 @@ public class AdminMetricsService {
                 long cnt = ((Number) row[1]).longValue();
                 map.put(hourStart, cnt);
             }
-            hourly = buildHourlyListSince(map, now.toInstant(), zoneId);
+            // For arbitrary ranges, we just show returned buckets or we could fill gaps if needed.
+            // Here we just map what we got, or maybe fill gaps between start and end?
+            // Simple approach: just return what DB gave, frontend charts usually handle gaps or we fill 0s.
+            // Let's fill 0s for every hour in the range if range < 48h?
+            // For now, let's just return the list sorted.
+            hourly = rows.stream().map(row -> {
+                 Instant h = ((java.sql.Timestamp) row[0]).toInstant();
+                 long c = ((Number) row[1]).longValue();
+                 return new HourlyDto(h, c);
+            }).collect(Collectors.toList());
+
         } catch (Exception ex) {
-            // Fallback to in-memory grouping (works on H2)
+            // Fallback to in-memory grouping
             List<Order> recentOrders = orderRepository.findByRestaurantId(restaurantId).stream()
-                    .filter(o -> o.getPlacedAt() != null && o.getPlacedAt().isAfter(sinceInstant))
+                    .filter(o -> o.getPlacedAt() != null && !o.getPlacedAt().isBefore(start) && !o.getPlacedAt().isAfter(end))
                     .collect(Collectors.toList());
+            
+            // Group by hour
             Map<Instant, Long> map = new HashMap<>();
             for (Order o : recentOrders) {
                 Instant placed = o.getPlacedAt();
-                ZonedDateTime z = placed.atZone(zoneId).withMinute(0).withSecond(0).withNano(0);
-                map.merge(z.toInstant(), 1L, Long::sum);
+                // We need a ZoneId to truncate to hour properly? 
+                // Actually the DB query used DATE_TRUNC which implies a timezone or UTC.
+                // Let's use UTC for truncation consistency if fallback
+                Instant hourTrunc = placed.truncatedTo(java.time.temporal.ChronoUnit.HOURS);
+                map.merge(hourTrunc, 1L, Long::sum);
             }
-            hourly = buildHourlyListSince(map, now.toInstant(), zoneId);
+             hourly = map.entrySet().stream()
+                     .sorted(Map.Entry.comparingByKey())
+                     .map(e -> new HourlyDto(e.getKey(), e.getValue()))
+                     .collect(Collectors.toList());
         }
 
         // Category breakdown
-        List<CategoryStatDto> catStats = orderItemRepository.findCategoryStatsByRestaurant(restaurantId).stream()
+        List<CategoryStatDto> catStats = orderItemRepository.findCategoryStatsByRestaurant(restaurantId, start, end).stream()
                 .map(p -> new CategoryStatDto(
                         p.getCategoryId() == null ? "uncategorized" : p.getCategoryId(),
                         p.getCategoryName() == null ? "Others" : p.getCategoryName(),

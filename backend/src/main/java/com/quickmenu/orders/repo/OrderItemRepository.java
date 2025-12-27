@@ -19,10 +19,14 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
       FROM OrderItem oi
       JOIN oi.order o
       WHERE o.restaurantId = :restaurantId
+        AND o.placedAt >= :start
+        AND o.placedAt <= :end
       GROUP BY oi.dish.id, oi.dish.name
       ORDER BY SUM(oi.quantity) DESC
     """)
-    List<TopDishProjection> findTopDishesByRestaurant(@Param("restaurantId") String restaurantId);
+    List<TopDishProjection> findTopDishesByRestaurant(@Param("restaurantId") String restaurantId,
+                                                      @Param("start") java.time.Instant start,
+                                                      @Param("end") java.time.Instant end);
 
     @Query("""
       SELECT c.id AS categoryId,
@@ -33,10 +37,14 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
       LEFT JOIN Category c ON d.categoryId = c.id
       JOIN oi.order o
       WHERE o.restaurantId = :restaurantId
+        AND o.placedAt >= :start
+        AND o.placedAt <= :end
       GROUP BY c.id, c.name
       ORDER BY SUM(oi.quantity) DESC
     """)
-    List<CategoryStatProjection> findCategoryStatsByRestaurant(@Param("restaurantId") String restaurantId);
+    List<CategoryStatProjection> findCategoryStatsByRestaurant(@Param("restaurantId") String restaurantId,
+                                                               @Param("start") java.time.Instant start,
+                                                               @Param("end") java.time.Instant end);
 
     interface TopDishProjection {
         String getDishId();

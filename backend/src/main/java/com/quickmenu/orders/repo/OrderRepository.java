@@ -63,9 +63,12 @@ public interface OrderRepository extends JpaRepository<Order, String> {
                COUNT(*) AS orders_count
         FROM orders
         WHERE restaurant_id = :restaurantId
-          AND placed_at >= :since
+          AND placed_at >= :start
+          AND placed_at <= :end
         GROUP BY DATE_TRUNC('hour', placed_at)
         ORDER BY DATE_TRUNC('hour', placed_at) ASC
     """, nativeQuery = true)
-    List<Object[]> hourlyOrdersSince(@Param("restaurantId") String restaurantId, @Param("since") java.time.Instant since);
+    List<Object[]> hourlyOrdersBetween(@Param("restaurantId") String restaurantId,
+                                       @Param("start") java.time.Instant start,
+                                       @Param("end") java.time.Instant end);
 }
