@@ -2,6 +2,8 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore, useUIStore } from '../app/store';
+import { Menu, User, LogOut, LayoutDashboard, Utensils } from 'lucide-react';
+import Button from './ui/Button';
 
 export default function NavBar() {
   const token = useAuthStore((s) => s.token);
@@ -18,53 +20,60 @@ export default function NavBar() {
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN' || user?.roles?.includes('ADMIN') || user?.roles?.includes('ROLE_ADMIN');
 
   return (
-    <nav className="bg-white shadow px-4 py-2 flex items-center justify-between sticky top-0 z-50">
+    <nav className="bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
       <div className="flex items-center gap-4">
         {isAdmin && (
           <button
             onClick={toggleSidebar}
-            className="md:hidden p-1 rounded hover:bg-gray-100"
+            className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
             aria-label="Toggle Sidebar"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <Menu className="w-6 h-6" />
           </button>
         )}
-        <Link to="/" className="font-bold text-lg">
-          Quick Menu
+        <Link to="/" className="font-bold text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          QuickMenu
         </Link>
-        <Link to="/menu/demo" className="text-sm text-gray-600">
-          Menu (demo)
-        </Link>
-        {token && !isAdmin && (
-          <Link to="/staff" className="text-sm text-gray-600">
-            Staff
-          </Link>
-        )}
-        {token && isAdmin && (
-          <Link to="/admin" className="text-sm text-gray-600">
-            Admin Dashboard
-          </Link>
-        )}
+        <div className="hidden md:flex items-center gap-4 ml-4 border-l pl-4 h-6 border-gray-200">
+           <Link to="/menu/demo" className="text-sm font-medium text-gray-500 hover:text-blue-600 flex items-center gap-2 transition">
+             <Utensils className="w-4 h-4" /> Demo Menu
+           </Link>
+           
+           {token && !isAdmin && (
+            <Link to="/staff" className="text-sm font-medium text-gray-500 hover:text-blue-600 flex items-center gap-2 transition">
+              <LayoutDashboard className="w-4 h-4" /> Staff Board
+            </Link>
+           )}
+           
+           {token && isAdmin && (
+            <Link to="/admin" className="text-sm font-medium text-gray-500 hover:text-blue-600 flex items-center gap-2 transition">
+              <LayoutDashboard className="w-4 h-4" /> Dashboard
+            </Link>
+           )}
+        </div>
       </div>
+      
       <div>
         {token ? (
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-700 hidden sm:inline">
-              Hi, {(user as any)?.name ?? (user as any)?.email ?? 'Staff'}
-            </span>
-            <button onClick={handleLogout} className="px-3 py-1 bg-red-600 text-white rounded text-sm">
-              Logout
-            </button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline font-medium">
+                {(user as any)?.name ?? (user as any)?.email ?? 'Staff'}
+              </span>
+            </div>
+            <Button variant="danger" size="sm" onClick={handleLogout} className="flex items-center gap-2">
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
           </div>
         ) : (
-          <div className="flex gap-2">
-            <Link to="/login" className="text-sm text-gray-700">
-              Login
+          <div className="flex gap-3">
+            <Link to="/login">
+               <Button variant="ghost" size="sm">Login</Button>
             </Link>
-            <Link to="/signup" className="text-sm text-gray-700">
-              Sign up
+            <Link to="/signup">
+               <Button size="sm">Get Started</Button>
             </Link>
           </div>
         )}
