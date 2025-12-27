@@ -36,7 +36,6 @@ export default function AboutUs() {
 
             {/* Profile Info */}
             <div className="lg:w-2/3 text-center lg:text-left">
-              <span className="text-blue-400 font-black uppercase tracking-[0.3em] text-[10px] mb-4 block">Meet the Mind</span>
               <h2 className="text-4xl md:text-5xl font-black mb-8 tracking-tight">About the <span className="text-blue-400">Developer</span></h2>
               
               <p className="text-gray-400 text-xl font-medium leading-relaxed mb-10">
@@ -45,7 +44,7 @@ export default function AboutUs() {
                 born from my love for clean code and seamless user experiences.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
                 <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
                   <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center text-blue-400">
                     <Briefcase className="w-5 h-5" />
@@ -89,6 +88,7 @@ export default function AboutUs() {
 
               {/* Tech Stack Section */}
               <div className="mb-12">
+                <div className="text-xs text-blue-400 font-black uppercase tracking-[0.2em] mb-8 lg:text-left text-center">Tech stacks used in this project</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Frontend Stack */}
                   <div>
@@ -117,7 +117,8 @@ export default function AboutUs() {
                         { name: 'Spring Boot', color: 'bg-green-500/10 text-green-400 border-green-500/20' },
                         { name: 'Spring Security', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
                         { name: 'JWT Auth', color: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
-                        { name: 'WS / STOMP', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20' },
+                        { name: 'Spring WS + STOMP', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20' },
+                        { name: 'Swagger / OpenAPI', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
                         { name: 'MySQL/PG', color: 'bg-blue-400/10 text-blue-300 border-blue-400/20' },
                       ].map((tech) => (
                         <span key={tech.name} className={`px-3 py-1.5 rounded-lg border text-[11px] font-black tracking-tight ${tech.color}`}>
@@ -128,6 +129,9 @@ export default function AboutUs() {
                   </div>
                 </div>
               </div>
+
+
+              {/* Social Links Placeholder */}
 
               {/* Social Links Placeholder */}
               <div className="flex flex-wrap justify-center lg:justify-start gap-4">

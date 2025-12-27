@@ -37,7 +37,7 @@ export default function LandingNavbar() {
         <div className="hidden md:flex items-center gap-8">
           <button onClick={() => scrollTo('howitworks')} className={`${scrolled ? 'text-gray-600' : 'text-gray-700'} hover:text-blue-600 font-medium transition`}>How it Works</button>
           <button onClick={() => scrollTo('features')} className={`${scrolled ? 'text-gray-600' : 'text-gray-700'} hover:text-blue-600 font-medium transition`}>Features</button>
-          <button onClick={() => scrollTo('about')} className={`${scrolled ? 'text-gray-600' : 'text-gray-700'} hover:text-blue-600 font-medium transition`}>About Us</button>
+          <button onClick={() => scrollTo('about')} className={`${scrolled ? 'text-gray-600' : 'text-gray-700'} hover:text-blue-600 font-medium transition`}>About</button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -46,7 +46,7 @@ export default function LandingNavbar() {
               <div className="hidden lg:flex flex-col items-end mr-2">
                 <span className="text-[9px] font-black uppercase tracking-widest text-blue-600/60 leading-none mb-1">Welcome back</span>
                 <span className="text-xs font-black text-gray-900 leading-none">
-                  {user?.name || user?.email?.split('@')[0] || 'Member'}
+                  {user?.name || user?.email || 'Member'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
