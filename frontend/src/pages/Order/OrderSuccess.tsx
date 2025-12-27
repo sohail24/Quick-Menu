@@ -2,12 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
+import useStomp from '../../hooks/useStomp';
 import { CheckCircle2, ChevronLeft, MapPin, ClipboardList, Clock, ArrowRight, Home, Receipt, HelpCircle } from 'lucide-react';
 import Button from '../../components/ui/Button';
 
 export default function OrderSuccess() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const stomp = useStomp();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +26,25 @@ export default function OrderSuccess() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!id || !order?.restaurantId) return;
+
+    const topic = `/topic/restaurants/${order.restaurantId}/orders`;
+    const sub = stomp.subscribe(topic, (msg) => {
+      try {
+        const payload = JSON.parse(msg.body);
+        if (payload?.id === id) {
+          console.debug('[STOMP] Order status updated:', payload.status);
+          setOrder(payload);
+        }
+      } catch (e) {}
+    });
+
+    return () => {
+      try { sub?.unsubscribe(); } catch (e) {}
+    };
+  }, [id, stomp, order?.restaurantId]);
 
   if (loading) {
     return (

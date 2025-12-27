@@ -22,7 +22,7 @@ const STATUS_STEPS = [
   { id: 'SERVED', label: 'Served', icon: Utensils },
 ];
 
-export default function OrderStatusFloating() {
+export default function OrderStatusFloating({ restaurantId }: { restaurantId?: string | null }) {
   const stomp = useStomp();
   const storedOrderId = typeof window !== 'undefined' ? localStorage.getItem('qm_last_order_id') : null;
   const [orderId, setOrderId] = useState<string | null>(storedOrderId);
@@ -52,29 +52,26 @@ export default function OrderStatusFloating() {
 
     fetchStatus();
 
-    // Subscribe to STOMP topic
-    const sub = stomp.subscribe(`/topic/orders/${orderId}`, (msg) => {
+    // Subscribe to restaurant-specific orders topic (Server pushes full enriched payload)
+    const topic = `/topic/restaurants/${restaurantId || '*'}/orders`;
+    const sub = stomp.subscribe(topic, (msg) => {
       try {
         const payload = JSON.parse(msg.body);
-        if (active) setOrder(payload);
+        // Only update if it's our orderId
+        if (payload?.id === orderId && active) {
+          console.debug('[STOMP] Order status updated:', payload.status);
+          setOrder(payload);
+        }
       } catch (e) {}
     });
 
-    // Sub to generic as fallback
-    const sub2 = stomp.subscribe(`/topic/restaurants/*/orders`, (msg) => {
-      try {
-        const payload = JSON.parse(msg.body);
-        if (payload?.id === orderId && active) setOrder(payload);
-      } catch (err) {}
-    });
-
-    pollTimer = setInterval(fetchStatus, 30000); // Slower polling if WS is active
+    // No more polling needed as we now get full updates via STOMP
 
     return () => {
       active = false;
       if (pollTimer) clearInterval(pollTimer);
     };
-  }, [orderId, stomp]);
+  }, [orderId, stomp, restaurantId]);
 
   function clearTracking() {
     localStorage.removeItem('qm_last_order_id');

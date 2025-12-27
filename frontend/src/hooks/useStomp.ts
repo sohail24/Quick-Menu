@@ -1,5 +1,5 @@
 // src/hooks/useStomp.ts
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
@@ -92,14 +92,14 @@ export default function useStomp(): StompClientWrapper {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function isConnected() {
+  const isConnected = useCallback(() => {
     return !!(clientRef.current && clientRef.current.connected);
-  }
+  }, []);
 
-  function subscribe(
+  const subscribe = useCallback((
     destination: string,
     callback: (msg: IMessage) => void,
-  ): StompSubscription | null {
+  ): StompSubscription | null => {
     const c = clientRef.current;
     if (!c) {
       console.warn('[STOMP] client not initialized - queuing subscription:', destination);
@@ -121,9 +121,9 @@ export default function useStomp(): StompClientWrapper {
       pendingSubsRef.current.push({ dest: destination, cb: callback });
       return null;
     }
-  }
+  }, []);
 
-  function publish(destination: string, body?: any) {
+  const publish = useCallback((destination: string, body?: any) => {
     const c = clientRef.current;
     if (!c || !c.connected) {
       console.warn('[STOMP] publish called but client not connected', destination);
@@ -134,9 +134,9 @@ export default function useStomp(): StompClientWrapper {
     } catch (e) {
       console.error('[STOMP] publish error', e);
     }
-  }
+  }, []);
 
-  async function deactivate() {
+  const deactivate = useCallback(async () => {
     const c = clientRef.current;
     if (!c) return;
     try {
@@ -154,15 +154,19 @@ export default function useStomp(): StompClientWrapper {
     } finally {
       clientRef.current = null;
     }
-  }
+  }, []);
 
-  return {
+  const activate = useCallback(() => {
+    clientRef.current?.activate();
+  }, []);
+
+  return useMemo(() => ({
     isConnected,
     subscribe,
     publish,
-    activate: () => clientRef.current?.activate(),
+    activate,
     deactivate,
-  };
+  }), [isConnected, subscribe, publish, activate, deactivate]);
 }
 
 export function createStompClient(token?: string) {

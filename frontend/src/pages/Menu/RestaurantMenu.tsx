@@ -341,7 +341,7 @@ export default function RestaurantMenu() {
       </div>
 
       <div className="container mx-auto px-4 pt-6">
-        <OrderStatusFloating />
+        <OrderStatusFloating restaurantId={effectiveRestaurantId} />
 
         {/* Existing Order Alert */}
         {existingOrderForTable && (

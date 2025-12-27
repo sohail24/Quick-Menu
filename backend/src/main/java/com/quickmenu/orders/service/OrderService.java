@@ -136,8 +136,8 @@ public class OrderService {
             }
         }
 
-        messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders",
-                new OrderEvent(updated.getId(), updated.getTableId(), "ORDER_UPDATED"));
+        Map<String, Object> orderPayload = enrichOrderForResponse(updated);
+        messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
 
         return updated;
     }
