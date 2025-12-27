@@ -1,6 +1,6 @@
 // src/routes/AppRoutes.tsx
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from '../pages/Auth/Login';
 import Signup from '../pages/Auth/Signup';
 import RestaurantMenu from '../pages/Menu/RestaurantMenu';
@@ -23,13 +23,18 @@ import AdminTables from '../pages/Admin/AdminTables';
 import AdminQrPage from '../pages/Admin/AdminQrPage';
 import RestaurantLanding from '../pages/Public/RestaurantLanding';
 import AdminStaff from '../pages/Admin/AdminStaff';
+import LandingPage from '../pages/Landing/LandingPage';
 
 export default function AppRoutes() {
+  const location = useLocation();
+  // Hide main navbar on Landing Page, and optionally Login/Signup if desired
+  const hideNavBar = location.pathname === '/';
+
   return (
     <>
-      <NavBar />
+      {!hideNavBar && <NavBar />}
       <Routes>
-        <Route path="/" element={<Navigate to="/menu/demo" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         {/* public menu */}
