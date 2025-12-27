@@ -39,6 +39,18 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             Pageable pageable);
 
 
+    @Query("SELECT o FROM Order o WHERE o.restaurantId = :restaurantId " +
+            "AND (:status IS NULL OR o.status = :status) " +
+            "AND (:startDate IS NULL OR o.placedAt >= :startDate) " +
+            "AND (:endDate IS NULL OR o.placedAt <= :endDate) " +
+            "ORDER BY CASE WHEN o.status IN (com.quickmenu.orders.model.Order.Status.PLACED, com.quickmenu.orders.model.Order.Status.PENDING, com.quickmenu.orders.model.Order.Status.IN_PROGRESS, com.quickmenu.orders.model.Order.Status.PREPARING, com.quickmenu.orders.model.Order.Status.READY) THEN 0 ELSE 1 END ASC, o.placedAt DESC")
+    Page<Order> findByFilters(
+            @Param("restaurantId") String restaurantId,
+            @Param("status") Order.Status status,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate,
+            Pageable pageable);
+
     long countByRestaurantIdAndPlacedAtBetween(String restaurantId, Instant start, Instant end);
 
     @Query("select coalesce(sum(o.totalAmount), 0) from Order o where o.restaurantId = :rid and o.placedAt between :start and :end")

@@ -63,19 +63,21 @@ public class OrderController {
     }
 
     @GetMapping
-    @Operation(summary = "List orders", description = "List orders for staff (paginated, filterable by status).")
+    @Operation(summary = "List orders", description = "List orders for staff (paginated, filterable by status and date).")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
-    public ResponseEntity<Page<OrderDto.OrderResponse>> listOrders(@PathVariable String restaurantId,
-                                                  @RequestParam(required = false) Order.Status status,
-                                                  @RequestParam(defaultValue = "0") int page,
-                                                  @RequestParam(defaultValue = "20") int size,
-                                                  @RequestParam(defaultValue = "placedAt") String[] sort) {
+    public ResponseEntity<Page<OrderDto.OrderResponse>> listOrders(
+            @PathVariable String restaurantId,
+            @RequestParam(required = false) Order.Status status,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(parseSort(sort)));
+        // Enforce specific sorting: Active > Completed, then by placedAt DESC
+        // We use unsorted PageRequest because the @Query in repository handles the order
+        Pageable pageable = PageRequest.of(page, size);
 
-        Page<Order> p = (status == null)
-                ? orderRepository.findByRestaurantId(restaurantId, pageable)
-                : orderRepository.findByRestaurantIdAndStatus(restaurantId, status, pageable);
+        Page<Order> p = orderRepository.findByFilters(restaurantId, status, startDate, endDate, pageable);
 
         Page<OrderDto.OrderResponse> dtoPage = p.map(OrderMapper::toResponse);
         return ResponseEntity.ok(dtoPage);
