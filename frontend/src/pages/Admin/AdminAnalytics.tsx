@@ -1,7 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import api from '../../lib/api';
 import { downloadCsv } from '../../lib/csv';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts';
 import { useAuthStore } from '../../app/store';
 
 /* ---------------- Small UI helpers ---------------- */
@@ -30,6 +42,8 @@ export default function AdminAnalytics() {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [restaurantId, setRestaurantId] = useState<string>('');
   const [timezone, setTimezone] = useState('Asia/Kolkata');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,13 +75,13 @@ export default function AdminAnalytics() {
     setLoading(true);
     setError(null);
 
+    const params: any = { restaurantId, timezone };
+    if (startDate) params.startDate = new Date(startDate).toISOString();
+    if (endDate) params.endDate = new Date(endDate).toISOString();
+
     Promise.all([
-      api.get(`/api/admin/stats`, {
-        params: { restaurantId, timezone },
-      }),
-      api.get(`/api/admin/metrics`, {
-        params: { restaurantId, timezone },
-      }),
+      api.get(`/api/admin/stats`, { params }),
+      api.get(`/api/admin/metrics`, { params }),
     ])
       .then(([statsRes, metricsRes]) => {
         /* ---- stats ---- */
@@ -76,7 +90,7 @@ export default function AdminAnalytics() {
 
         /* ---- top dishes ---- */
         setTopDishes(metricsRes.data?.topDishes ?? []);
-        
+
         /* ---- category breakdown ---- */
         setCategoryStats(metricsRes.data?.categoryBreakdown ?? []);
 
@@ -89,7 +103,7 @@ export default function AdminAnalytics() {
         setError('Failed to load analytics');
       })
       .finally(() => setLoading(false));
-  }, [restaurantId, timezone]);
+  }, [restaurantId, timezone, startDate, endDate]);
 
   /* -------- CSV export -------- */
   function exportCsv() {
@@ -113,19 +127,19 @@ export default function AdminAnalytics() {
         orders: h.orders,
       }),
     );
-    
-    categoryStats.forEach((c) => 
+
+    categoryStats.forEach((c) =>
       rows.push({
         category: c.categoryName,
-        count: c.count
-      })
+        count: c.count,
+      }),
     );
 
     downloadCsv(`analytics_${restaurantId}.csv`, rows);
   }
 
   const maxDishQty = Math.max(...topDishes.map((d) => d.totalQty), 1);
-  
+
   // Colors for Pie Chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -163,12 +177,40 @@ export default function AdminAnalytics() {
           <option value="America/Los_Angeles">USA Pacific (Los Angeles)</option>
           <option value="Europe/London">UK (London)</option>
         </select>
+
+        {/* Date Filter */}
+        <div className="flex items-center gap-2 border p-1 rounded bg-white">
+          <input
+            type="datetime-local"
+            className="text-sm px-1 border-r"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <span className="text-gray-400">to</span>
+          <input
+            type="datetime-local"
+            className="text-sm px-1"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+          {(startDate || endDate) && (
+            <button
+              onClick={() => {
+                setStartDate('');
+                setEndDate('');
+              }}
+              className="ml-2 text-xs text-red-500 hover:text-red-700 font-medium"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <StatCard title="Orders Today" value={loading ? '…' : ordersToday} />
-        <StatCard title="Revenue Today" value={loading ? '…' : `₹ ${revenueToday}`} />
+        <StatCard title="Total Orders" value={loading ? '…' : ordersToday} />
+        <StatCard title="Total Revenue" value={loading ? '…' : `₹ ${revenueToday}`} />
       </div>
 
       {/* charts */}
@@ -211,49 +253,54 @@ export default function AdminAnalytics() {
             </ResponsiveContainer>
           </div>
         </div>
-        
+
         {/* Category Breakdown (Pie Chart) */}
         <div className="bg-white rounded shadow p-4 lg:col-span-2">
           <h3 className="font-medium mb-3">Orders by Category</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div style={{ height: 300 }}>
-                {categoryStats.length > 0 ? (
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie
-                        data={categoryStats}
-                        dataKey="count"
-                        nameKey="categoryName"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        fill="#8884d8"
-                        label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {categoryStats.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-500">No category data available</div>
-                )}
-             </div>
-             {/* Text Summary */}
-             <div className="flex flex-col justify-center">
-                {categoryStats.map((c, i) => (
-                  <div key={i} className="flex justify-between p-2 border-b last:border-0">
-                     <span className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></span>
-                        {c.categoryName}
-                     </span>
-                     <span className="font-semibold">{c.count} orders</span>
-                  </div>
-                ))}
-             </div>
+            <div style={{ height: 300 }}>
+              {categoryStats.length > 0 ? (
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={categoryStats}
+                      dataKey="count"
+                      nameKey="categoryName"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      fill="#8884d8"
+                      label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {categoryStats.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  No category data available
+                </div>
+              )}
+            </div>
+            {/* Text Summary */}
+            <div className="flex flex-col justify-center">
+              {categoryStats.map((c, i) => (
+                <div key={i} className="flex justify-between p-2 border-b last:border-0">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                    ></span>
+                    {c.categoryName}
+                  </span>
+                  <span className="font-semibold">{c.count} orders</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -279,7 +326,7 @@ function normalizeHourly(raw: any[], timezone: string) {
     const hStr = formatter.format(d);
     // hStr might be "24" in some locales/browsers for midnight, normalize to 0-23
     const hour = parseInt(hStr, 10) % 24;
-    
+
     map.set(hour, r.ordersCount);
   });
 
