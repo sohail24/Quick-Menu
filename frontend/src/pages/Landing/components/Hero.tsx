@@ -11,7 +11,7 @@ export default function Hero() {
   const dashboardPath = isAdmin ? '/admin' : '/staff';
 
   return (
-    <div className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center pt-20 pb-20 overflow-hidden">
       {/* Background Gradients */}
       <div className="absolute top-0 right-0 -z-10 w-[600px] h-[600px] bg-blue-100/50 rounded-full blur-3xl opacity-60 translate-x-1/3 -translate-y-1/4"></div>
       <div className="absolute bottom-0 left-0 -z-10 w-[500px] h-[500px] bg-indigo-100/50 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/4"></div>

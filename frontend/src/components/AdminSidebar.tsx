@@ -1,7 +1,7 @@
 // src/components/AdminSidebar.tsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useUIStore } from '../app/store';
+import { useUIStore, useAuthStore } from '../app/store';
 import { 
   LayoutDashboard, 
   UtensilsCrossed, 
@@ -43,6 +43,11 @@ const SectionLabel = ({ label }: { label: string }) => (
 export default function AdminSidebar() {
   const isSidebarOpen = useUIStore((s) => s.isSidebarOpen);
   const closeSidebar = useUIStore((s) => s.closeSidebar);
+  const user = useAuthStore((s) => s.user);
+
+  const displayName = (user as any)?.name ?? (user as any)?.email?.split('@')[0] ?? 'Admin';
+  const email = (user as any)?.email ?? 'admin@quickmenu.com';
+  const initials = displayName.substring(0, 2).toUpperCase();
 
   return (
     <>
@@ -90,15 +95,15 @@ export default function AdminSidebar() {
           <NavItem to="/admin/settings" icon={Settings} label="Account & Plans" onClick={closeSidebar} />
         </nav>
 
-        {/* Footer User Info (Optional placeholder) */}
+        {/* Footer User Info */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-              AD
+              {initials}
             </div>
-            <div className="text-sm">
-              <div className="font-medium text-gray-900">Admin User</div>
-              <div className="text-xs text-gray-500">admin@quickmenu.com</div>
+            <div className="text-sm overflow-hidden">
+              <div className="font-medium text-gray-900 truncate" title={displayName}>{displayName}</div>
+              <div className="text-xs text-gray-500 truncate" title={email}>{email}</div>
             </div>
           </div>
         </div>
