@@ -25,6 +25,8 @@ import RestaurantLanding from '../pages/Public/RestaurantLanding';
 import AdminStaff from '../pages/Admin/AdminStaff';
 import LandingPage from '../pages/Landing/LandingPage';
 import AdminSettings from '../pages/Admin/AdminSettings';
+import ForgotPassword from '../pages/Auth/ForgotPassword';
+import ResetPassword from '../pages/Auth/ResetPassword';
 
 import PublicOnlyRoute from '../components/PublicOnlyRoute';
 
@@ -51,6 +53,22 @@ export default function AppRoutes() {
           element={
             <PublicOnlyRoute>
               <Signup />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicOnlyRoute>
+              <ForgotPassword />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <PublicOnlyRoute>
+              <ResetPassword />
             </PublicOnlyRoute>
           }
         />

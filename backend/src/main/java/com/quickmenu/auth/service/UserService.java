@@ -35,7 +35,7 @@ public class UserService {
                 .name(signUpRequest.getName())
                 .email(signUpRequest.getEmail())
                 .passwordHash(passwordEncoder.encode(signUpRequest.getPassword()))
-                .role(roleMap.get(signUpRequest.getRole() != null ? signUpRequest.getRole().toUpperCase() : "CUSTOMER"))
+                .role(roleMap.get(signUpRequest.getRole() != null ? signUpRequest.getRole().toUpperCase() : "ADMIN"))
                 .enabled(signUpRequest.getEnable() != null ? signUpRequest.getEnable() : false) // by default disabled
                 .build();
         return userRepository.save(user);
@@ -47,5 +47,24 @@ public class UserService {
 
     public void deleteUserByEmail(String email) {
         userRepository.findByEmail(email).ifPresent(userRepository::delete);
+    }
+
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Incorrect current password");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    public void updatePassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }

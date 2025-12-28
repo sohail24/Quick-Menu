@@ -60,9 +60,15 @@ export default function Login() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+             placeholder="••••••••"
             required
           />
+          
+          <div className="flex justify-end">
+            <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+              Forgot Password?
+            </Link>
+          </div>
           
           <Button className="w-full" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}

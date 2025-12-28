@@ -49,10 +49,10 @@ export default function Signup() {
 
         <form onSubmit={submit} className="space-y-5">
            <Input
-            label="Restaurant/Legal Name"
+            label="Admin Username"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Tasty Bites"
+            placeholder="e.g. ironman3000"
             required
           />
           <Input

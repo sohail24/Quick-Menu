@@ -75,18 +75,16 @@ export default function AdminSidebar() {
           <NavItem to="/admin" icon={LayoutDashboard} label="Overview" end onClick={closeSidebar} />
           <NavItem to="/admin/analytics" icon={BarChart3} label="Analytics" onClick={closeSidebar} />
           
-          <SectionLabel label="Operations" />
+          <SectionLabel label="Management" />
           <NavItem to="/admin/orders" icon={ShoppingCart} label="Live Orders" onClick={closeSidebar} />
           <NavItem to="/admin/restaurants" icon={List} label="Restaurants" end onClick={closeSidebar} />
-          
-          <SectionLabel label="Menu Management" />
           <NavItem to="/admin/dishes" icon={UtensilsCrossed} label="Dishes" onClick={closeSidebar} />
           <NavItem to="/admin/categories" icon={LayoutGrid} label="Categories" onClick={closeSidebar} />
           <NavItem to="/admin/tables" icon={Grid} label="Tables" onClick={closeSidebar} />
           
           <SectionLabel label="Organization" />
-          <NavItem to="/admin/staff" icon={Users} label="Staff Members" onClick={closeSidebar} />
           <NavItem to="/admin/restaurants/create" icon={PlusCircle} label="Add Restaurant" onClick={closeSidebar} />
+          <NavItem to="/admin/staff" icon={Users} label="Staff Members" onClick={closeSidebar} />
           
           <SectionLabel label="Settings" />
           <NavItem to="/admin/settings" icon={Settings} label="Account & Plans" onClick={closeSidebar} />

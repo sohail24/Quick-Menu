@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import { useAuthStore } from '../../app/store';
-import { User, Shield, LogOut, AlertTriangle, CheckCircle } from 'lucide-react';
+import { User, Shield, LogOut, AlertTriangle, CheckCircle, Lock, Key, X } from 'lucide-react';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
+import Card from '../../components/ui/Card';
 
 export default function AdminSettings() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   
   const logout = useAuthStore(s => s.logout);
@@ -71,10 +75,13 @@ export default function AdminSettings() {
               Security & Privacy
             </h2>
             <p className="text-sm text-gray-500 mb-6">
-              Manage your password and account security settings. To update your password, please contact support or use the password recovery flow.
+              Manage your password and account security settings. Regular password updates are recommended for better protection.
             </p>
             <div className="flex items-center gap-4">
-               <button className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+               <button 
+                onClick={() => setShowPasswordModal(true)}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-bold transition-all shadow-lg shadow-indigo-100"
+               >
                  Change Password
                </button>
             </div>
@@ -124,6 +131,11 @@ export default function AdminSettings() {
         </div>
       </div>
 
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+      )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
@@ -154,6 +166,87 @@ export default function AdminSettings() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      alert("New passwords don't match");
+      return;
+    }
+    setLoading(true);
+    try {
+      await api.post('/api/auth/change-password', { currentPassword, newPassword });
+      alert('Password updated successfully!');
+      onClose();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to update password');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+      <Card className="max-w-md w-full p-8 animate-in fade-in zoom-in duration-300 relative">
+        <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full">
+          <X className="w-5 h-5 text-gray-400" />
+        </button>
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Key className="w-8 h-8 text-indigo-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Change Password</h2>
+          <p className="text-sm text-gray-500 mt-2">Update your login credentials</p>
+        </div>
+
+        <form onSubmit={handleUpdate} className="space-y-4">
+          <Input 
+            label="Current Password" 
+            type="password" 
+            value={currentPassword} 
+            onChange={e => setCurrentPassword(e.target.value)}
+            required
+          />
+          <Input 
+            label="New Password" 
+            type="password" 
+            value={newPassword} 
+            onChange={e => setNewPassword(e.target.value)}
+            required
+            placeholder="At least 6 characters"
+          />
+          <Input 
+            label="Confirm New Password" 
+            type="password" 
+            value={confirmPassword} 
+            onChange={e => setConfirmPassword(e.target.value)}
+            required
+          />
+          <div className="pt-4 flex gap-3">
+            <Button className="flex-1" disabled={loading}>
+              {loading ? 'Updating...' : 'Update Password'}
+            </Button>
+            <button 
+              type="button" 
+              onClick={onClose}
+              disabled={loading}
+              className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Card>
     </div>
   );
 }
