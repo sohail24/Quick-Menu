@@ -16,12 +16,17 @@ export default function Login() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    await doLogin(email, password);
+  }
+
+  async function doLogin(e: string, p: string) {
     setLoading(true);
     try {
-      const res = await api.post('/api/auth/login', { email, password });
+      const res = await api.post('/api/auth/login', { email: e, password: p });
       const token = res.data.token;
       if (!token) throw new Error('No token returned');
       setToken(token);
+      alert('Login successful');
       navigate('/menu/demo');
     } catch (err: any) {
       console.error(err);
@@ -29,6 +34,14 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleDemoAdmin() {
+    doLogin('admin@quickmenu.local', 'Admin123!');
+  }
+
+  function handleDemoStaff() {
+    doLogin('staff@quickmenu.local', 'Staff123!');
   }
 
   return (
@@ -73,6 +86,25 @@ export default function Login() {
           <Button className="w-full" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={handleDemoAdmin}
+              disabled={loading}
+              className="py-2.5 px-4 bg-white border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200"
+            >
+              Demo Admin
+            </button>
+            <button
+              type="button"
+              onClick={handleDemoStaff}
+              disabled={loading}
+              className="py-2.5 px-4 bg-white border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200"
+            >
+              Demo Staff
+            </button>
+          </div>
 
           <div className="text-center text-sm text-gray-500 mt-4">
             Don't have an account?{' '}

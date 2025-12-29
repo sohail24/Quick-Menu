@@ -1,4 +1,5 @@
 module.exports = {
+  darkMode: 'class',
   content: {
     files: ["./index.html", "./src/**/*.{ts,tsx,css}"],
     safelist: [
