@@ -3,8 +3,6 @@ import LandingNavbar from './components/LandingNavbar';
 import Hero from './components/Hero';
 import HowItWorks from './components/HowItWorks';
 import Features from './components/Features';
-import AdminDemo from './components/AdminDemo';
-import StaffDemo from './components/StaffDemo';
 import AboutUs from './components/AboutUs';
 import Footer from './components/Footer';
 
@@ -20,8 +18,6 @@ export default function LandingPage() {
       <Hero />
       <HowItWorks />
       <Features />
-      <AdminDemo />
-      <StaffDemo />
       <AboutUs />
       <Footer />
     </div>
