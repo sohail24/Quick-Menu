@@ -105,10 +105,9 @@ public class AuthController {
                             "message", "If an account exists with that email, we have sent a password reset code."
                     ));
                 })
-                .orElse(ResponseEntity.ok(Map.of(
-                        // Return same message to prevent email enumeration
-                        "message", "If an account exists with that email, we have sent a password reset code."
-                )));
+                .orElseThrow(
+                        ()-> new IllegalArgumentException("Email does not exist, Please provide correct email.")
+                );
     }
 
     @PostMapping("/reset-password")
