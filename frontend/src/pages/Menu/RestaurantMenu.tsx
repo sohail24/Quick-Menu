@@ -27,7 +27,7 @@ export default function RestaurantMenu() {
   const navigate = useNavigate();
 
   const [effectiveRestaurantId, setEffectiveRestaurantId] = useState<string | null>(
-    paramRestaurantId ?? null,
+    paramRestaurantId === 'demo' ? null : (paramRestaurantId ?? null),
   );
   const [effectiveTableId, setEffectiveTableId] = useState<string | null>(queryTableId ?? null);
 
@@ -89,7 +89,7 @@ export default function RestaurantMenu() {
 
   // Fetch Restaurant Details
   useEffect(() => {
-    if (!effectiveRestaurantId) return;
+    if (!effectiveRestaurantId || effectiveRestaurantId === 'demo') return;
     api.get(`/api/restaurants/${effectiveRestaurantId}`)
        .then(res => setRestaurant(res.data))
        .catch(err => console.warn("Failed to fetch restaurant details", err));

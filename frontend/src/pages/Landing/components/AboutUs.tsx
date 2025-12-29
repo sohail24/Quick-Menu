@@ -3,7 +3,7 @@ import { Github, Linkedin, Mail, MapPin, Briefcase, GraduationCap, Heart } from 
 
 export default function AboutUs() {
   return (
-    <section id="about" className="py-24 bg-gray-900 text-white relative overflow-hidden">
+    <section id="about" className="py-24 bg-gray-900 text-white relative overflow-hidden min-h-screen ">
       {/* Background patterns */}
       <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
         <div className="absolute top-10 left-10 w-64 h-64 bg-blue-500 rounded-full blur-[100px]"></div>

@@ -16,6 +16,7 @@ export default function Features() {
     '/screenshots/admin_dashboard_6.png',
     '/screenshots/admin_dashboard_7.png',
     '/screenshots/admin_dashboard_8.png',
+    '/screenshots/admin_dashboard_8_b.png',
     '/screenshots/admin_dashboard_9.png',
     '/screenshots/admin_dashboard_10.png'
   ];
@@ -32,7 +33,7 @@ export default function Features() {
 
   return (
     <section id="features" className="py-24 bg-gray-50/50">
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-6 min-h-screen">
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-20">
