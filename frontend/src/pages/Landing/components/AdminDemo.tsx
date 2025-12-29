@@ -1,7 +1,36 @@
-import React from 'react';
-import { LayoutDashboard, Utensils, BarChart3, Settings, QrCode, Plus, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LayoutDashboard, Utensils, BarChart3, Settings, QrCode, Plus, Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 export default function AdminDemo() {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  
+  const screenshots = [
+    '/screenshots/admin_dashboard_1.png',
+    '/screenshots/admin_dashboard_2.png',
+    '/screenshots/admin_dashboard_3.png',
+    '/screenshots/admin_dashboard_4.png',
+    '/screenshots/admin_dashboard_5.png',
+    '/screenshots/admin_dashboard_6.png',
+    '/screenshots/admin_dashboard_7.png',
+    '/screenshots/admin_dashboard_8.png',
+    '/screenshots/admin_dashboard_9.png',
+    '/screenshots/admin_dashboard_10.png'
+  ];
+
+  // Auto-advance
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!showModal) {
+        setActiveSlide(bs => (bs + 1) % screenshots.length);
+      }
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [showModal]);
+
+  const nextSlide = () => setActiveSlide(s => (s + 1) % screenshots.length);
+  const prevSlide = () => setActiveSlide(s => (s - 1 + screenshots.length) % screenshots.length);
+
   return (
     <section id="admin-demo" className="py-24 bg-white overflow-hidden">
       <div className="container mx-auto px-6">
@@ -51,84 +80,92 @@ export default function AdminDemo() {
             </div>
           </div>
 
-          {/* Visual Demo / Mock UI */}
+          {/* Visual Demo / Screenshot Carousel */}
           <div className="lg:w-1/2 order-1 lg:order-2 relative">
             <div className="absolute -inset-10 bg-gradient-to-tr from-blue-600/10 to-indigo-600/10 rounded-full blur-[100px] opacity-70"></div>
             
-            <div className="relative bg-gray-50 rounded-[40px] border border-gray-200 shadow-2xl p-8 overflow-hidden">
-              {/* Image Placeholder Overlay */}
-              <div className="absolute inset-4 z-20 bg-gray-100/10 backdrop-blur-[2px] border-2 border-dashed border-gray-300 rounded-[32px] flex items-center justify-center group/img">
-                <div className="text-center p-6 bg-white/90 rounded-3xl shadow-xl border border-gray-100 group-hover/img:scale-105 transition-transform duration-500">
-                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-blue-600">
-                    <LayoutDashboard className="w-8 h-8" />
-                  </div>
-                  <div className="text-sm font-black text-gray-900 mb-1">Admin Dashboard Screenshot</div>
-                  <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Replace this with your actual UI image</div>
+            <div className="relative bg-gray-50 rounded-[24px] border border-gray-200 shadow-2xl overflow-hidden group">
+              <div className="relative aspect-[16/10] bg-white">
+                <img 
+                  src={screenshots[activeSlide]} 
+                  alt={`Admin Dashboard View ${activeSlide + 1}`}
+                  className="w-full h-full object-cover transition-opacity duration-500 ease-in-out cursor-zoom-in"
+                  onClick={() => setShowModal(true)}
+                />
+                
+                {/* Carousel Controls */}
+                <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2 z-10">
+                  {screenshots.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveSlide(i)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        i === activeSlide ? 'bg-blue-600 w-6' : 'bg-gray-300 hover:bg-gray-400'
+                      }`}
+                    />
+                  ))}
                 </div>
-              </div>
 
-              {/* Fake Sidebar */}
-              <div className="flex gap-8">
-                <div className="w-16 hidden sm:flex flex-col gap-6 py-4 items-center bg-white rounded-3xl border border-gray-100 shadow-sm">
-                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white"><LayoutDashboard className="w-5 h-5"/></div>
-                  <div className="w-10 h-10 text-gray-400 hover:text-blue-600"><Utensils className="w-5 h-5"/></div>
-                  <div className="w-10 h-10 text-gray-400 hover:text-blue-600"><BarChart3 className="w-5 h-5"/></div>
-                  <div className="w-10 h-10 text-gray-400 hover:text-blue-600"><QrCode className="w-5 h-5"/></div>
-                  <div className="mt-auto w-10 h-10 text-gray-400 hover:text-blue-600"><Settings className="w-5 h-5"/></div>
+                <div className="absolute inset-y-0 left-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-4">
+                  <button 
+                    onClick={prevSlide}
+                    className="p-3 bg-white/90 backdrop-blur text-gray-900 rounded-full shadow-xl hover:bg-white hover:scale-110 transition duration-200 border border-gray-100"
+                    aria-label="Previous slide"
+                  >
+                    <ChevronLeft className="w-8 h-8" />
+                  </button>
                 </div>
 
-                {/* Main Content Area */}
-                <div className="flex-1">
-                  <div className="flex justify-between items-center mb-10">
-                    <h4 className="text-2xl font-black text-gray-900">Menu items</h4>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/20">
-                      <Plus className="w-4 h-4"/> Add New
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {[
-                      { name: 'Spicy Burger', price: '$12.99', category: 'Fast Food', img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80' },
-                      { name: 'Pasta Carbonara', price: '$15.50', category: 'Italian', img: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=400&q=80' },
-                      { name: 'Chicken Salad', price: '$10.00', category: 'Health', img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80' },
-                      { name: 'Veggie Pizza', price: '$14.00', category: 'Italian', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&q=80' },
-                    ].map((item, i) => (
-                      <div key={i} className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
-                        <img src={item.img} className="w-12 h-12 rounded-xl object-cover" />
-                        <div className="flex-1">
-                          <div className="text-xs font-black text-gray-900">{item.name}</div>
-                          <div className="text-[10px] text-gray-400 font-bold">{item.category}</div>
-                        </div>
-                        <div className="text-xs font-black text-blue-600">{item.price}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Tiny chart mockup */}
-                  <div className="mt-8 pt-8 border-t border-gray-100">
-                    <div className="flex justify-between items-end gap-2 h-20">
-                      {[40, 70, 45, 90, 65, 80, 50].map((h, i) => (
-                        <div key={i} className="flex-1 bg-blue-100 rounded-t-lg relative group">
-                          <div style={{ height: `${h}%` }} className="absolute bottom-0 left-0 right-0 bg-blue-600 rounded-t-lg transition-all duration-500 group-hover:bg-blue-500"></div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-between mt-2 text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                      <span>Mon</span>
-                      <span>Tue</span>
-                      <span>Wed</span>
-                      <span>Thu</span>
-                      <span>Fri</span>
-                      <span>Sat</span>
-                      <span>Sun</span>
-                    </div>
-                  </div>
+                <div className="absolute inset-y-0 right-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-4">
+                  <button 
+                    onClick={nextSlide}
+                    className="p-3 bg-white/90 backdrop-blur text-gray-900 rounded-full shadow-xl hover:bg-white hover:scale-110 transition duration-200 border border-gray-100"
+                    aria-label="Next slide"
+                  >
+                    <ChevronRight className="w-8 h-8" />
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      {/* Full Screen Modal */}
+      {showModal && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 sm:p-8"
+          onClick={() => setShowModal(false)}
+        >
+          <button 
+            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors p-2"
+            onClick={() => setShowModal(false)}
+          >
+            <X className="w-8 h-8" />
+          </button>
+          
+          <div className="relative w-full max-w-7xl max-h-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
+             <img 
+               src={screenshots[activeSlide]} 
+               alt="Full size view" 
+               className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+             />
+             
+             {/* Modal Controls */}
+             <button 
+                onClick={(e) => { e.stopPropagation(); prevSlide(); }}
+                className="absolute left-4 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition"
+             >
+                <ChevronLeft className="w-8 h-8" />
+             </button>
+             <button 
+                onClick={(e) => { e.stopPropagation(); nextSlide(); }}
+                className="absolute right-4 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition"
+             >
+                <ChevronRight className="w-8 h-8" />
+             </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

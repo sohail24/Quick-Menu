@@ -1,107 +1,111 @@
 import React from 'react';
-import { QrCode, Layout, Activity, BarChart3, BellRing, ShieldCheck, Zap, Smartphone, Palette } from 'lucide-react';
-
-const features = [
-  {
-    icon: <QrCode className="w-6 h-6" />,
-    title: 'Precision QR System',
-    desc: 'Table-specific codes for instant menu access and pinpoint service accuracy.',
-    color: 'text-blue-600',
-    bg: 'bg-blue-50'
-  },
-  {
-    icon: <Layout className="w-6 h-6" />,
-    title: 'Smart Menu Builder',
-    desc: 'Categorize dishes, add rich photos, and update prices in real-time with ease.',
-    color: 'text-indigo-600',
-    bg: 'bg-indigo-50'
-  },
-  {
-    icon: <Activity className="w-6 h-6" />,
-    title: 'Live Order Tracker',
-    desc: 'Keep guests engaged with real-time status updates from kitchen to table.',
-    color: 'text-purple-600',
-    bg: 'bg-purple-50'
-  },
-  {
-    icon: <BarChart3 className="w-6 h-6" />,
-    title: 'Powerful Analytics',
-    desc: 'Visualize sales performance and peak hours to optimize your operations.',
-    color: 'text-emerald-600',
-    bg: 'bg-emerald-50'
-  },
-  {
-    icon: <BellRing className="w-6 h-6" />,
-    title: 'Instant Service Bell',
-    desc: 'One-tap waiter call system that alerts staff dashboards immediately.',
-    color: 'text-amber-600',
-    bg: 'bg-amber-50'
-  },
-  {
-    icon: <ShieldCheck className="w-6 h-6" />,
-    title: 'Reliable Control',
-    desc: 'A robust staff dashboard for seamless order management and status control.',
-    color: 'text-red-600',
-    bg: 'bg-red-50'
-  }
-];
+import { QrCode, Layout, Activity, BarChart3, BellRing, ShieldCheck, Zap, Smartphone, Palette, ChefHat, LayoutDashboard } from 'lucide-react';
 
 export default function Features() {
   return (
     <section id="features" className="py-24 bg-gray-50/50">
       <div className="container mx-auto px-6">
-        <div className="flex flex-col lg:flex-row items-center gap-20">
+        
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-20">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full font-black text-[10px] uppercase tracking-widest mb-6">
+              <Zap className="w-4 h-4 fill-current" />
+              Complete Ecosystem
+          </div>
+          <h2 className="text-4xl lg:text-5xl font-black text-gray-900 mb-6 leading-[1.1] tracking-tight">
+            Built for <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Every Role</span>
+          </h2>
+          <p className="text-xl text-gray-500 font-medium">
+            QuickMenu connects your guests, staff, and management in one seamless platform.
+          </p>
+        </div>
+
+        {/* 3-Pillar Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          <div className="lg:w-1/2">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full font-black text-[10px] uppercase tracking-widest mb-6">
-               <Zap className="w-4 h-4 fill-current" />
-               Handy Tools
-            </div>
-            
-            <h2 className="text-4xl lg:text-5xl font-black text-gray-900 mb-8 leading-[1.1] tracking-tight">
-              Everything you need for a <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">modern menu</span>
-            </h2>
-            
-            <p className="text-xl text-gray-500 mb-12 leading-relaxed font-medium">
-              Say goodbye to messy paper menus. QuickMenu gives you simple, easy-to-use digital tools to manage your restaurant and keep your customers happy.
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              {features.map((feat, idx) => (
-                <div key={idx} className="group flex flex-col items-start p-2 hover:bg-white hover:shadow-xl hover:shadow-gray-200/50 rounded-3xl transition-all duration-300">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 mb-4 transition-all duration-300 group-hover:scale-110 ${feat.bg} ${feat.color}`}>
-                    {feat.icon}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-gray-900 mb-2 tracking-tight group-hover:text-blue-600 transition-colors">{feat.title}</h3>
-                    <p className="text-sm text-gray-500 font-medium leading-relaxed">{feat.desc}</p>
-                  </div>
+          {/* 1. Customer Section */}
+          <div className="relative bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col items-center text-center group hover:-translate-y-2 transition-transform duration-500">
+             <div className="w-full bg-blue-50/50 rounded-3xl p-8 mb-8 flex items-center justify-center relative overflow-hidden h-[320px]">
+                {/* Phone Mockup */}
+                <div className="relative z-10 w-[160px] aspect-[9/19] bg-gray-900 rounded-[2rem] border-4 border-gray-900 overflow-hidden shadow-xl">
+                   <img 
+                      src="/screenshots/customer_menu_mobile.png" 
+                      alt="Mobile Menu Interface" 
+                      className="w-full h-full object-cover rounded-[1.8rem]"
+                    />
                 </div>
-              ))}
-            </div>
+                <div className="absolute inset-0 bg-blue-100/50 blur-3xl rounded-full transform scale-75 group-hover:scale-100 transition-transform duration-700"></div>
+             </div>
+             
+             <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold uppercase tracking-wider mb-4">
+                <Smartphone className="w-4 h-4" />
+                Customer App
+             </div>
+             <h3 className="text-2xl font-black text-gray-900 mb-3">Instant Ordering</h3>
+             <p className="text-gray-500 font-medium leading-relaxed">
+                No downloads required. Guests simply scan a QR code to view the menu and order instantly from their phone.
+             </p>
           </div>
 
-          <div className="lg:w-1/2 relative group">
-            <div className="absolute -inset-4 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[48px] rotate-2 opacity-5 blur-2xl group-hover:opacity-10 transition-opacity"></div>
-            <div className="relative z-10 bg-white p-4 rounded-[40px] shadow-2xl border border-gray-100 overflow-hidden">
-               <img 
-                 src="https://images.unsplash.com/photo-1555396273-367ea4ec4db0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
-                 alt="Digital Dining Experience" 
-                 className="rounded-[32px] w-full h-[600px] object-cover hover:scale-105 transition duration-700"
-               />
-               {/* Floating Badge */}
-               <div className="absolute bottom-10 left-10 right-10 bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/20 shadow-xl">
-                  <div className="flex items-center gap-4">
-                     <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
-                        <Smartphone className="w-6 h-6" />
-                     </div>
-                     <div>
-                        <div className="text-gray-900 font-black tracking-tight">Optimized for Mobile</div>
-                        <div className="text-gray-500 text-sm font-medium">No app required for guests.</div>
-                     </div>
-                  </div>
-               </div>
-            </div>
+          {/* 2. Admin Section */}
+          <div className="relative bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col items-center text-center group hover:-translate-y-2 transition-transform duration-500">
+             <div className="w-full bg-indigo-50/50 rounded-3xl p-8 mb-8 flex items-center justify-center relative overflow-hidden h-[320px]">
+                {/* Abstract Admin UI */}
+                <div className="relative z-10 w-[240px] bg-white rounded-xl shadow-xl p-3 border border-gray-100 transform rotate-[-5deg] group-hover:rotate-0 transition-transform duration-500">
+                   <div className="flex gap-2 mb-3 border-b border-gray-100 pb-2">
+                      <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                   </div>
+                   <div className="space-y-2">
+                      <div className="flex gap-2">
+                         <div className="w-1/3 h-16 bg-indigo-50 rounded-lg"></div>
+                         <div className="w-2/3 h-16 bg-gray-50 rounded-lg"></div>
+                      </div>
+                      <div className="h-20 bg-gray-50 rounded-lg"></div>
+                   </div>
+                   <BarChart3 className="absolute -bottom-4 -right-4 w-12 h-12 text-indigo-600 fill-indigo-100 drop-shadow-lg" />
+                </div>
+                <div className="absolute inset-0 bg-indigo-100/50 blur-3xl rounded-full transform scale-75 group-hover:scale-100 transition-transform duration-700"></div>
+             </div>
+
+             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold uppercase tracking-wider mb-4">
+                <LayoutDashboard className="w-4 h-4" />
+                Admin Dashboard
+             </div>
+             <h3 className="text-2xl font-black text-gray-900 mb-3">Total Control</h3>
+             <p className="text-gray-500 font-medium leading-relaxed">
+                Manage your menu, track sales analytics, and customize your restaurant's profile from a powerful admin panel.
+             </p>
+          </div>
+
+          {/* 3. Staff Section */}
+          <div className="relative bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col items-center text-center group hover:-translate-y-2 transition-transform duration-500">
+             <div className="w-full bg-orange-50/50 rounded-3xl p-8 mb-8 flex items-center justify-center relative overflow-hidden h-[320px]">
+                {/* Abstract Staff UI */}
+                <div className="relative z-10 w-[220px] bg-white rounded-xl shadow-xl p-4 border border-gray-100 transform rotate-[5deg] group-hover:rotate-0 transition-transform duration-500">
+                   <div className="flex justify-between items-center mb-4">
+                      <div className="w-20 h-4 bg-gray-100 rounded"></div>
+                      <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-xs">2m</div>
+                   </div>
+                   <div className="space-y-3">
+                      <div className="h-8 bg-gray-50 rounded border-l-4 border-orange-500 w-full"></div>
+                      <div className="h-8 bg-gray-50 rounded border-l-4 border-orange-500 w-full"></div>
+                      <div className="h-8 bg-green-50 rounded border-l-4 border-green-500 w-full opacity-50"></div>
+                   </div>
+                   <ChefHat className="absolute -bottom-4 -left-4 w-12 h-12 text-orange-600 fill-orange-100 drop-shadow-lg" />
+                </div>
+                <div className="absolute inset-0 bg-orange-100/50 blur-3xl rounded-full transform scale-75 group-hover:scale-100 transition-transform duration-700"></div>
+             </div>
+
+             <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-xs font-bold uppercase tracking-wider mb-4">
+                <ShieldCheck className="w-4 h-4" />
+                Staff Portal
+             </div>
+             <h3 className="text-2xl font-black text-gray-900 mb-3">Kitchen Sync</h3>
+             <p className="text-gray-500 font-medium leading-relaxed">
+                A dedicated display for your kitchen staff to track incoming orders, manage prep status, and get waiter calls.
+             </p>
           </div>
 
         </div>
