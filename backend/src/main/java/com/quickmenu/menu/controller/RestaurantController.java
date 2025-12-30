@@ -2,6 +2,7 @@ package com.quickmenu.menu.controller;
 
 import com.quickmenu.menu.model.Restaurant;
 import com.quickmenu.menu.repo.RestaurantRepository;
+import com.quickmenu.menu.service.RestaurantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.*;
@@ -17,9 +18,11 @@ import java.util.Arrays;
 public class RestaurantController {
 
     private final RestaurantRepository restaurantRepository;
+    private final RestaurantService restaurantService;
 
-    public RestaurantController(RestaurantRepository restaurantRepository) {
+    public RestaurantController(RestaurantRepository restaurantRepository, RestaurantService restaurantService) {
         this.restaurantRepository = restaurantRepository;
+        this.restaurantService = restaurantService;
     }
 
     @PostMapping
@@ -85,7 +88,7 @@ public class RestaurantController {
     @Operation(summary = "Delete restaurant", description = "Delete a restaurant (admin).")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> delete(@PathVariable String restaurantId) {
-        restaurantRepository.deleteById(restaurantId);
+        restaurantService.delete(restaurantId);
         return ResponseEntity.noContent().build();
     }
 
