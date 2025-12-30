@@ -39,6 +39,9 @@ public class OrderItem {
     @Column(nullable = false)
     private BigDecimal priceAtOrder;
 
+    @Column(name = "dish_name")
+    private String dishName;
+
     @Column(length = 1000)
     private String note;
 }

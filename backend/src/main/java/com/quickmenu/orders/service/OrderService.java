@@ -77,6 +77,7 @@ public class OrderService {
 
             OrderItem oi = OrderItem.builder()
                     .dish(dish)
+                    .dishName(dish.getName())
                     .quantity(it.getQuantity())
                     .priceAtOrder(dish.getPrice())
                     .note(it.getNote())

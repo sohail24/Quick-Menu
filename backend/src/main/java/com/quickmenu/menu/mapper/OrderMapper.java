@@ -30,7 +30,20 @@ public class OrderMapper {
     public static OrderDto.OrderItemResponse toItemResponse(OrderItem item) {
         OrderDto.OrderItemResponse dto = new OrderDto.OrderItemResponse();
         dto.setDishId(item.getDish().getId());
-        dto.setDishName(item.getDish().getName());
+        
+        // Use snapshot name if available, otherwise fallback (safely)
+        String name = item.getDishName();
+        if (name == null) {
+            try {
+                name = item.getDish().getName();
+            } catch (jakarta.persistence.EntityNotFoundException e) {
+                name = "Deleted Dish";
+            } catch (Exception e) {
+                name = "Unknown Dish";
+            }
+        }
+        dto.setDishName(name);
+
         dto.setQuantity(item.getQuantity());
         dto.setPriceAtOrder(item.getPriceAtOrder());
         dto.setNote(item.getNote());

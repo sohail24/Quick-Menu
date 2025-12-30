@@ -271,6 +271,7 @@ public class DataInitializer implements CommandLineRunner {
             OrderItem item1 = OrderItem.builder()
                     .order(order1)
                     .dish(dishes.get(0))
+                    .dishName(dishes.get(0).getName())
                     .quantity(2)
                     .priceAtOrder(dishes.get(0).getPrice())
                     .note("No onions")
@@ -279,6 +280,7 @@ public class DataInitializer implements CommandLineRunner {
             OrderItem item2 = OrderItem.builder()
                     .order(order1)
                     .dish(dishes.get(1))
+                    .dishName(dishes.get(1).getName())
                     .quantity(1)
                     .priceAtOrder(dishes.get(1).getPrice())
                     .build();
@@ -304,6 +306,7 @@ public class DataInitializer implements CommandLineRunner {
             OrderItem item3 = OrderItem.builder()
                     .order(order2)
                     .dish(dishes.get(2))
+                    .dishName(dishes.get(2).getName())
                     .quantity(1)
                     .priceAtOrder(dishes.get(2).getPrice())
                     .build();
@@ -311,6 +314,7 @@ public class DataInitializer implements CommandLineRunner {
             OrderItem item4 = OrderItem.builder()
                     .order(order2)
                     .dish(dishes.get(3))
+                    .dishName(dishes.get(3).getName())
                     .quantity(2)
                     .priceAtOrder(dishes.get(3).getPrice())
                     .build();
