@@ -127,7 +127,12 @@ public class DishController {
         return dishRepository.findById(dishId)
                 .filter(d -> restaurantId.equals(d.getRestaurantId()))
                 .map(existing -> {
-                    dishRepository.delete(existing);
+                    if (Boolean.TRUE.equals(existing.getIsDemo())) {
+                        existing.setDeletedAt(java.time.Instant.now());
+                        dishRepository.save(existing);
+                    } else {
+                        dishRepository.delete(existing);
+                    }
                     return ResponseEntity.noContent().build(); // 204 No Content
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());

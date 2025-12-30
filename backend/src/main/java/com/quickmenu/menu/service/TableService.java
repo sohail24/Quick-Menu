@@ -49,6 +49,11 @@ public class TableService {
 
     public void deleteTable(String restaurantId, String tableId) {
         TableEntity t = getTable(restaurantId, tableId);
-        tableRepository.delete(t);
+        if (Boolean.TRUE.equals(t.getIsDemo())) {
+            t.setDeletedAt(java.time.Instant.now());
+            tableRepository.save(t);
+        } else {
+            tableRepository.delete(t);
+        }
     }
 }

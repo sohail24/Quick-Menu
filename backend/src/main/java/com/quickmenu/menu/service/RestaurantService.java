@@ -38,6 +38,13 @@ public class RestaurantService {
     }
 
     public void delete(String id) {
-        restaurantRepository.deleteById(id);
+        restaurantRepository.findById(id).ifPresent(restaurant -> {
+            if (Boolean.TRUE.equals(restaurant.getIsDemo())) {
+                restaurant.setDeletedAt(java.time.Instant.now());
+                restaurantRepository.save(restaurant);
+            } else {
+                restaurantRepository.delete(restaurant);
+            }
+        });
     }
 }

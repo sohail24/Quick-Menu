@@ -3,11 +3,13 @@ package com.quickmenu.auth.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Where;
 
 import java.time.Instant;
 import java.util.List;
 
 @Entity
+@Where(clause = "deleted_at IS NULL")
 @Table(name = "users")
 @Getter
 @Setter
@@ -50,6 +52,14 @@ public class User {
 
     @Column(name = "assigned_restaurant_id")
     private String assignedRestaurantId;
+
+    // Demo data management
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isDemo = false;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     // Optional future-proofing
     @ElementCollection

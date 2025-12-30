@@ -3,10 +3,12 @@ package com.quickmenu.menu.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Where;
 
 import java.time.Instant;
 
 @Entity
+@Where(clause = "deleted_at IS NULL")
 @Table(name = "restaurants")
 @Getter
 @Setter
@@ -33,6 +35,14 @@ public class Restaurant {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    // Demo data management
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isDemo = false;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     @PrePersist
     public void prePersist() {

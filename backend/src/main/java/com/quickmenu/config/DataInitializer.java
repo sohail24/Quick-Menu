@@ -75,6 +75,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setPasswordHash(passwordEncoder.encode("Admin123!"));
             admin.setCreatedAt(Instant.now());
             admin.setEnabled(true);
+            admin.setIsDemo(true);
             userRepo.save(admin);
                 System.out.println("Seeded admin -> email: " + adminEmail + " password: Admin123!");
         } else {
@@ -99,7 +100,9 @@ public class DataInitializer implements CommandLineRunner {
                     .timezone("Asia/Kolkata")
                     .currency("INR")
                     .ownerUserId("admin@quickmenu.local") // admin is the owner
+                    .ownerUserId("admin@quickmenu.local") // admin is the owner
                     .createdAt(Instant.now())
+                    .isDemo(true)
                     .build();
             r = restaurantRepo.save(r);
             System.out.println("Created demo restaurant: id=" + r.getId());
@@ -124,6 +127,7 @@ public class DataInitializer implements CommandLineRunner {
                     .qrUrl(qrUrl)
                     .createdAt(Instant.now())
                     .occupied(false)
+                    .isDemo(true)
                     .build();
             table = tableRepo.save(table);
             System.out.println("Created demo table: id=" + table.getId() + " qrUrl=" + qrUrl);
@@ -134,6 +138,7 @@ public class DataInitializer implements CommandLineRunner {
                     .qrUrl( "/menu/" + r.getId() + "?tableId=table-2")
                     .createdAt(Instant.now())
                     .occupied(false)
+                    .isDemo(true)
                     .build();
             table2 = tableRepo.save(table2);
             System.out.println("Created demo table: id=" + table2.getId() + " qrUrl=" +  "/menu/" + r.getId() + "?tableId=table-2");
@@ -147,6 +152,7 @@ public class DataInitializer implements CommandLineRunner {
                         .name("Starters")
                         .orderIndex(1)
                         .createdAt(Instant.now())
+                        .isDemo(true)
                         .build()));
 
         Restaurant finalR1 = r;
@@ -156,6 +162,7 @@ public class DataInitializer implements CommandLineRunner {
                         .name("Mains")
                         .orderIndex(2)
                         .createdAt(Instant.now())
+                        .isDemo(true)
                         .build()));
 
         // Seed dishes if not exist
@@ -172,6 +179,7 @@ public class DataInitializer implements CommandLineRunner {
                     .prepTimeMins(10)
                     .tags("Spicy,Tandoori,Soft,Paneer")
                     .createdAt(Instant.now())
+                    .isDemo(true)
                     .build());
 
             dishes.add(Dish.builder()
@@ -185,6 +193,7 @@ public class DataInitializer implements CommandLineRunner {
                     .prepTimeMins(8)
                     .tags("Crispy,Fried,Onions,Cabbage,DeepFried")
                     .createdAt(Instant.now())
+                    .isDemo(true)
                     .build());
 
             dishes.add(Dish.builder()
@@ -198,6 +207,7 @@ public class DataInitializer implements CommandLineRunner {
                     .prepTimeMins(20)
                     .tags("Creamy,Tomatao,Butter,Chicken,ButterChicken")
                     .createdAt(Instant.now())
+                    .isDemo(true)
                     .build());
 
             dishes.add(Dish.builder()
@@ -211,6 +221,7 @@ public class DataInitializer implements CommandLineRunner {
                     .prepTimeMins(5)
                     .tags("Plain,Jeera,Rice")
                     .createdAt(Instant.now())
+                    .isDemo(true)
                     .build());
 
             dishRepo.saveAll(dishes);
@@ -230,6 +241,7 @@ public class DataInitializer implements CommandLineRunner {
             staff.setCreatedAt(Instant.now());
             staff.setAssignedRestaurantId(r.getId()); //demo restaurant
             staff.setEnabled(true);
+            staff.setIsDemo(true);
             userRepo.save(staff);
             System.out.println("Seeded staff -> email: " + staffEmail + " password: Staff123!");
         } else {
@@ -253,6 +265,7 @@ public class DataInitializer implements CommandLineRunner {
                     .customerNote("Extra spicy please")
                     .status(Order.Status.SERVED)
                     .placedAt(Instant.now().minusSeconds(3600)) // 1 hour ago
+                    .isDemo(true)
                     .build();
 
             OrderItem item1 = OrderItem.builder()
@@ -285,6 +298,7 @@ public class DataInitializer implements CommandLineRunner {
                     .customerNote("Serve quickly")
                     .status(Order.Status.SERVED)
                     .placedAt(Instant.now().minusSeconds(1800)) // 30 mins ago
+                    .isDemo(true)
                     .build();
 
             OrderItem item3 = OrderItem.builder()

@@ -3,12 +3,14 @@ package com.quickmenu.orders.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Where;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
 @Entity
+@Where(clause = "deleted_at IS NULL")
 @Table(name = "orders")
 @Getter
 @Setter
@@ -43,6 +45,7 @@ public class Order {
     private String customerNote;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private Status status = Status.PENDING;
 
     private BigDecimal totalAmount;
@@ -56,6 +59,14 @@ public class Order {
             placedAt = Instant.now();
         }
     }
+
+    // Demo data management
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isDemo = false;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items;

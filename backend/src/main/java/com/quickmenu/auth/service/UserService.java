@@ -46,7 +46,14 @@ public class UserService {
     }
 
     public void deleteUserByEmail(String email) {
-        userRepository.findByEmail(email).ifPresent(userRepository::delete);
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (Boolean.TRUE.equals(user.getIsDemo())) {
+                user.setDeletedAt(java.time.Instant.now());
+                userRepository.save(user);
+            } else {
+                userRepository.delete(user);
+            }
+        });
     }
 
     public void changePassword(String email, String currentPassword, String newPassword) {

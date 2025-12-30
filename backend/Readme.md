@@ -280,4 +280,16 @@ src/
 - Postman collection: docs/Quick-Menu.postman_collection.json
 - Postman env: docs/Quick-Menu.postman_environment.json
 
+
 ---
+
+## 🧹 Demo Data Persistence & Soft Delete
+
+To maintain a consistent demo state for recruiters and users:
+- **Soft Delete**: Deletions for demo data (`isDemo=true`) are "soft" (marked with `deletedAt`). Non-demo data is hard-deleted.
+- **Auto-Restoration**: A scheduler runs every 30 minutes (configurable via `DEMO_DATA_RESTORE_INTERVAL_MINUTES`) to:
+  - Restore soft-deleted demo entities.
+  - Reset passwords for demo users (`admin@quickmenu.local`, `staff@quickmenu.local`).
+- **Manual Trigger**: Admin can trigger restoration via `POST /api/admin/restore-demo-data`.
+
+See `.env.example` for configuration.

@@ -69,4 +69,10 @@ app:
   uploads-dir: ./uploads
   base-url: http://localhost:8080
 
+# Demo data configuration
+demo:
+  data:
+    enabled: true
+    restore-interval-minutes: 30
+
 

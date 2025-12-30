@@ -66,7 +66,12 @@ public class CategoryController {
         return categoryRepository.findById(categoryId)
                 .filter(c -> restaurantId.equals(c.getRestaurantId()))
                 .map(existing -> {
-                    categoryRepository.delete(existing);
+                    if (Boolean.TRUE.equals(existing.getIsDemo())) {
+                        existing.setDeletedAt(java.time.Instant.now());
+                        categoryRepository.save(existing);
+                    } else {
+                        categoryRepository.delete(existing);
+                    }
                     return ResponseEntity.noContent().build(); // 204 No Content
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
