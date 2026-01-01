@@ -22,3 +22,7 @@ services:
         sync: false
       - key: JWT_EXPIRATION
         value: 86400000
+      - key: DEMO_DATA_ENABLED
+        value: true
+      - key: DEMO_DATA_RESTORE_INTERVAL_MINUTES
+        value: 30
