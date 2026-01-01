@@ -1,8 +1,12 @@
 spring:
   datasource:
+    driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:quickmenu}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+
+server:
+  port: ${PORT:8080}
   
   jpa:
     hibernate:
