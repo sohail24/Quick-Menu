@@ -5,7 +5,19 @@ export default function Features() {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
+
   const [activeAdminSlide, setActiveAdminSlide] = useState(0);
+  const [activeCustomerSlide, setActiveCustomerSlide] = useState(0);
+
+  const customerScreenshots = [
+    '/screenshots/customer_screen_1.png',
+    '/screenshots/customer_screen_2.png',
+    '/screenshots/customer_screen_3.png',
+    '/screenshots/customer_screen_4.png',
+    '/screenshots/customer_screen_5.png',
+    '/screenshots/customer_screen_5b.png',
+    '/screenshots/customer_screen_6.png'
+  ];
 
   const adminScreenshots = [
     '/screenshots/admin_dashboard_1.png',
@@ -20,6 +32,16 @@ export default function Features() {
     '/screenshots/admin_dashboard_9.png',
     '/screenshots/admin_dashboard_10.png'
   ];
+
+  const nextCustomerSlide = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveCustomerSlide((prev) => (prev + 1) % customerScreenshots.length);
+  };
+
+  const prevCustomerSlide = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveCustomerSlide((prev) => (prev - 1 + customerScreenshots.length) % customerScreenshots.length);
+  };
 
   const nextAdminSlide = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -61,7 +83,7 @@ export default function Features() {
                 {/* Phone Mockup */}
                 <div className="relative z-10 w-[160px] aspect-[9/19] bg-gray-900 rounded-[2rem] border-4 border-gray-900 overflow-hidden shadow-xl transition-transform duration-500 group-hover:scale-105">
                    <img 
-                      src="/screenshots/customer_menu_mobile.png" 
+                      src={customerScreenshots[0]} 
                       alt="Mobile Menu Interface" 
                       className="w-full h-full object-cover rounded-[1.8rem]"
                     />
@@ -144,8 +166,27 @@ export default function Features() {
           <button className="absolute top-4 right-4 text-white/70 hover:text-white p-2">
             <X className="w-8 h-8" />
           </button>
-          <div className="relative max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-             <img src="/screenshots/customer_menu_mobile.png" alt="Customer App Full" className="max-h-[85vh] w-auto rounded-3xl shadow-2xl" />
+          
+          <div className="relative w-full max-w-7xl flex items-center justify-center" onClick={e => e.stopPropagation()}>
+             <img 
+               src={customerScreenshots[activeCustomerSlide]} 
+               alt={`Customer View ${activeCustomerSlide + 1}`} 
+               className="max-h-[85vh] w-auto rounded-3xl shadow-2xl" 
+             />
+
+             <button onClick={prevCustomerSlide} className="absolute left-2 md:left-4 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition">
+                <ChevronLeft className="w-8 h-8" />
+             </button>
+             <button onClick={nextCustomerSlide} className="absolute right-2 md:right-4 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition">
+                <ChevronRight className="w-8 h-8" />
+             </button>
+
+             {/* Dots */}
+             <div className="absolute -bottom-12 left-0 right-0 flex justify-center gap-2">
+               {customerScreenshots.map((_, i) => (
+                 <div key={i} className={`w-2 h-2 rounded-full ${i === activeCustomerSlide ? 'bg-white' : 'bg-white/30'}`} />
+               ))}
+             </div>
           </div>
         </div>
       )}

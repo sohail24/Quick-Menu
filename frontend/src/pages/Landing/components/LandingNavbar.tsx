@@ -30,7 +30,7 @@ export default function LandingNavbar() {
       }`}
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
-        <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer" onClick={() => window.scrollTo(0,0)}>
+        <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           QuickMenu
         </div>
 
