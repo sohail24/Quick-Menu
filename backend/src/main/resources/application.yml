@@ -68,6 +68,8 @@ websocket:
 app:
   uploads-dir: ./uploads
   base-url: http://localhost:8080
+  cors:
+    allowed-origins: http://localhost:5173
 
 # Demo data configuration
 demo:
