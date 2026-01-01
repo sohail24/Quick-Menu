@@ -73,11 +73,15 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        // Enforce specific sorting: Active > Completed, then by placedAt DESC
-        // We use unsorted PageRequest because the @Query in repository handles the order
-        Pageable pageable = PageRequest.of(page, size);
+        // Enforce specific sorting: Active > Completed (via statusPriority formula), then by placedAt DESC
+        java.util.List<Sort.Order> orders = new java.util.ArrayList<>();
+        orders.add(new Sort.Order(Sort.Direction.ASC, "statusPriority"));
+        orders.add(new Sort.Order(Sort.Direction.DESC, "placedAt"));
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by(orders));
 
-        Page<Order> p = orderRepository.findByFilters(restaurantId, status, startDate, endDate, pageable);
+        org.springframework.data.jpa.domain.Specification<Order> spec = com.quickmenu.orders.repo.OrderSpecification.withFilters(restaurantId, status, startDate, endDate);
+        Page<Order> p = orderRepository.findAll(spec, pageable);
 
         Page<OrderDto.OrderResponse> dtoPage = p.map(OrderMapper::toResponse);
         return ResponseEntity.ok(dtoPage);
