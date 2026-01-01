@@ -1,0 +1,357 @@
+{
+  "info": {
+    "name": "E-Menu API",
+    "_postman_id": "e-menu-collection-2025-001",
+    "description": "Postman collection matching the E-Menu OpenAPI (v1.0.0). Set {{API_URL}} and use Login to set {{TOKEN}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup (Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Owner Name\",\n  \"email\": \"owner@example.com\",\n  \"password\": \"P@ssw0rd\",\n  \"restaurantName\": \"My Test Restaurant\"\n}"
+            },
+            "url": { "raw": "{{API_URL}}/api/auth/signup", "host": ["{{API_URL}}"], "path": ["api", "auth", "signup"] }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"P@ssw0rd\"\n}"
+            },
+            "url": { "raw": "{{API_URL}}/api/auth/login", "host": ["{{API_URL}}"], "path": ["api", "auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json && json.token) {",
+                  "    pm.environment.set('TOKEN', json.token);",
+                  "    console.log('TOKEN set');",
+                  "  } else if (json && json.tokenType && json.accessToken) {",
+                  "    pm.environment.set('TOKEN', json.accessToken);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Restaurants & Tables",
+      "item": [
+        {
+          "name": "Create Restaurant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Central Sushi\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"currency\": \"INR\"\n}"
+            },
+            "url": { "raw": "{{API_URL}}/api/restaurants", "host": ["{{API_URL}}"], "path": ["api", "restaurants"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json && json.id) { pm.environment.set('RESTAURANT_ID', json.id); }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Table (generate QR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"name\": \"Table 1\" }" },
+            "url": {
+              "raw": "{{API_URL}}/api/restaurants/{{RESTAURANT_ID}}/tables",
+              "host": ["{{API_URL}}"],
+              "path": ["api", "restaurants", "{{RESTAURANT_ID}}", "tables"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json && json.id) pm.environment.set('TABLE_ID', json.id);",
+                  "  if (json && json.qrUrl) pm.environment.set('TABLE_QR', json.qrUrl);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Tables",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": {
+              "raw": "{{API_URL}}/api/restaurants/{{RESTAURANT_ID}}/tables",
+              "host": ["{{API_URL}}"],
+              "path": ["api", "restaurants", "{{RESTAURANT_ID}}", "tables"]
+            }
+          }
+        },
+        {
+          "name": "Get Restaurant (public)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{API_URL}}/api/restaurants/{{RESTAURANT_ID}}",
+              "host": ["{{API_URL}}"],
+              "path": ["api", "restaurants", "{{RESTAURANT_ID}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Menu Management",
+      "item": [
+        {
+          "name": "Get Public Menu",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{API_URL}}/api/{{RESTAURANT_ID}}/menu", "host": ["{{API_URL}}"], "path": ["api", "{{RESTAURANT_ID}}", "menu"] }
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"name\": \"Starters\", \"orderIndex\": 1 }" },
+            "url": { "raw": "{{API_URL}}/api/{{RESTAURANT_ID}}/categories", "host": ["{{API_URL}}"], "path": ["api", "{{RESTAURANT_ID}}", "categories"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json && json.id) pm.environment.set('CATEGORY_ID', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Dish (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Paneer Tikka", "type": "text" },
+                { "key": "description", "value": "Spicy paneer kebab", "type": "text" },
+                { "key": "price", "value": "229", "type": "text" },
+                { "key": "categoryId", "value": "{{CATEGORY_ID}}", "type": "text" },
+                { "key": "image", "type": "file", "src": "" }
+              ]
+            },
+            "url": { "raw": "{{API_URL}}/api/{{RESTAURANT_ID}}/dishes", "host": ["{{API_URL}}"], "path": ["api", "{{RESTAURANT_ID}}", "dishes"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json && json.id) pm.environment.set('DISH_ID', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Dish (patch)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"price\": 249, \"isAvailable\": true }" },
+            "url": { "raw": "{{API_URL}}/api/{{RESTAURANT_ID}}/dishes/{{DISH_ID}}", "host": ["{{API_URL}}"], "path": ["api", "{{RESTAURANT_ID}}", "dishes", "{{DISH_ID}}"] }
+          }
+        },
+        {
+          "name": "Toggle Dish Availability",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"isAvailable\": false }" },
+            "url": { "raw": "{{API_URL}}/api/{{RESTAURANT_ID}}/dishes/{{DISH_ID}}/availability", "host": ["{{API_URL}}"], "path": ["api", "{{RESTAURANT_ID}}", "dishes", "{{DISH_ID}}", "availability"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders & Bell",
+      "item": [
+        {
+          "name": "Place Order (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tableId\": \"{{TABLE_ID}}\",\n  \"customerNote\": \"No onions please\",\n  \"items\": [\n    { \"dishId\": \"{{DISH_ID}}\", \"quantity\": 2 }\n  ]\n}"
+            },
+            "url": { "raw": "{{API_URL}}/api/{{RESTAURANT_ID}}/orders", "host": ["{{API_URL}}"], "path": ["api", "{{RESTAURANT_ID}}", "orders"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json && json.id) pm.environment.set('ORDER_ID', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Orders (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{API_URL}}/api/{{RESTAURANT_ID}}/orders", "host": ["{{API_URL}}"], "path": ["api", "{{RESTAURANT_ID}}", "orders"] }
+          }
+        },
+        {
+          "name": "Get Order Details",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{API_URL}}/api/{{RESTAURANT_ID}}/orders/{{ORDER_ID}}", "host": ["{{API_URL}}"], "path": ["api", "{{RESTAURANT_ID}}", "orders", "{{ORDER_ID}}"] }
+          }
+        },
+        {
+          "name": "Update Order Status (Staff)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"status\": \"IN_PROGRESS\" }" },
+            "url": { "raw": "{{API_URL}}/api/{{RESTAURANT_ID}}/orders/{{ORDER_ID}}", "host": ["{{API_URL}}"], "path": ["api", "{{RESTAURANT_ID}}", "orders", "{{ORDER_ID}}"] }
+          }
+        },
+        {
+          "name": "Ring Bell (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"message\": \"Please send water\" }" },
+            "url": {
+              "raw": "{{API_URL}}/api/{{RESTAURANT_ID}}/tables/{{TABLE_ID}}/bell",
+              "host": ["{{API_URL}}"],
+              "path": ["api", "{{RESTAURANT_ID}}", "tables", "{{TABLE_ID}}", "bell"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Uploads & Admin",
+      "item": [
+        {
+          "name": "Upload Image (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": { "raw": "{{API_URL}}/api/uploads", "host": ["{{API_URL}}"], "path": ["api", "uploads"] }
+          }
+        },
+        {
+          "name": "Admin Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": {
+              "raw": "{{API_URL}}/api/admin/stats?restaurantId={{RESTAURANT_ID}}",
+              "host": ["{{API_URL}}"],
+              "path": ["api", "admin", "stats"],
+              "query": [{ "key": "restaurantId", "value": "{{RESTAURANT_ID}}" }]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "API_URL", "value": "http://localhost:8080" },
+    { "key": "TOKEN", "value": "" },
+    { "key": "RESTAURANT_ID", "value": "" },
+    { "key": "TABLE_ID", "value": "" },
+    { "key": "CATEGORY_ID", "value": "" },
+    { "key": "DISH_ID", "value": "" },
+    { "key": "ORDER_ID", "value": "" }
+  ]
+}
