@@ -99,7 +99,12 @@ public class AuthController {
                     resetTokens.put(token, request.getEmail());
                     
                     // Send email
-                    emailService.sendPasswordResetEmail(request.getEmail(), token);
+                    try {
+                        emailService.sendPasswordResetEmail(request.getEmail(), token);
+                    } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(Map.of("message", "Failed to send reset email. Please check your configuration or try again later."));
+                    }
                     
                     return ResponseEntity.ok(Map.of(
                             "message", "If an account exists with that email, we have sent a password reset code."

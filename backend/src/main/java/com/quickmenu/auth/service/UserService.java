@@ -36,7 +36,7 @@ public class UserService {
                 .email(signUpRequest.getEmail())
                 .passwordHash(passwordEncoder.encode(signUpRequest.getPassword()))
                 .role(roleMap.get(signUpRequest.getRole() != null ? signUpRequest.getRole().toUpperCase() : "ADMIN"))
-                .enabled(signUpRequest.getEnable() != null ? signUpRequest.getEnable() : false) // by default disabled
+                .enabled(signUpRequest.getEnable() != null ? signUpRequest.getEnable() : true) // by default enabled
                 .build();
         return userRepository.save(user);
     }

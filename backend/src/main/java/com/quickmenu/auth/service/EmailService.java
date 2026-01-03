@@ -2,11 +2,13 @@ package com.quickmenu.auth.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class EmailService {
 
     private final JavaMailSender mailSender;
@@ -17,6 +19,7 @@ public class EmailService {
 
     public void sendPasswordResetEmail(String toEmail, String resetCode) {
         try {
+            log.info("Attempting to send password reset email to: {}", toEmail);
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -27,7 +30,9 @@ public class EmailService {
             helper.setText(htmlContent, true);
 
             mailSender.send(message);
-        } catch (MessagingException e) {
+            log.info("Password reset email sent successfully to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to: {}. Error: {}", toEmail, e.getMessage());
             throw new RuntimeException("Failed to send email", e);
         }
     }
