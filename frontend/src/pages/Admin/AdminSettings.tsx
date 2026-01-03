@@ -105,18 +105,14 @@ export default function AdminSettings() {
         <div className="space-y-6">
           <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[40px] p-8 text-white shadow-xl shadow-blue-200">
             <h3 className="text-lg font-bold mb-2">Current Plan</h3>
-            <div className="text-4xl font-black mb-4">Enterprise</div>
+            <div className="text-4xl font-black mb-4">Free</div>
             <p className="text-blue-100 text-sm mb-6 leading-relaxed">
-              You are on the highest tier plan with unlimited restaurants, staff members, and priority support.
+              You are on the standard free plan. Enjoy all the core features to manage your restaurant and menus.
             </p>
             <div className="space-y-3">
                <div className="flex items-center gap-2 text-sm bg-white/10 p-3 rounded-2xl">
                  <CheckCircle className="w-4 h-4 text-blue-300" />
-                 <span>Unlimited Restaurants</span>
-               </div>
-               <div className="flex items-center gap-2 text-sm bg-white/10 p-3 rounded-2xl">
-                 <CheckCircle className="w-4 h-4 text-blue-300" />
-                 <span>24/7 Priority Support</span>
+                 <span>Community Support</span>
                </div>
             </div>
           </div>

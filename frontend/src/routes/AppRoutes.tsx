@@ -32,7 +32,7 @@ import PublicOnlyRoute from '../components/PublicOnlyRoute';
 
 export default function AppRoutes() {
   const location = useLocation();
-  // Hide main navbar on Landing Page, and optionally Login/Signup if desired
+  // Hide main navbar on Landing Page, but show on all others including Auth
   const hideNavBar = location.pathname === '/';
 
   return (

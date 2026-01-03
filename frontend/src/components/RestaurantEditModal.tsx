@@ -66,23 +66,22 @@ export default function RestaurantEditModal({
           {/* Row 2: Address + Owner User ID */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700">Address</label>
+              <label className="block text-gray-700 font-medium mb-1">Address</label>
               <input
                 value={form.address ?? ''}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
                 placeholder="Street, city, country"
-                className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="mt-1 p-2 border border-gray-200 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
               />
             </div>
             <div>
-              <label className="block text-gray-700">
-                Owner User ID {editing ? '(Readonly once assigned)' : ''}
+              <label className="block text-gray-700 font-medium mb-1">
+                Owner User ID (Readonly)
               </label>
               <input
                 value={form.ownerUserId ?? ''}
-                onChange={(e) => setForm({ ...form, ownerUserId: e.target.value || null })}
-                className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                disabled={!!editing}
+                disabled
+                className="mt-1 p-2 border border-gray-100 bg-gray-50 text-gray-400 w-full cursor-not-allowed"
               />
             </div>
           </div>
@@ -90,22 +89,29 @@ export default function RestaurantEditModal({
           {/* Row 3: Timezone + Currency */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700">Timezone</label>
-              <input
+              <label className="block text-gray-700 font-medium mb-1">Timezone</label>
+              <select
                 value={form.timezone}
                 onChange={(e) => setForm({ ...form, timezone: e.target.value })}
-                placeholder="e.g. Asia/Kolkata"
-                className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
+                className="mt-1 p-2 border border-gray-200 rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              >
+                <option value="Asia/Kolkata">India (Asia/Kolkata)</option>
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">USA Eastern (New York)</option>
+                <option value="America/Los_Angeles">USA Pacific (Los Angeles)</option>
+                <option value="Europe/London">UK (London)</option>
+              </select>
             </div>
             <div>
-              <label className="block text-gray-700">Currency</label>
-              <input
+              <label className="block text-gray-700 font-medium mb-1">Currency</label>
+              <select
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
-                placeholder="e.g. INR"
-                className="mt-1 p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
+                className="mt-1 p-2 border border-gray-200 rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              >
+                <option value="INR">INR (₹)</option>
+                <option value="USD">USD ($)</option>
+              </select>
             </div>
           </div>
 
