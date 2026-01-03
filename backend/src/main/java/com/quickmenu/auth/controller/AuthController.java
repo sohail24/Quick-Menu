@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -47,7 +48,7 @@ public class AuthController {
         this.emailService = emailService;
     }
 
-    @PostMapping("/signup")
+    @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Signup Endpoint", description = "Used for registering a new User (ADMIN/STAFF/CUSTOMER")
     public ResponseEntity<?> register(@Valid @RequestBody SignUpRequest request) {
         User created = userService.registerUser(request);
@@ -55,7 +56,7 @@ public class AuthController {
         return ResponseEntity.status(201).body(new AuthResponse(token, "Bearer", tokenProvider.parseClaims(token).getBody().getExpiration().getTime()));
     }
 
-    @PostMapping("/login")
+    @PostMapping(value = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Login Endpoint", description = "Used for logging existing User to the application (ADMIN/STAFF/CUSTOMER)")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
@@ -80,7 +81,7 @@ public class AuthController {
         return ResponseEntity.ok(new AuthResponse(token, "Bearer", expiresIn));
     }
 
-    @PostMapping("/change-password")
+    @PostMapping(value = "/change-password", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Change Password", description = "Allows logged in users to change their password")
     public ResponseEntity<?> changePassword(Authentication auth, @Valid @RequestBody ChangePasswordRequest request) {
         if (auth == null || !auth.isAuthenticated()) {
@@ -90,7 +91,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
     }
 
-    @PostMapping("/forgot-password")
+    @PostMapping(value = "/forgot-password", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Forgot Password", description = "Initiates password reset flow (Sends Email)")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         return userService.findByEmail(request.getEmail())
@@ -115,7 +116,7 @@ public class AuthController {
                 );
     }
 
-    @PostMapping("/reset-password")
+    @PostMapping(value = "/reset-password", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Reset Password", description = "Performs password reset using token")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         String email = resetTokens.get(request.getToken());
