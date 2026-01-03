@@ -19,6 +19,7 @@ public interface TableRepository extends JpaRepository<TableEntity, String> {
     Page<TableEntity> findByRestaurantId(String restaurantId, Pageable pageable);
 
     Optional<TableEntity> findByRestaurantIdAndName(String restaurantId, String name);
+    void deleteAllByIsDemoTrue();
 
     // find tables that are not occupied for a restaurant
     List<TableEntity> findByRestaurantIdAndOccupiedFalse(String restaurantId);

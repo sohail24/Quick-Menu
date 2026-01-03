@@ -14,5 +14,6 @@ public interface CategoryRepository extends JpaRepository<Category, String> {
     // Pageable variant (order by orderIndex)
     Page<Category> findByRestaurantId(String restaurantId, Pageable pageable);
 
-    <T> Optional<T> findByRestaurantIdAndName(String restaurantId, String name);
+    Optional<Category> findByRestaurantIdAndName(String restaurantId, String name);
+    void deleteAllByIsDemoTrue();
 }

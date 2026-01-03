@@ -11,10 +11,10 @@ import java.util.List;
 public interface DishRepository extends JpaRepository<Dish, String>, JpaSpecificationExecutor<Dish> {
     List<Dish> findByRestaurantIdAndIsAvailableTrue(String restaurantId);
     List<Dish> findByRestaurantId(String restaurantId);
+    void deleteAllByIsDemoTrue();
 
     // Pageable variants
     Page<Dish> findByRestaurantId(String restaurantId, Pageable pageable);
     Page<Dish> findByRestaurantIdAndIsAvailableTrue(String restaurantId, Pageable pageable);
-
-    int countByRestaurantId(String restaurantId);
+    long countByRestaurantId(String restaurantId);
 }

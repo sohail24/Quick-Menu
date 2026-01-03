@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 public interface OrderRepository extends JpaRepository<Order, String>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Order> {
     List<Order> findByRestaurantId(String restaurantId);
     List<Order> findByRestaurantIdAndStatus(String restaurantId, Order.Status status);
+    void deleteAllByIsDemoTrue();
     // Pageable variants
     Page<Order> findByRestaurantId(String restaurantId, Pageable pageable);
     Page<Order> findByRestaurantIdAndStatus(String restaurantId, Order.Status status, Pageable pageable);

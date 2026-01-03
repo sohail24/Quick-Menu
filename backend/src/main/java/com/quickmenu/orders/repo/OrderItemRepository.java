@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
     List<OrderItem> findByOrder_Id(String orderId);
+    void deleteAllByOrderIsDemoTrue();
 
     @Query("""
       SELECT oi.dish.id AS dishId,
