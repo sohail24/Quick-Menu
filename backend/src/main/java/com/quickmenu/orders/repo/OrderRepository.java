@@ -4,7 +4,9 @@ import com.quickmenu.orders.model.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
@@ -14,6 +16,10 @@ import java.math.BigDecimal;
 public interface OrderRepository extends JpaRepository<Order, String>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Order> {
     List<Order> findByRestaurantId(String restaurantId);
     List<Order> findByRestaurantIdAndStatus(String restaurantId, Order.Status status);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Order o WHERE o.isDemo = true")
     void deleteAllByIsDemoTrue();
     // Pageable variants
     Page<Order> findByRestaurantId(String restaurantId, Pageable pageable);

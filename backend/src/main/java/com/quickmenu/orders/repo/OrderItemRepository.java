@@ -2,14 +2,19 @@ package com.quickmenu.orders.repo;
 
 import com.quickmenu.orders.model.OrderItem;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
     List<OrderItem> findByOrder_Id(String orderId);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM OrderItem oi WHERE oi.order.isDemo = true")
     void deleteAllByOrderIsDemoTrue();
 
     @Query("""
