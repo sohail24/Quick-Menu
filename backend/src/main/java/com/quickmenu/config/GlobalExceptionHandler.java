@@ -2,6 +2,7 @@ package com.quickmenu.config;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -11,6 +12,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +45,12 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.FORBIDDEN, "Access is denied");
     }
 
+    // @ExceptionHandler(NoResourceFoundException.class)
+    // public ResponseEntity<?> handleNoResourceFound(NoResourceFoundException ex) {
+    //     // Return 404 without a stack trace to reduce log noise for missing images/favicons
+    //     return buildError(HttpStatus.NOT_FOUND, "Resource not found: " + ex.getResourcePath());
+    // }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleAll(Exception ex) {
         ex.printStackTrace(); // log to console; replace with logger in prod
@@ -71,6 +79,9 @@ public class GlobalExceptionHandler {
         body.put("status", status.value());
         body.put("error", status.getReasonPhrase());
         body.put("message", message);
-        return new ResponseEntity<>(body, new HttpHeaders(), status);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return new ResponseEntity<>(body, headers, status);
     }
 }

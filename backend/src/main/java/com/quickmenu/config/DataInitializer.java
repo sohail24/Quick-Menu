@@ -15,15 +15,11 @@ import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.model.OrderItem;
 import com.quickmenu.orders.repo.OrderRepository;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 
@@ -37,6 +33,10 @@ public class DataInitializer implements CommandLineRunner {
     private final DishRepository dishRepo;
     private final PasswordEncoder passwordEncoder;
     private final OrderRepository orderRepo;
+    private final com.quickmenu.orders.repo.OrderItemRepository orderItemRepo;
+
+    @org.springframework.beans.factory.annotation.Value("${app.base-url:http://localhost:8080}")
+    private String baseUrl;
 
     public DataInitializer(UserRepository userRepo,
                            RestaurantRepository restaurantRepo,
@@ -44,7 +44,8 @@ public class DataInitializer implements CommandLineRunner {
                            CategoryRepository categoryRepo,
                            DishRepository dishRepo,
                            PasswordEncoder passwordEncoder,
-                           OrderRepository orderRepo) {
+                           OrderRepository orderRepo,
+                           com.quickmenu.orders.repo.OrderItemRepository orderItemRepo) {
         this.userRepo = userRepo;
         this.restaurantRepo = restaurantRepo;
         this.tableRepo = tableRepo;
@@ -52,15 +53,38 @@ public class DataInitializer implements CommandLineRunner {
         this.dishRepo = dishRepo;
         this.passwordEncoder = passwordEncoder;
         this.orderRepo = orderRepo;
+        this.orderItemRepo = orderItemRepo;
     }
 
     @Override
     public void run(String... args) throws Exception {
-        // ---------- Users ----------
-        seedUsers();
+        // Startup logic: Only perform a full reset/seed if the demo admin is missing (first-time setup).
+        if (!userRepo.existsByEmail("admin@quickmenu.local")) {
+            System.out.println("No demo admin found. Performing initial demo data seed...");
+            resetDemoData();
+        } else {
+            System.out.println("Demo data already exists. Skipping startup seed.");
+        }
+    }
 
-        // ---------- Demo restaurant + table + categories + dishes ----------
+    @Transactional
+    public void resetDemoData() {
+        System.out.println("Starting full demo data reset (Truncate & Re-seed)...");
+
+        // 1. Truncate demo records in reverse dependency order
+        orderItemRepo.deleteAllByOrderIsDemoTrue();
+        orderRepo.deleteAllByIsDemoTrue();
+        dishRepo.deleteAllByIsDemoTrue();
+        categoryRepo.deleteAllByIsDemoTrue();
+        tableRepo.deleteAllByIsDemoTrue();
+        restaurantRepo.deleteAllByIsDemoTrue();
+        userRepo.deleteAllByIsDemoTrue();
+
+        // 2. Re-seed demo data
+        seedUsers();
         seedDemoRestaurant();
+
+        System.out.println("Demo data reset completed successfully.");
     }
 
     private void seedUsers() {
@@ -96,7 +120,7 @@ public class DataInitializer implements CommandLineRunner {
                     .description("This is a demo/test restaurant for the quick menu.")
                     .address("Pune, India")
                     .planId("Free")
-                    .bannerUrl("http://localhost:8080/uploads/Restaurant_Demo_Bistro.png")
+                    .bannerUrl("https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop")
                     .timezone("Asia/Kolkata")
                     .currency("INR")
                     .ownerUserId("admin@quickmenu.local") // admin is the owner
@@ -174,7 +198,7 @@ public class DataInitializer implements CommandLineRunner {
                     .name("Paneer Tikka")
                     .description("Grilled paneer with spices.")
                     .price(BigDecimal.valueOf(229.0))
-                    .imageUrl("http://localhost:8080/uploads/Dish_Paneer_Tikka.png")
+                    .imageUrl("https://plus.unsplash.com/premium_vector-1713201017274-e9e97d783e75?q=80&w=2128&auto=format&fit=crop")
                     .isAvailable(true)
                     .prepTimeMins(10)
                     .tags("Spicy,Tandoori,Soft,Paneer")
@@ -188,7 +212,7 @@ public class DataInitializer implements CommandLineRunner {
                     .name("Veg Spring Roll")
                     .description("Crispy rolls with veg filling.")
                     .price(BigDecimal.valueOf(149.0))
-                    .imageUrl("http://localhost:8080/uploads/Dish_Spring_Roll.png")
+                    .imageUrl("https://plus.unsplash.com/premium_vector-1713201017274-e9e97d783e75?q=80&w=2128&auto=format&fit=crop")
                     .isAvailable(true)
                     .prepTimeMins(8)
                     .tags("Crispy,Fried,Onions,Cabbage,DeepFried")
@@ -202,7 +226,7 @@ public class DataInitializer implements CommandLineRunner {
                     .name("Butter Chicken")
                     .description("Creamy tomato gravy with tender chicken.")
                     .price(BigDecimal.valueOf(299.0))
-                    .imageUrl("http://localhost:8080/uploads/Dish_Butter_Chicken.png")
+                    .imageUrl("https://plus.unsplash.com/premium_vector-1713201017274-e9e97d783e75?q=80&w=2128&auto=format&fit=crop")
                     .isAvailable(true)
                     .prepTimeMins(20)
                     .tags("Creamy,Tomatao,Butter,Chicken,ButterChicken")
@@ -216,7 +240,7 @@ public class DataInitializer implements CommandLineRunner {
                     .name("Jeera Rice")
                     .description("Aromatic cumin rice.")
                     .price(BigDecimal.valueOf(99.0))
-                    .imageUrl("http://localhost:8080/uploads/Dish_Jeera_Rice.png")
+                    .imageUrl("https://plus.unsplash.com/premium_vector-1713201017274-e9e97d783e75?q=80&w=2128&auto=format&fit=crop")
                     .isAvailable(true)
                     .prepTimeMins(5)
                     .tags("Plain,Jeera,Rice")

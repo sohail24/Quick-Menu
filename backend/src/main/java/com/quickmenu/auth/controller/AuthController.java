@@ -1,9 +1,11 @@
 package com.quickmenu.auth.controller;
+import lombok.extern.slf4j.Slf4j;
 
 import com.quickmenu.auth.dto.AuthResponse;
 import com.quickmenu.auth.dto.LoginRequest;
 import com.quickmenu.auth.dto.SignUpRequest;
 import com.quickmenu.auth.model.User;
+import com.quickmenu.auth.service.EmailSender;
 import com.quickmenu.auth.service.UserService;
 import com.quickmenu.auth.security.CustomUserDetails;
 import com.quickmenu.auth.security.JwtTokenProvider;
@@ -12,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,12 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Endpoints for Authentication")
+@Slf4j
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final UserService userService;
-    private final com.quickmenu.auth.service.EmailService emailService;
+    private final EmailSender emailSender;
 
     // Simple in-memory storage for reset tokens (email -> token)
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
@@ -40,14 +44,14 @@ public class AuthController {
     public AuthController(AuthenticationManager authenticationManager,
                           JwtTokenProvider tokenProvider,
                           UserService userService,
-                          com.quickmenu.auth.service.EmailService emailService) {
+                          EmailSender emailSender) {
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
         this.userService = userService;
-        this.emailService = emailService;
+        this.emailSender = emailSender;
     }
 
-    @PostMapping("/signup")
+    @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Signup Endpoint", description = "Used for registering a new User (ADMIN/STAFF/CUSTOMER")
     public ResponseEntity<?> register(@Valid @RequestBody SignUpRequest request) {
         User created = userService.registerUser(request);
@@ -55,7 +59,7 @@ public class AuthController {
         return ResponseEntity.status(201).body(new AuthResponse(token, "Bearer", tokenProvider.parseClaims(token).getBody().getExpiration().getTime()));
     }
 
-    @PostMapping("/login")
+    @PostMapping(value = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Login Endpoint", description = "Used for logging existing User to the application (ADMIN/STAFF/CUSTOMER)")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
@@ -80,7 +84,7 @@ public class AuthController {
         return ResponseEntity.ok(new AuthResponse(token, "Bearer", expiresIn));
     }
 
-    @PostMapping("/change-password")
+    @PostMapping(value = "/change-password", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Change Password", description = "Allows logged in users to change their password")
     public ResponseEntity<?> changePassword(Authentication auth, @Valid @RequestBody ChangePasswordRequest request) {
         if (auth == null || !auth.isAuthenticated()) {
@@ -90,7 +94,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
     }
 
-    @PostMapping("/forgot-password")
+    @PostMapping(value = "/forgot-password", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Forgot Password", description = "Initiates password reset flow (Sends Email)")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         return userService.findByEmail(request.getEmail())
@@ -99,18 +103,20 @@ public class AuthController {
                     resetTokens.put(token, request.getEmail());
                     
                     // Send email
-                    emailService.sendPasswordResetEmail(request.getEmail(), token);
-                    
-                    return ResponseEntity.ok(Map.of(
-                            "message", "If an account exists with that email, we have sent a password reset code."
-                    ));
+                    try {
+                        emailSender.sendPasswordResetEmail(user.getEmail(), token);
+                        return ResponseEntity.ok(Map.of("message", "Reset code sent to your email"));
+                    } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(Map.of("message", "Failed to send reset email. Please try again later."));
+                    }
                 })
                 .orElseThrow(
                         ()-> new IllegalArgumentException("Email does not exist, Please provide correct email.")
                 );
     }
 
-    @PostMapping("/reset-password")
+    @PostMapping(value = "/reset-password", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Reset Password", description = "Performs password reset using token")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         String email = resetTokens.get(request.getToken());

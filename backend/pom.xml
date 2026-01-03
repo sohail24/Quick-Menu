@@ -134,10 +134,16 @@
 			<version>3.5.1</version>
 		</dependency>
 
-		<!-- Spring boot starter mail-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
+		<!-- SendGrid Java SDK -->
+		<dependency>
+			<groupId>com.sendgrid</groupId>
+			<artifactId>sendgrid-java</artifactId>
+			<version>4.10.3</version>
 		</dependency>
 
 	</dependencies>

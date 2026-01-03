@@ -5,8 +5,10 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -19,6 +21,11 @@ public interface TableRepository extends JpaRepository<TableEntity, String> {
     Page<TableEntity> findByRestaurantId(String restaurantId, Pageable pageable);
 
     Optional<TableEntity> findByRestaurantIdAndName(String restaurantId, String name);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM TableEntity t WHERE t.isDemo = true")
+    void deleteAllByIsDemoTrue();
 
     // find tables that are not occupied for a restaurant
     List<TableEntity> findByRestaurantIdAndOccupiedFalse(String restaurantId);

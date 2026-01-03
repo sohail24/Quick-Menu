@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Where;
+import org.hibernate.annotations.Formula;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -47,6 +48,9 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Status status = Status.PENDING;
+
+    @Formula("(CASE WHEN status IN ('PLACED','PENDING','IN_PROGRESS','PREPARING','READY') THEN 0 ELSE 1 END)")
+    private int statusPriority;
 
     private BigDecimal totalAmount;
 

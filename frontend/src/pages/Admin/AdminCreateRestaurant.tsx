@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import QRCode from 'qrcode';
 import ImageUploader from '../../components/ImageUploader';
+import { useAuthStore } from '../../app/store';
 
 type CreateReq = {
   name: string;
@@ -27,7 +28,8 @@ export default function AdminCreateRestaurant() {
   const [planId, setPlanId] = useState('free');
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [address, setAddress] = useState('');
-  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
+  const { user } = useAuthStore();
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(user?.email || null);
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -131,11 +133,11 @@ export default function AdminCreateRestaurant() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Owner User ID (optional)</label>
+              <label className="block text-sm font-medium text-gray-500">Owner User ID (Read-only)</label>
               <input
                 value={ownerUserId ?? ''}
-                onChange={(e) => setOwnerUserId(e.target.value || null)}
-                className="mt-1 p-2 border rounded w-full"
+                disabled
+                className="mt-1 p-2 border rounded w-full bg-gray-100 cursor-not-allowed text-gray-500"
               />
             </div>
 
