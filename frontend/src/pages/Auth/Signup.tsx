@@ -33,17 +33,16 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] lg:h-[calc(100vh-64px)] lg:overflow-hidden flex items-center justify-center p-6 bg-white selection:bg-blue-50 relative">
-      {/* Background patterns */}
-      <div className="absolute top-0 right-0 -z-10 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-3xl opacity-60 translate-x-1/3 -translate-y-1/4 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 -z-10 w-[500px] h-[500px] bg-indigo-50/50 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/4 pointer-events-none"></div>
+    <div className="min-h-[calc(100dvh-64px)] lg:h-[calc(100dvh-64px)] lg:overflow-hidden flex items-center justify-center p-6 bg-white selection:bg-blue-50 relative overflow-x-hidden">
+      {/* Background patterns clipped inside a container */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-3xl opacity-60 translate-x-1/3 -translate-y-1/4"></div>
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-50/50 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/4"></div>
+      </div>
 
       <div className="w-full max-sm:max-w-xs max-w-sm relative z-10 py-4">
-        <div className="text-center mb-6 sm:mb-8">
-          <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:scale-105 transition-transform inline-block">
-            QuickMenu
-          </Link>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mt-6 mb-2">Create account.</h1>
+        <div className="text-center sm:text-left mb-8">
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Create account.</h1>
           <p className="text-sm text-gray-400 font-medium tracking-tight">No credit card required. Cancel anytime.</p>
         </div>
 
