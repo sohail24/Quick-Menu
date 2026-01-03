@@ -29,7 +29,7 @@ export default function ImageUploader({
   onError,
   onProgress,
   autoUpload = true,
-  uploadUrl = '/api/uploads',
+  uploadUrl = 'api/uploads',
   maxSizeBytes = 10 * 1024 * 1024,
   accept = 'image/*',
   fieldName = 'file',
