@@ -189,6 +189,15 @@ public class DataInitializer implements CommandLineRunner {
                         .isDemo(true)
                         .build()));
 
+        Category combo = (Category) categoryRepo.findByRestaurantIdAndName(r.getId(), "Starters")
+                .orElseGet(() -> categoryRepo.save(Category.builder()
+                        .restaurantId(finalR.getId())
+                        .name("Starters")
+                        .orderIndex(1)
+                        .createdAt(Instant.now())
+                        .isDemo(true)
+                        .build()));
+
         // Seed dishes if not exist
         if (dishRepo.countByRestaurantId(r.getId()) == 0) {
             List<Dish> dishes = new ArrayList<>();
@@ -244,6 +253,20 @@ public class DataInitializer implements CommandLineRunner {
                     .isAvailable(true)
                     .prepTimeMins(5)
                     .tags("Plain,Jeera,Rice,Cumin")
+                    .createdAt(Instant.now())
+                    .isDemo(true)
+                    .build());
+
+            dishes.add(Dish.builder()
+                    .restaurantId(r.getId())
+                    .categoryId(combo.getId())
+                    .name("Jeera Rice with Veg Spring Roll")
+                    .description("Soft jeera rice with crispy veg spring roll for your tastebuds.")
+                    .price(BigDecimal.valueOf(99.0))
+                    .imageUrl("https://res.cloudinary.com/dd0vsg58y/image/upload/v1767463018/xdsvzk98ug1uvws0cwol.png")
+                    .isAvailable(true)
+                    .prepTimeMins(5)
+                    .tags("Cumin,Jeera,Onions,Rice,Fried,SpringRoll")
                     .createdAt(Instant.now())
                     .isDemo(true)
                     .build());
