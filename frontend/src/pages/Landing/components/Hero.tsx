@@ -41,8 +41,8 @@ export default function Hero() {
                   <Button size="lg" className="w-full">Go to Dashboard</Button>
                 </Link>
               ) : (
-                <Link to="/signup" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full">Start Free Trial</Button>
+                <Link to="/login" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full">Try it for free</Button>
                 </Link>
               )}
               <Link to="/menu/demo" className="w-full sm:w-auto">

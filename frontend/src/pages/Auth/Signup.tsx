@@ -33,13 +33,13 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 relative overflow-hidden">
+    <div className="h-screen flex items-center justify-center p-4 bg-gray-50 relative overflow-hidden">
       {/* Background patterns */}
       <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-purple-100/50 rounded-full blur-3xl opacity-50 -translate-y-1/2 -translate-x-1/2"></div>
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-3xl opacity-50 translate-y-1/2 translate-x-1/2"></div>
 
-      <Card className="w-full max-w-md p-8 relative z-10">
-        <div className="text-center mb-8">
+      <Card className="w-full max-w-md p-6 relative z-10">
+        <div className="text-center mb-4">
           <Link to="/" className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent inline-block mb-2">
             QuickMenu
           </Link>
@@ -47,7 +47,7 @@ export default function Signup() {
           <p className="text-sm text-gray-500 mt-1">No credit card required. Cancel anytime.</p>
         </div>
 
-        <form onSubmit={submit} className="space-y-5">
+        <form onSubmit={submit} className="space-y-4">
            <Input
             label="Admin Username"
             value={name}
@@ -76,7 +76,7 @@ export default function Signup() {
             {loading ? 'Creating Account...' : 'Create Account'}
           </Button>
 
-          <div className="text-center text-sm text-gray-500 mt-4">
+          <div className="text-center text-sm text-gray-500 mt-2">
             Already have an account?{' '}
             <Link to="/login" className="text-blue-600 font-medium hover:underline">
               Sign In

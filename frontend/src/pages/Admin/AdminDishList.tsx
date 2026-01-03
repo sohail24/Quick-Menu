@@ -21,10 +21,12 @@ export default function AdminDishList() {
 
   // filters / pagination
   const [searchQ, setSearchQ] = useState('');
+  const [debouncedSearchQ, setDebouncedSearchQ] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(20);
   const [total, setTotal] = useState<number | null>(null);
+  const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // bulk
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -33,6 +35,18 @@ export default function AdminDishList() {
   const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
 
   const navigate = useNavigate();
+
+  // Debounce search
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearchQ(searchQ);
+      setPage(0);
+    }, 300);
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [searchQ]);
 
   useEffect(() => {
     let mounted = true;
@@ -89,12 +103,12 @@ export default function AdminDishList() {
   const queryStr = useMemo(() => {
     const params: string[] = [];
     params.push(`includeUnavailable=true`);
-    if (searchQ) params.push(`search=${encodeURIComponent(searchQ)}`);
+    if (debouncedSearchQ) params.push(`search=${encodeURIComponent(debouncedSearchQ)}`);
     if (categoryFilter) params.push(`categoryId=${encodeURIComponent(categoryFilter)}`);
     params.push(`page=${page}`);
     params.push(`size=${size}`);
     return params.length ? `?${params.join('&')}` : '';
-  }, [searchQ, categoryFilter, page, size]);
+  }, [debouncedSearchQ, categoryFilter, page, size]);
 
   useEffect(() => {
     let mounted = true;
@@ -110,7 +124,7 @@ export default function AdminDishList() {
         const urls = [
           `/api/${selectedRest}/dishes${queryStr}`,
           `/api/restaurants/${selectedRest}/dishes${queryStr}`,
-          `/api/dishes?restaurantId=${selectedRest}${searchQ ? `&search=${encodeURIComponent(searchQ)}` : ''}&includeUnavailable=false&page=${page}&size=${size}`,
+          `/api/dishes?restaurantId=${selectedRest}${debouncedSearchQ ? `&search=${encodeURIComponent(debouncedSearchQ)}` : ''}&includeUnavailable=false&page=${page}&size=${size}`,
         ];
         let ok = false;
         for (const u of urls) {
@@ -145,7 +159,8 @@ export default function AdminDishList() {
     return () => {
       mounted = false;
     };
-  }, [selectedRest, queryStr, page, size, categoryFilter, searchQ]);
+  }, [selectedRest, queryStr, page, size, categoryFilter, debouncedSearchQ]);
+
 
   function toggleSelect(id: string) {
     setSelected((s) => ({ ...s, [id]: !s[id] }));
