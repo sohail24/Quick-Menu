@@ -1,4 +1,5 @@
 package com.quickmenu.auth.controller;
+import lombok.extern.slf4j.Slf4j;
 
 import com.quickmenu.auth.dto.AuthResponse;
 import com.quickmenu.auth.dto.LoginRequest;
@@ -28,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Endpoints for Authentication")
+@Slf4j
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -101,15 +103,12 @@ public class AuthController {
                     
                     // Send email
                     try {
-                        emailService.sendPasswordResetEmail(request.getEmail(), token);
+                        emailService.sendPasswordResetEmail(user.getEmail(), token);
+                        return ResponseEntity.ok(Map.of("message", "Reset code sent to your email"));
                     } catch (Exception e) {
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(Map.of("message", "Failed to send reset email. Please check your configuration or try again later."));
+                                .body(Map.of("message", "Failed to send reset email. Please try again later."));
                     }
-                    
-                    return ResponseEntity.ok(Map.of(
-                            "message", "If an account exists with that email, we have sent a password reset code."
-                    ));
                 })
                 .orElseThrow(
                         ()-> new IllegalArgumentException("Email does not exist, Please provide correct email.")

@@ -19,23 +19,9 @@ spring:
         format_sql: true
     show-sql: false
 
-  mail:
-    host: smtp.gmail.com
-    port: 465
-    username: ${EMAIL_ID}
-    password: ${EMAIL_PASSWORD}
-    properties:
-      mail:
-        debug: true
-        smtp:
-          auth: true
-          ssl:
-            enable: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
-          starttls:
-            enable: false
+  # SendGrid Configuration
+  sendgrid:
+    api-key: ${SENDGRID_API_KEY}
 
 server:
   port: ${PORT:8080}
