@@ -158,11 +158,14 @@ export default function AdminCreateRestaurant() {
               </div>
               <div>
                 <label className="block text-sm">Currency</label>
-                <input
+                <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
                   className="mt-1 p-2 border rounded w-full"
-                />
+                >
+                  <option value="INR">INR (₹)</option>
+                  <option value="USD">USD ($)</option>
+                </select>
               </div>
             </div>
 
