@@ -5,6 +5,7 @@ import com.quickmenu.auth.dto.AuthResponse;
 import com.quickmenu.auth.dto.LoginRequest;
 import com.quickmenu.auth.dto.SignUpRequest;
 import com.quickmenu.auth.model.User;
+import com.quickmenu.auth.service.EmailSender;
 import com.quickmenu.auth.service.UserService;
 import com.quickmenu.auth.security.CustomUserDetails;
 import com.quickmenu.auth.security.JwtTokenProvider;
@@ -35,7 +36,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final UserService userService;
-    private final com.quickmenu.auth.service.EmailService emailService;
+    private final EmailSender emailSender;
 
     // Simple in-memory storage for reset tokens (email -> token)
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
@@ -43,11 +44,11 @@ public class AuthController {
     public AuthController(AuthenticationManager authenticationManager,
                           JwtTokenProvider tokenProvider,
                           UserService userService,
-                          com.quickmenu.auth.service.EmailService emailService) {
+                          EmailSender emailSender) {
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
         this.userService = userService;
-        this.emailService = emailService;
+        this.emailSender = emailSender;
     }
 
     @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -103,7 +104,7 @@ public class AuthController {
                     
                     // Send email
                     try {
-                        emailService.sendPasswordResetEmail(user.getEmail(), token);
+                        emailSender.sendPasswordResetEmail(user.getEmail(), token);
                         return ResponseEntity.ok(Map.of("message", "Reset code sent to your email"));
                     } catch (Exception e) {
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
