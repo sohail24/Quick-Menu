@@ -1,8 +1,6 @@
-// src/components/ImageUploader.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import axios, { CancelTokenSource } from 'axios';
-
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+import api from '../lib/api';
 
 type Props = {
   /** Optional existing image url to show as initial preview */
@@ -85,11 +83,9 @@ export default function ImageUploader({
     cancelRef.current = source;
 
     try {
-      const token = localStorage.getItem('qm_token');
-      const res = await axios.post(baseURL + uploadUrl, fd, {
+      const res = await api.post(uploadUrl, fd, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: token ? `Bearer ${token}` : undefined,
         },
         cancelToken: source.token,
         onUploadProgress: (ev) => {

@@ -1,5 +1,5 @@
 // src/pages/Auth/Login.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../lib/api';
 import { useAuthStore } from '../../app/store';
@@ -7,16 +7,28 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
 
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const setToken = useAuthStore((s) => s.setToken);
   const navigate = useNavigate();
+  const demoRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     await doLogin(email, password);
+  }
+
+  function scrollToDemo() {
+    demoRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function scrollToTop() {
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
 
   async function doLogin(e: string, p: string) {
@@ -45,19 +57,21 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] lg:h-[calc(100vh-64px)] lg:overflow-hidden grid grid-cols-1 lg:grid-cols-2 bg-white relative">
-      {/* Background patterns */}
-      <div className="absolute top-0 right-0 -z-10 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-3xl opacity-60 translate-x-1/3 -translate-y-1/4 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 -z-10 w-[500px] h-[500px] bg-indigo-50/50 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/4 pointer-events-none"></div>
+    <div className="min-h-[calc(100dvh-64px)] lg:h-[calc(100dvh-64px)] lg:overflow-hidden grid grid-cols-1 lg:grid-cols-2 bg-white relative overflow-x-hidden">
+      {/* Background patterns clipped inside a container */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-3xl opacity-60 translate-x-1/3 -translate-y-1/4"></div>
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-50/50 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/4"></div>
+      </div>
 
       {/* Left Column: Login Form */}
-      <div className="flex flex-col items-center justify-center p-6 sm:p-12 lg:p-12 order-1 lg:order-1 relative z-10 min-h-[500px] lg:min-h-0">
+      <div 
+        ref={formRef}
+        className="flex flex-col items-center justify-center p-6 sm:p-12 lg:p-12 order-1 lg:order-1 relative z-10 min-h-[calc(100dvh-64px)] lg:min-h-0"
+      >
         <div className="w-full max-sm:max-w-xs max-w-sm">
-          <div className="mb-8">
-            <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:scale-105 transition-transform inline-block">
-              QuickMenu
-            </Link>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mt-6 mb-2">Welcome back.</h1>
+          <div className="mb-8 text-center sm:text-left">
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Welcome back.</h1>
             <p className="text-sm text-gray-400 font-medium tracking-tight">Enter your details to access your dashboard</p>
           </div>
 
@@ -107,10 +121,30 @@ export default function Login() {
             </div>
           </form>
         </div>
+
+        {/* Mobile only: Try it for free hint */}
+        <div 
+          onClick={scrollToDemo}
+          className="lg:hidden absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-80 animate-in fade-in slide-in-from-bottom duration-1000 cursor-pointer hover:opacity-100 transition-all z-20"
+        >
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600/60 whitespace-nowrap mb-1">Try it for free</span>
+          <ChevronDown className="w-5 h-5 text-blue-500 animate-bounce" />
+        </div>
       </div>
 
-      {/* Right Column: Demo Access */}
-      <div className="bg-blue-50/30 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-12 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l border-blue-50 relative z-10 backdrop-blur-sm min-h-[400px] lg:min-h-0">
+      <div 
+        ref={demoRef}
+        className="bg-blue-50/30 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-12 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l border-blue-50 relative z-10 backdrop-blur-sm min-h-[calc(100dvh-64px)] lg:min-h-0"
+      >
+        {/* Mobile only: Go up hint */}
+        <div 
+          onClick={scrollToTop}
+          className="lg:hidden absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-all cursor-pointer z-20"
+        >
+          <ChevronUp className="w-5 h-5 text-blue-500 animate-bounce" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600/60 whitespace-nowrap">Login</span>
+        </div>
+
         <div className="w-full max-w-md">
           <div className="mb-6 text-center lg:text-left">
             <span className="inline-block px-3 py-1 rounded-full bg-blue-100/50 text-blue-700 text-[11px] font-bold uppercase tracking-widest mb-3">

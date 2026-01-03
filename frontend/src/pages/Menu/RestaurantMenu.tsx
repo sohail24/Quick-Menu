@@ -307,7 +307,7 @@ export default function RestaurantMenu() {
       </div>
 
       {/* Sticky Category Nav */}
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm overflow-hidden">
+      <div className="sticky top-0 z-40 bg-white backdrop-blur-xl border-b border-gray-100 shadow-sm overflow-hidden">
         <div 
           ref={categoryNavRef}
           className="container mx-auto px-4 py-3 flex gap-4 overflow-x-auto no-scrollbar scroll-smooth"

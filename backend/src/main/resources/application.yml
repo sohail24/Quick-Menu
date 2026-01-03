@@ -68,6 +68,10 @@ websocket:
 app:
   uploads-dir: ./uploads
   base-url: http://localhost:8080
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:your-cloud-name}
+    api-key: ${CLOUDINARY_API_KEY:your-api-key}
+    api-secret: ${CLOUDINARY_API_SECRET:your-api-secret}
   cors:
     allowed-origins: http://localhost:5173
 
