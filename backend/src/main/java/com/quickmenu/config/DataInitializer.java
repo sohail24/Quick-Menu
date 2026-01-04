@@ -14,17 +14,13 @@ import com.quickmenu.menu.repo.TableRepository;
 import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.model.OrderItem;
 import com.quickmenu.orders.repo.OrderRepository;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
-import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
@@ -38,9 +34,6 @@ public class DataInitializer {
     private final PasswordEncoder passwordEncoder;
     private final OrderRepository orderRepo;
     private final com.quickmenu.orders.repo.OrderItemRepository orderItemRepo;
-
-    @org.springframework.beans.factory.annotation.Value("${app.base-url:http://localhost:8080}")
-    private String baseUrl;
 
     public DataInitializer(UserRepository userRepo,
                            RestaurantRepository restaurantRepo,
@@ -60,28 +53,9 @@ public class DataInitializer {
         this.orderItemRepo = orderItemRepo;
     }
 
-    @Async
-    @EventListener(ApplicationReadyEvent.class)
-    public void handleApplicationReady() {
-        // Startup logic: Run asynchronously to avoid blocking Render's startup process.
-        // This ensures the application is marked as 'Ready' in seconds while data seeds in the background.
-        try {
-            if (!userRepo.existsByEmail("admin@quickmenu.local")) {
-                log.info("No demo admin found. Starting background demo data seed...");
-                resetDemoData();
-            } else {
-                log.info("Demo data already exists. Skipping startup seed.");
-            }
-        } catch (Exception e) {
-            log.error("Non-critical error during background demo data seeding", e);
-        }
-    }
-
-    @Transactional
     public void resetDemoData() {
-        log.info("Starting full demo data reset (Truncate & Re-seed)...");
-
         // 1. Truncate demo records in reverse dependency order
+        log.info("Truncating existing demo data...");
         orderItemRepo.deleteAllByOrderIsDemoTrue();
         orderRepo.deleteAllByIsDemoTrue();
         dishRepo.deleteAllByIsDemoTrue();
@@ -91,10 +65,9 @@ public class DataInitializer {
         userRepo.deleteAllByIsDemoTrue();
 
         // 2. Re-seed demo data
+        log.info("Seeding fresh demo users and restaurant...");
         seedUsers();
         seedDemoRestaurant();
-
-        log.info("Demo data reset completed successfully.");
     }
 
     private void seedUsers() {

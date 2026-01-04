@@ -1,7 +1,6 @@
 package com.quickmenu.scheduler;
 
-import com.quickmenu.config.DataInitializer;
-import jakarta.transaction.Transactional;
+import com.quickmenu.service.DemoDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,24 +12,29 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class DemoDataScheduler {
 
-    private final DataInitializer dataInitializer;
+    private final DemoDataService demoDataService;
 
     @Value("${demo.data.enabled:false}")
     private boolean demoDataEnabled;
 
-    @Scheduled(fixedRateString = "#{${demo.data.restore-interval-minutes:30} * 60000}")
-    @Transactional
+    /**
+     * Scheduled task to reset demo data.
+     * - initialDelay: Wait 5 seconds after app is ready before first run.
+     *   This ensures the application is fully started and responsive to health checks.
+     * - fixedRate: Run every X minutes as configured.
+     */
+    @Scheduled(initialDelayString = "5000", fixedRateString = "#{${demo.data.restore-interval-minutes:30} * 60000}")
     public void restoreDemoData() {
         if (!demoDataEnabled) {
+            log.info("Demo data restoration is disabled. Skipping.");
             return;
         }
 
-        log.info("Starting scheduled demo data restoration (Truncate & Re-seed)...");
+        log.info("Starting scheduled demo data reset...");
         try {
-            dataInitializer.resetDemoData();
-            log.info("Demo data restoration completed successfully.");
+            demoDataService.resetDemoData();
         } catch (Exception e) {
-            log.error("Failed to restore demo data", e);
+            log.error("Failed to restore demo data during scheduled task", e);
         }
     }
 }
