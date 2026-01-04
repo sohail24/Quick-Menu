@@ -26,6 +26,7 @@ export default function AdminDishList() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(20);
   const [total, setTotal] = useState<number | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // bulk
@@ -159,7 +160,11 @@ export default function AdminDishList() {
     return () => {
       mounted = false;
     };
-  }, [selectedRest, queryStr, page, size, categoryFilter, debouncedSearchQ]);
+  }, [selectedRest, queryStr, page, size, categoryFilter, debouncedSearchQ, refreshKey]);
+
+  function refreshData() {
+    setRefreshKey((k) => k + 1);
+  }
 
 
   function toggleSelect(id: string) {
@@ -193,8 +198,7 @@ export default function AdminDishList() {
       );
       alert('Updated');
       setSelected({});
-      // refresh
-      setTimeout(() => setSelectedRest((s) => (s ? s + '' : s)), 200);
+      refreshData();
     } catch (err) {
       console.error('Bulk update failed', err);
       alert('Bulk update failed');
@@ -220,7 +224,7 @@ export default function AdminDishList() {
     if (!confirm('Delete this dish? This is permanent.')) return;
     try {
       await api.delete(`/api/${selectedRest}/dishes/${id}`);
-      setDishes((prev) => prev.filter((p) => p.id !== id));
+      refreshData();
     } catch (err) {
       console.error('Delete dish failed', err);
       alert('Delete failed');
@@ -241,7 +245,7 @@ export default function AdminDishList() {
           <button
             onClick={() => {
               setPage(0);
-              setSelectedRest((s) => (s ? s + '' : s));
+              refreshData();
             }}
             className="px-3 py-1 border rounded"
           >
