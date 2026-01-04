@@ -22,6 +22,7 @@ type Props = {
  * Or for router:
  * <Route path="/admin/*" element={<AdminRoute><AdminLayout /></AdminRoute>} />
  */
+
 export default function AdminRoute({
   children,
   allowedRoles = ['ADMIN'],
