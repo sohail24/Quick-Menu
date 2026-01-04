@@ -8,16 +8,45 @@ export default function RestaurantLanding() {
   const [restaurant, setRestaurant] = useState<any>(null);
   const [qr, setQr] = useState<string>('');
 
+  const [showWakeupMsg, setShowWakeupMsg] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    api.get(`/api/restaurants/${restaurantId}`).then((res) => {
-      setRestaurant(res.data);
-    });
+    let timer: NodeJS.Timeout;
+    if (loading) {
+      timer = setTimeout(() => {
+        setShowWakeupMsg(true);
+      }, 5000);
+    } else {
+      setShowWakeupMsg(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  useEffect(() => {
+    api.get(`/api/restaurants/${restaurantId}`)
+      .then((res) => {
+        setRestaurant(res.data);
+      })
+      .finally(() => setLoading(false));
 
     const menuUrl = `${window.location.origin}/menu/${restaurantId}`;
     QRCode.toDataURL(menuUrl, { width: 280 }).then(setQr);
   }, [restaurantId]);
 
-  if (!restaurant) return <div className="p-6">Loading…</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-gray-900 font-bold">Loading restaurant details...</p>
+        {showWakeupMsg && (
+          <p className="mt-2 text-sm text-blue-600 font-bold animate-pulse text-center px-4">
+            Server is waking up, please wait...
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

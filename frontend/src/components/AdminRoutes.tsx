@@ -22,6 +22,7 @@ type Props = {
  * Or for router:
  * <Route path="/admin/*" element={<AdminRoute><AdminLayout /></AdminRoute>} />
  */
+
 export default function AdminRoute({
   children,
   allowedRoles = ['ADMIN'],
@@ -33,7 +34,6 @@ export default function AdminRoute({
   useEffect(() => {
     let mounted = true;
     setChecking(true);
-
     api
       .get('/api/auth/me', { headers: { 'x-skip-401-redirect': '1' } })
       .then((res) => {

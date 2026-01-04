@@ -17,6 +17,19 @@ export default function Login() {
   const navigate = useNavigate();
   const demoRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const [showWakeupMsg, setShowWakeupMsg] = React.useState(false);
+
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (loading) {
+      timer = setTimeout(() => {
+        setShowWakeupMsg(true);
+      }, 5000);
+    } else {
+      setShowWakeupMsg(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -106,9 +119,16 @@ export default function Login() {
             
             <Button className="w-full h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-xl shadow-blue-600/20 transition-all mt-2" disabled={loading}>
               {loading ? (
-                <div className="flex items-center gap-2 justify-center">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Signing in...</span>
+                <div className="flex flex-col items-center justify-center gap-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Signing in...</span>
+                  </div>
+                  {showWakeupMsg && (
+                    <span className="text-[10px] text-blue-100 font-medium animate-pulse">
+                      Server is starting (free tier). First request may take a few minutes ..., have a cup of coffee in the meantime.
+                    </span>
+                  )}
                 </div>
               ) : 'Sign In'}
             </Button>

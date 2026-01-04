@@ -35,6 +35,19 @@ export default function RestaurantMenu() {
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [loadingMenu, setLoadingMenu] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showWakeupMsg, setShowWakeupMsg] = useState(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (loadingMenu || loadingDemo) {
+      timer = setTimeout(() => {
+        setShowWakeupMsg(true);
+      }, 5000);
+    } else {
+      setShowWakeupMsg(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loadingMenu, loadingDemo]);
 
   const [dishes, setDishes] = useState<any[]>([]);
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -423,10 +436,16 @@ export default function RestaurantMenu() {
           )}
         </div>
 
-        {loadingMenu && dishes.length === 0 && (
+        {(loadingMenu || loadingDemo) && dishes.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 pointer-events-none">
              <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-             <p className="mt-4 text-gray-500 font-medium italic">Preparing your menu...</p>
+             <p className="mt-4 text-gray-900 font-bold italic">Preparing your menu...</p>
+             {showWakeupMsg && (
+                <p className="mt-2 text-sm text-blue-600 font-bold animate-pulse px-4 text-center">
+                  Free tier server is waking up, this might take 30-60 seconds. <br/>
+                  Please don't refresh the page.
+                </p>
+             )}
           </div>
         )}
 
