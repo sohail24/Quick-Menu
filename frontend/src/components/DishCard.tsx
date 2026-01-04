@@ -8,6 +8,7 @@ interface DishCardProps {
     description: string;
     price: number;
     imageUrl?: string;
+    prepTimeMins: number;
   };
   onAdd: (dish: any) => void;
 }
