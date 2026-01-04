@@ -7,7 +7,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
 
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,10 +18,12 @@ export default function Login() {
   const demoRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const [showWakeupMsg, setShowWakeupMsg] = React.useState(false);
+  const [userDismissedWakeup, setUserDismissedWakeup] = React.useState(false);
 
   React.useEffect(() => {
     let timer: NodeJS.Timeout;
     if (loading) {
+      setUserDismissedWakeup(false); // Reset on new attempt
       timer = setTimeout(() => {
         setShowWakeupMsg(true);
       }, 5000);
@@ -222,9 +224,15 @@ export default function Login() {
       </div>
 
       {/* Prominent Wakeup Overlay */}
-      {showWakeupMsg && (
+      {showWakeupMsg && !userDismissedWakeup && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-white/60 backdrop-blur-md animate-in fade-in duration-500">
           <div className="w-full max-w-sm bg-white rounded-[40px] p-8 shadow-2xl shadow-blue-500/20 border border-blue-50 text-center relative overflow-hidden">
+            <button 
+              onClick={() => setUserDismissedWakeup(true)}
+              className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all z-20"
+            >
+              <X className="w-4 h-4" />
+            </button>
             {/* Background Accent */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-50 rounded-full blur-3xl opacity-60"></div>
             
