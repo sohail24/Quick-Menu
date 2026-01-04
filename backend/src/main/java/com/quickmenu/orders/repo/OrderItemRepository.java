@@ -17,6 +17,11 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
     @Query("DELETE FROM OrderItem oi WHERE oi.order.isDemo = true")
     void deleteAllByOrderIsDemoTrue();
 
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM OrderItem oi WHERE oi.dish.isDemo = true")
+    void deleteAllByDishIsDemoTrue();
+
     @Query("""
       SELECT oi.dish.id AS dishId,
              oi.dish.name AS dishName,

@@ -55,10 +55,19 @@ public class DataInitializer {
 
     public void resetDemoData() {
         // 1. Truncate demo records in reverse dependency order
+        // IMPORTANT: order_items can reference both orders AND dishes via foreign keys.
+        // We must clear all referencing records before deleting the referenced entities.
         log.info("Truncating existing demo data...");
+        
+        // First, delete order_items that reference demo orders OR demo dishes
         orderItemRepo.deleteAllByOrderIsDemoTrue();
+        orderItemRepo.deleteAllByDishIsDemoTrue();
+        
+        // Now we can safely delete orders and dishes
         orderRepo.deleteAllByIsDemoTrue();
         dishRepo.deleteAllByIsDemoTrue();
+        
+        // Continue with the rest
         categoryRepo.deleteAllByIsDemoTrue();
         tableRepo.deleteAllByIsDemoTrue();
         restaurantRepo.deleteAllByIsDemoTrue();
