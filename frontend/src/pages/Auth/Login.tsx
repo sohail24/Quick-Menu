@@ -119,16 +119,9 @@ export default function Login() {
             
             <Button className="w-full h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-xl shadow-blue-600/20 transition-all mt-2" disabled={loading}>
               {loading ? (
-                <div className="flex flex-col items-center justify-center gap-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>Signing in...</span>
-                  </div>
-                  {showWakeupMsg && (
-                    <span className="text-[10px] text-blue-100 font-medium animate-pulse">
-                      Server is starting (free tier). First request may take a few minutes ..., have a cup of coffee in the meantime.
-                    </span>
-                  )}
+                <div className="flex items-center gap-2 justify-center">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Signing in...</span>
                 </div>
               ) : 'Sign In'}
             </Button>
@@ -227,6 +220,31 @@ export default function Login() {
           </div>
         </div>
       </div>
+
+      {/* Prominent Wakeup Overlay */}
+      {showWakeupMsg && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-white/60 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-sm bg-white rounded-[40px] p-8 shadow-2xl shadow-blue-500/20 border border-blue-50 text-center relative overflow-hidden">
+            {/* Background Accent */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-50 rounded-full blur-3xl opacity-60"></div>
+            
+            <div className="relative z-10">
+              <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center text-4xl mb-6 mx-auto animate-bounce">
+                ☕
+              </div>
+              <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">Server is waking up</h3>
+              <p className="text-gray-500 font-medium leading-relaxed mb-8">
+                We're on a free tier, so the first request can take a few minutes to start. 
+                Grab a cup of coffee while we prepare everything!
+              </p>
+              <div className="flex items-center justify-center gap-3 text-blue-600 font-black text-xs uppercase tracking-[0.2em]">
+                <div className="w-2 h-2 bg-blue-600 rounded-full animate-ping"></div>
+                Starting Backend...
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
