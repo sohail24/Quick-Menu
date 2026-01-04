@@ -8,7 +8,7 @@ import OrderSummaryModal from '../../components/OrderSummaryModal';
 import OrderStatusFloating from '../../components/OrderStatusFloating';
 import BellButton from '../../components/BellButton';
 import { getActiveOrderFor } from '../../lib/orderStorage';
-import { Search, ChevronLeft, MapPin, Star, Clock } from 'lucide-react';
+import { Search, ChevronLeft, MapPin, Star, Clock, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
 
 type CartItem = {
@@ -36,10 +36,12 @@ export default function RestaurantMenu() {
   const [loadingMenu, setLoadingMenu] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showWakeupMsg, setShowWakeupMsg] = useState(false);
+  const [userDismissedWakeup, setUserDismissedWakeup] = useState(false);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (loadingMenu || loadingDemo) {
+      setUserDismissedWakeup(false); // Reset on new attempt
       timer = setTimeout(() => {
         setShowWakeupMsg(true);
       }, 5000);
@@ -437,14 +439,34 @@ export default function RestaurantMenu() {
         </div>
 
         {(loadingMenu || loadingDemo) && dishes.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 pointer-events-none">
-             <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-             <p className="mt-4 text-gray-900 font-bold italic">Preparing your menu...</p>
-             {showWakeupMsg && (
-                <p className="mt-2 text-sm text-blue-600 font-bold animate-pulse px-4 text-center">
-                  Free tier server is waking up, this might take 30-60 seconds. <br/>
-                  Please don't refresh the page.
-                </p>
+          <div className="flex flex-col items-center justify-center py-24 min-h-[50vh]">
+             {!showWakeupMsg ? (
+               <>
+                 <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-6"></div>
+                 <p className="text-gray-900 font-black text-lg italic tracking-tight">Preparing your menu...</p>
+               </>
+             ) : (
+               <div className="w-full max-w-sm bg-white rounded-[40px] p-10 shadow-3xl shadow-blue-600/10 border border-blue-50 text-center animate-in zoom-in duration-500 relative overflow-hidden">
+                  <button 
+                    onClick={() => setUserDismissedWakeup(true)}
+                    className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all z-20"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="w-24 h-24 bg-blue-50 rounded-[32px] flex items-center justify-center text-5xl mb-8 mx-auto relative">
+                    <div className="absolute inset-0 bg-blue-500/10 rounded-[32px] animate-ping duration-[3000ms]"></div>
+                    ☕
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">Server is Starting</h3>
+                  <p className="text-gray-500 font-medium leading-relaxed mb-8">
+                    We use a free hosting tier. The first request takes about a minute to wake up the server.
+                    Please have a seat and stay on this page.
+                  </p>
+                  <div className="inline-flex items-center gap-3 bg-blue-50 px-6 py-2.5 rounded-2xl text-blue-600 font-black text-[10px] uppercase tracking-[0.2em]">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                    Powering Up...
+                  </div>
+               </div>
              )}
           </div>
         )}
