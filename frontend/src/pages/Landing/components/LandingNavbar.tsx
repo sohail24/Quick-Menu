@@ -4,7 +4,11 @@ import { useAuthStore } from '../../../app/store';
 import { LogOut, LayoutDashboard } from 'lucide-react';
 import Button from '../../../components/ui/Button';
 
-export default function LandingNavbar() {
+interface LandingNavbarProps {
+  activeSection?: string;
+}
+
+export default function LandingNavbar({ activeSection }: LandingNavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
@@ -23,6 +27,12 @@ export default function LandingNavbar() {
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN' || user?.roles?.includes('ADMIN') || user?.roles?.includes('ROLE_ADMIN');
   const dashboardPath = isAdmin ? '/admin' : '/staff';
 
+  const linkClass = (id: string) => {
+    const isActive = activeSection === id;
+    if (isActive) return 'text-blue-600 font-bold';
+    return scrolled ? 'text-gray-600 hover:text-blue-600' : 'text-gray-700 hover:text-blue-600';
+  };
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -35,9 +45,9 @@ export default function LandingNavbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-8">
-          <button onClick={() => scrollTo('howitworks')} className={`${scrolled ? 'text-gray-600' : 'text-gray-700'} hover:text-blue-600 font-medium transition`}>How it Works</button>
-          <button onClick={() => scrollTo('features')} className={`${scrolled ? 'text-gray-600' : 'text-gray-700'} hover:text-blue-600 font-medium transition`}>Features</button>
-          <button onClick={() => scrollTo('about')} className={`${scrolled ? 'text-gray-600' : 'text-gray-700'} hover:text-blue-600 font-medium transition`}>About</button>
+          <button onClick={() => scrollTo('howitworks')} className={`${linkClass('howitworks')} font-medium transition`}>How it Works</button>
+          <button onClick={() => scrollTo('features')} className={`${linkClass('features')} font-medium transition`}>Features</button>
+          <button onClick={() => scrollTo('about')} className={`${linkClass('about')} font-medium transition`}>About</button>
         </div>
 
         <div className="flex items-center gap-4">
