@@ -189,7 +189,7 @@ public class DataInitializer implements CommandLineRunner {
                         .isDemo(true)
                         .build()));
 
-        Category combo = (Category) categoryRepo.findByRestaurantIdAndName(r.getId(), "Starters")
+        Category combo = (Category) categoryRepo.findByRestaurantIdAndName(r.getId(), "Combo")
                 .orElseGet(() -> categoryRepo.save(Category.builder()
                         .restaurantId(finalR.getId())
                         .name("Starters")
