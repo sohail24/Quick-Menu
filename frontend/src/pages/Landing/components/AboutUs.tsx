@@ -39,9 +39,8 @@ export default function AboutUs() {
               <h2 className="text-4xl md:text-5xl font-black mb-8 tracking-tight">About the <span className="text-blue-400">Developer</span></h2>
               
               <p className="text-gray-400 text-xl font-medium leading-relaxed mb-10">
-                Hi, I'm Sohail! I'm a passionate software engineer dedicated to building simple, 
-                effective solutions for everyday challenges. QuickMenu is a personal project 
-                born from my love for clean code and seamless user experiences.
+                Hi, I’m Sohail, a Software Engineer with 3 years of experience building scalable and reliable enterprise applications.
+                QuickMenu is a personal project where I’m designing a contactless restaurant ordering system while experimenting with modern backend and frontend technologies
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
@@ -51,7 +50,7 @@ export default function AboutUs() {
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Current Role</div>
-                    <div className="font-bold">Software Engineer @ TCS</div>
+                    <div className="font-bold">Software Engineer @ Tata Consultancy Services</div>
                   </div>
                 </div>
                 
@@ -61,7 +60,7 @@ export default function AboutUs() {
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Education</div>
-                    <div className="font-bold">Computer Engineer</div>
+                    <div className="font-bold">B.E (Computer Engineer) </div>
                   </div>
                 </div>
 
@@ -113,13 +112,30 @@ export default function AboutUs() {
                     <div className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4 lg:text-left text-center">Backend & Security</div>
                     <div className="flex flex-wrap justify-center lg:justify-start gap-2">
                       {[
-                        { name: 'Java', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
-                        { name: 'Spring Boot', color: 'bg-green-500/10 text-green-400 border-green-500/20' },
+                        { name: 'Java 17', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
+                        { name: 'Spring Boot 3', color: 'bg-green-500/10 text-green-400 border-green-400/20' },
                         { name: 'Spring Security', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
                         { name: 'JWT Auth', color: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
-                        { name: 'Spring WS + STOMP', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20' },
+                        { name: 'Web Sockets + STOMP', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20' },
                         { name: 'Swagger / OpenAPI', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-                        { name: 'MySQL/PG', color: 'bg-blue-400/10 text-blue-300 border-blue-400/20' },
+                      ].map((tech) => (
+                        <span key={tech.name} className={`px-3 py-1.5 rounded-lg border text-[11px] font-black tracking-tight ${tech.color}`}>
+                          {tech.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Infrastructure & Services */}
+                  <div>
+                    <div className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4 lg:text-left text-center">Infrastructure & Services</div>
+                    <div className="flex flex-wrap justify-center lg:justify-start gap-2">
+                       {[
+                        { name: 'H2 (Dev)', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+                        { name: 'PostgreSQL (Live)', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
+                        { name: 'Java Mail (Local)', color: 'bg-orange-500/10 text-orange-400 border-orange-500/20' },
+                        { name: 'SendGrid (Live)', color: 'bg-blue-400/10 text-blue-300 border-blue-400/20' },
+                        { name: 'Cloudinary', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
                       ].map((tech) => (
                         <span key={tech.name} className={`px-3 py-1.5 rounded-lg border text-[11px] font-black tracking-tight ${tech.color}`}>
                           {tech.name}
@@ -133,17 +149,30 @@ export default function AboutUs() {
 
               {/* Social Links Placeholder */}
 
-              {/* Social Links Placeholder */}
+              {/* Social Links */}
               <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                <button className="flex items-center gap-2 px-6 py-3 bg-white text-gray-900 rounded-2xl font-black text-sm hover:bg-blue-600 hover:text-white transition-all duration-300">
+                <a 
+                  href="https://github.com/sohail24/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-6 py-3 bg-white text-gray-900 rounded-2xl font-black text-sm hover:bg-blue-600 hover:text-white transition-all duration-300"
+                >
                   <Github className="w-5 h-5" /> Github
-                </button>
-                <button className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all duration-300">
+                </a>
+                <a 
+                  href="https://www.linkedin.com/in/sohailahmad24/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all duration-300"
+                >
                   <Linkedin className="w-5 h-5" /> LinkedIn
-                </button>
-                <button className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all duration-300">
+                </a>
+                <a 
+                  href="mailto:sohailahmadjobs@gmail.com"
+                  className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all duration-300"
+                >
                   <Mail className="w-5 h-5" /> Contact
-                </button>
+                </a>
               </div>
             </div>
 
