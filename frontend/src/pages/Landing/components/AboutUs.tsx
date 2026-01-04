@@ -38,9 +38,9 @@ export default function AboutUs() {
             <div className="lg:w-2/3 text-center lg:text-left">
               <h2 className="text-4xl md:text-5xl font-black mb-8 tracking-tight">About the <span className="text-blue-400">Developer</span></h2>
               
-              <p className="text-gray-400 text-xl font-medium leading-relaxed mb-10">
-                Hi, I’m Sohail, a Software Engineer with 3 years of experience building scalable and reliable enterprise applications.
-                QuickMenu is a personal project where I’m designing a contactless restaurant ordering system while experimenting with modern backend and frontend technologies
+              <p className="text-gray-400 text font-medium leading-relaxed mb-10">
+                Hi, I’m Sohail, A Software Engineer with 3 years of experience in building scalable and reliable enterprise applications.
+                QuickMenu is a personal project where it aims at contactless kiosk ordering system while experimenting with modern backend and frontend technologies
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
