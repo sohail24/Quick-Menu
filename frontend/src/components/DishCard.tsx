@@ -8,6 +8,7 @@ interface DishCardProps {
     description: string;
     price: number;
     imageUrl?: string;
+    prepTimeMins: number;
   };
   onAdd: (dish: any) => void;
 }
@@ -29,10 +30,10 @@ export default function DishCard({ dish, onAdd }: DishCardProps) {
           </div>
         )}
         
-        {/* Price Tag Overlay */}
+        {/* Prep Time Overlay */}
         <div className="absolute top-3 right-3">
-          <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border border-white/50 font-bold text-gray-900">
-            ₹{dish.price}
+          <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border border-white/50 font-bold text-gray-900 text-xs">
+            Prep Time: {dish.prepTimeMins} min
           </div>
         </div>
       </div>
