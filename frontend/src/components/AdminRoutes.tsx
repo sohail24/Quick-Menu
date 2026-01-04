@@ -34,7 +34,6 @@ export default function AdminRoute({
   useEffect(() => {
     let mounted = true;
     setChecking(true);
-
     api
       .get('/api/auth/me', { headers: { 'x-skip-401-redirect': '1' } })
       .then((res) => {
