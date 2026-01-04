@@ -1,0 +1,21 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # Run every 10 minutes
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Random Delay and Ping
+        run: |
+          # Generate random delay between 1 and 59 seconds
+          DELAY=$((1 + RANDOM % 59))
+          echo "Waiting for $DELAY seconds..."
+          sleep $DELAY
+          
+          BACKEND_URL="https://quick-menu-dq9o.onrender.com"
+          echo "Pinging $BACKEND_URL/api/health"
+          curl -f "$BACKEND_URL/api/health" || echo "Backend might be sleeping or down, but request was sent."
