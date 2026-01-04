@@ -83,26 +83,28 @@ export default function HowItWorks() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-8">
             {roleContent[activeRole].steps.map((step, idx) => (
               <div 
                 key={`${activeRole}-${idx}`} 
-                className="group bg-white p-8 rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 hover:shadow-2xl hover:shadow-blue-600/10 transition-all duration-500 hover:-translate-y-2 relative"
+                className="group bg-white p-4 md:p-8 rounded-[32px] md:rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 hover:shadow-2xl hover:shadow-blue-600/10 transition-all duration-500 hover:-translate-y-2 relative"
               >
                 {/* Step Number Badge */}
-                <div className="absolute -top-3 -right-3 w-10 h-10 bg-gray-900 text-white rounded-2xl flex items-center justify-center font-black text-lg shadow-lg group-hover:bg-blue-600 transition-colors duration-500">
+                <div className="absolute -top-3 -right-3 w-8 h-8 md:w-10 md:h-10 bg-gray-900 text-white rounded-xl md:rounded-2xl flex items-center justify-center font-black text-sm md:text-lg shadow-lg group-hover:bg-blue-600 transition-colors duration-500">
                   {idx + 1}
                 </div>
 
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-50 group-hover:scale-110 transition-all duration-500">
-                  {step.icon}
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:bg-blue-50 group-hover:scale-110 transition-all duration-500">
+                  {React.cloneElement(step.icon as React.ReactElement<any>, { 
+                    className: `w-6 h-6 md:w-8 md:h-8 ${(step.icon as React.ReactElement<any>).props.className.split(' ').filter((c: string) => !c.startsWith('w-') && !c.startsWith('h-')).join(' ')}`
+                  })}
                 </div>
                 
-                <h4 className="text-xl font-black text-gray-900 mb-3 tracking-tight group-hover:text-blue-600 transition-colors">
+                <h4 className="text-sm md:text-xl font-black text-gray-900 mb-2 md:mb-3 tracking-tight group-hover:text-blue-600 transition-colors">
                   {step.title}
                 </h4>
                 
-                <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                <p className="text-xs md:text-sm text-gray-500 font-medium leading-relaxed">
                   {step.desc}
                 </p>
               </div>
