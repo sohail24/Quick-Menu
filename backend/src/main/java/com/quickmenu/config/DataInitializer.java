@@ -14,7 +14,9 @@ import com.quickmenu.menu.repo.TableRepository;
 import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.model.OrderItem;
 import com.quickmenu.orders.repo.OrderRepository;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,9 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
-public class DataInitializer implements CommandLineRunner {
+@Slf4j
+public class DataInitializer {
 
     private final UserRepository userRepo;
     private final RestaurantRepository restaurantRepo;
@@ -56,20 +60,26 @@ public class DataInitializer implements CommandLineRunner {
         this.orderItemRepo = orderItemRepo;
     }
 
-    @Override
-    public void run(String... args) throws Exception {
-        // Startup logic: Only perform a full reset/seed if the demo admin is missing (first-time setup).
-        if (!userRepo.existsByEmail("admin@quickmenu.local")) {
-            System.out.println("No demo admin found. Performing initial demo data seed...");
-            resetDemoData();
-        } else {
-            System.out.println("Demo data already exists. Skipping startup seed.");
+    @Async
+    @EventListener(ApplicationReadyEvent.class)
+    public void handleApplicationReady() {
+        // Startup logic: Run asynchronously to avoid blocking Render's startup process.
+        // This ensures the application is marked as 'Ready' in seconds while data seeds in the background.
+        try {
+            if (!userRepo.existsByEmail("admin@quickmenu.local")) {
+                log.info("No demo admin found. Starting background demo data seed...");
+                resetDemoData();
+            } else {
+                log.info("Demo data already exists. Skipping startup seed.");
+            }
+        } catch (Exception e) {
+            log.error("Non-critical error during background demo data seeding", e);
         }
     }
 
     @Transactional
     public void resetDemoData() {
-        System.out.println("Starting full demo data reset (Truncate & Re-seed)...");
+        log.info("Starting full demo data reset (Truncate & Re-seed)...");
 
         // 1. Truncate demo records in reverse dependency order
         orderItemRepo.deleteAllByOrderIsDemoTrue();
@@ -84,7 +94,7 @@ public class DataInitializer implements CommandLineRunner {
         seedUsers();
         seedDemoRestaurant();
 
-        System.out.println("Demo data reset completed successfully.");
+        log.info("Demo data reset completed successfully.");
     }
 
     private void seedUsers() {
@@ -101,9 +111,9 @@ public class DataInitializer implements CommandLineRunner {
             admin.setEnabled(true);
             admin.setIsDemo(true);
             userRepo.save(admin);
-                System.out.println("Seeded admin -> email: " + adminEmail + " password: Admin123!");
+                log.info("Seeded admin -> email: {} password: Admin123!", adminEmail);
         } else {
-            System.out.println("Admin already exists: " + adminEmail);
+            log.info("Admin already exists: {}", adminEmail);
         }
     }
     private void seedDemoRestaurant() {
@@ -112,7 +122,7 @@ public class DataInitializer implements CommandLineRunner {
         Restaurant r;
         if (existing.isPresent()) {
             r = existing.get();
-            System.out.println("Demo restaurant exists: id=" + r.getId());
+            log.info("Demo restaurant exists: id={}", r.getId());
         } else {
             r = Restaurant.builder()
                     //.id("demoID12345678910111213141516171") // manually setting 32 length ID
@@ -129,7 +139,7 @@ public class DataInitializer implements CommandLineRunner {
                     .isDemo(true)
                     .build();
             r = restaurantRepo.save(r);
-            System.out.println("Created demo restaurant: id=" + r.getId());
+            log.info("Created demo restaurant: id={}", r.getId());
         }
 
         // Create a demo table
@@ -138,7 +148,7 @@ public class DataInitializer implements CommandLineRunner {
         TableEntity table;
         if (tOpt.isPresent()) {
             table = tOpt.get();
-            System.out.println("Demo table exists: id=" + table.getId());
+            log.info("Demo table exists: id={}", table.getId());
         } else {
             // simple QR url encoded with restaurantId & tableId placeholder (frontend will navigate to menu with tableId param)
             String qrUrl = "/menu/" + r.getId() + "?tableId=table-1";
@@ -154,7 +164,7 @@ public class DataInitializer implements CommandLineRunner {
                     .isDemo(true)
                     .build();
             table = tableRepo.save(table);
-            System.out.println("Created demo table: id=" + table.getId() + " qrUrl=" + qrUrl);
+            log.info("Created demo table: id={} qrUrl={}", table.getId(), qrUrl);
             // saving one more table
             TableEntity table2 = TableEntity.builder()
                     .restaurantId(r.getId())
@@ -165,7 +175,7 @@ public class DataInitializer implements CommandLineRunner {
                     .isDemo(true)
                     .build();
             table2 = tableRepo.save(table2);
-            System.out.println("Created demo table: id=" + table2.getId() + " qrUrl=" +  "/menu/" + r.getId() + "?tableId=table-2");
+            log.info("Created demo table: id={} qrUrl={}", table2.getId(),  "/menu/" + r.getId() + "?tableId=table-2");
         }
 
         // Create categories if missing
@@ -272,9 +282,9 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
 
             dishRepo.saveAll(dishes);
-            System.out.println("Seeded " + dishes.size() + " demo dishes for restaurant: " + r.getId());
+            log.info("Seeded {} demo dishes for restaurant: {}", dishes.size(), r.getId());
         } else {
-            System.out.println("Dishes already present for restaurant: " + r.getId());
+            log.info("Dishes already present for restaurant: {}", r.getId());
         }
 
         // create seed staff
@@ -290,9 +300,9 @@ public class DataInitializer implements CommandLineRunner {
             staff.setEnabled(true);
             staff.setIsDemo(true);
             userRepo.save(staff);
-            System.out.println("Seeded staff -> email: " + staffEmail + " password: Staff123!");
+            log.info("Seeded staff -> email: {} password: Staff123!", staffEmail);
         } else {
-            System.out.println("Staff already exists: " + staffEmail);
+            log.info("Staff already exists: {}", staffEmail);
         }
 
         // After seeding dishes and staff
@@ -373,16 +383,16 @@ public class DataInitializer implements CommandLineRunner {
             );
 
             orderRepo.saveAll(List.of(order1, order2));
-            System.out.println("Seeded 2 demo orders in SERVED state for restaurant: " + r.getName());
+            log.info("Seeded 2 demo orders in SERVED state for restaurant: {}", r.getName());
         }
 
         // Print summary for quick testing
-        System.out.println("=== DEMO DATA SUMMARY ===");
-        System.out.println("restaurantId=" + r.getId());
-        System.out.println("tableId=" + table.getId());
-        System.out.println("tableQrUrl=" + table.getQrUrl());
-        System.out.println("Staff login -> email=staff@quickmenu.local password=Staff123!");
-        System.out.println("Admin login -> email=admin@quickmenu.local password=Admin123!");
-        System.out.println("=========================");
+        log.info("=== DEMO DATA SUMMARY ===");
+        log.info("restaurantId={}", r.getId());
+        log.info("tableId={}", table.getId());
+        log.info("tableQrUrl={}", table.getQrUrl());
+        log.info("Staff login -> email=staff@quickmenu.local password=Staff123!");
+        log.info("Admin login -> email=admin@quickmenu.local password=Admin123!");
+        log.info("=========================");
     }
 }
