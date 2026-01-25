@@ -254,18 +254,18 @@ export default function AdminDishList() {
         </div>
       </div>
 
-      <div className="mb-3 grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
-        <div>
-          <label className="text-sm block">Restaurant</label>
+      <div className="mb-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex flex-col gap-1 min-w-0">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Restaurant</label>
           {loadingRestaurants ? (
-            <div className="text-sm text-gray-600">Loading...</div>
+            <div className="text-[10px] text-gray-400 italic">Loading...</div>
           ) : (
             <select
-              className="p-2 border rounded"
+              className="p-2 border border-blue-50 bg-blue-50/20 rounded-xl w-full text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all h-10"
               value={selectedRest ?? ''}
               onChange={(e) => setSelectedRest(e.target.value || null)}
             >
-              <option value="">-- select restaurant --</option>
+              <option value="">-- select --</option>
               {restaurants.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name ?? r.restaurantName ?? r.id}
@@ -275,10 +275,10 @@ export default function AdminDishList() {
           )}
         </div>
 
-        <div>
-          <label className="text-sm block">Category</label>
+        <div className="flex flex-col gap-1 min-w-0">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Category</label>
           <select
-            className="p-2 border rounded"
+            className="p-2 border border-gray-100 bg-gray-50/50 rounded-xl w-full text-xs font-bold focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all h-10"
             value={categoryFilter ?? ''}
             onChange={(e) => setCategoryFilter(e.target.value || null)}
           >
@@ -291,99 +291,113 @@ export default function AdminDishList() {
           </select>
         </div>
 
-        <div className="md:col-span-2">
-          <label className="text-sm block">Search</label>
+        <div className="flex flex-col gap-1 min-w-0 col-span-2 lg:col-span-2">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Search</label>
           <input
-            className="p-2 border rounded w-full"
+            className="p-2 border border-gray-100 bg-gray-50/50 rounded-xl w-full text-xs font-bold focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all h-10"
             placeholder="dish name or tag"
             value={searchQ}
             onChange={(e) => setSearchQ(e.target.value)}
           />
         </div>
 
-        <div>
-          <label className="text-sm block">Page size</label>
+        <div className="flex flex-col gap-1 min-w-0 col-span-2 lg:col-span-1">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Page size</label>
           <select
-            className="p-2 border rounded"
+            className="p-2 border border-gray-100 bg-gray-50/50 rounded-xl w-full text-xs font-bold focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all h-10"
             value={size}
             onChange={(e) => setSize(Number(e.target.value))}
           >
             {[10, 20, 50].map((s) => (
               <option key={s} value={s}>
-                {s}
+                {s} items
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button onClick={selectAllVisible} className="px-2 py-1 border rounded">
-            Select all
+      <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex flex-wrap items-center gap-2">
+          <button onClick={selectAllVisible} className="px-3 py-1.5 border border-gray-100 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+            All
           </button>
-          <button onClick={clearSelection} className="px-2 py-1 border rounded">
+          <button onClick={clearSelection} className="px-3 py-1.5 border border-gray-100 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors">
             Clear
           </button>
+          <div className="h-6 w-px bg-gray-100 mx-1 hidden sm:block" />
           <button
             onClick={() => bulkToggleAvailability(true)}
             disabled={bulkBusy}
-            className="px-2 py-1 bg-green-600 text-white rounded"
+            className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-green-100 transition-colors disabled:opacity-50"
           >
-            Mark Available
+            Available
           </button>
           <button
             onClick={() => bulkToggleAvailability(false)}
             disabled={bulkBusy}
-            className="px-2 py-1 bg-yellow-600 text-white rounded"
+            className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-amber-100 transition-colors disabled:opacity-50"
           >
-            Mark Unavailable
+            Hidden
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button onClick={exportVisible} className="px-3 py-1 border rounded">
+        <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0">
+          <button onClick={exportVisible} className="px-3 py-1.5 border border-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 transition-colors h-8">
             Export CSV
           </button>
-          <div className="text-sm text-gray-600">Total: {total ?? '—'}</div>
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total: {total ?? dishes.length}</div>
         </div>
       </div>
 
-      {loading && <div className="text-sm text-gray-600">Loading dishes…</div>}
-      {error && <div className="text-red-600">{error}</div>}
+      {loading && (
+        <div className="flex items-center justify-center py-10">
+          <div className="w-8 h-8 border-4 border-blue-600/10 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+      )}
+      {error && <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-bold mb-4">{error}</div>}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {dishes.length === 0 && !loading ? (
-          <div className="text-gray-600">No dishes found.</div>
+          <div className="text-center py-12 bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200">
+            <div className="text-sm text-gray-400 font-bold uppercase tracking-widest">No dishes found</div>
+          </div>
         ) : (
           dishes.map((d) => {
             const id = d.id;
             return (
               <div
                 key={id}
-                className="p-5 bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20 hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex items-center justify-between"
+                className="p-4 bg-white rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300"
               >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={!!selected[id]}
-                    onChange={() => toggleSelect(id)}
-                  />
-                  <DishCardAdmin dish={d} />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => navigate(`/admin/dishes/${id}`)}
-                    className="px-2 py-1 border rounded"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => doDelete(id)}
-                    className="px-2 py-1 border rounded text-red-600"
-                  >
-                    Delete
-                  </button>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className="flex-shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={!!selected[id]}
+                        onChange={() => toggleSelect(id)}
+                        className="w-4 h-4 rounded-md border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <DishCardAdmin dish={d} />
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => navigate(`/admin/dishes/${id}`)}
+                      className="h-8 px-4 bg-gray-50 hover:bg-blue-50 text-blue-600 font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-gray-100"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => doDelete(id)}
+                      className="h-8 px-3 bg-red-50 hover:bg-red-100 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-red-100/30"
+                    >
+                      Del
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -391,20 +405,23 @@ export default function AdminDishList() {
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <div>
+      <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
-            className="px-3 py-1 border rounded mr-2"
+            className="h-9 px-4 border border-gray-100 rounded-xl text-xs font-black text-gray-600 hover:bg-gray-50 transition-colors"
           >
             Prev
           </button>
-          <button onClick={() => setPage((p) => p + 1)} className="px-3 py-1 border rounded">
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            className="h-9 px-4 border border-gray-100 rounded-xl text-xs font-black text-gray-600 hover:bg-gray-50 transition-colors"
+          >
             Next
           </button>
         </div>
-        <div className="text-sm text-gray-600">
-          Page: {page} • Showing: {dishes.length}
+        <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+          Page {page} • Showing {dishes.length}
         </div>
       </div>
     </div>

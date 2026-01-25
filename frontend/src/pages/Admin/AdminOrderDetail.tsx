@@ -170,149 +170,179 @@ export default function AdminOrderDetail() {
     ];
 
   return (
-    <div className="p-4 bg-gray-50 min-h-screen">
-      <div className=" mx-auto">
+    <div className="p-4 lg:p-10 bg-gray-50 min-h-screen">
+      <div className="max-w-4xl mx-auto">
         {/* Header with Back and Print buttons */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Order #{orderId}</h1>
-            <p className="text-gray-600 mt-1">
-              {order?.customerName ?? 'Customer'} • {order?.customerPhone ?? ''}
-            </p>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+             <button
+                onClick={() => navigate(-1)}
+                className="h-10 w-10 flex items-center justify-center border border-gray-100 rounded-xl text-gray-500 hover:bg-gray-50 transition-colors"
+              >
+                ←
+              </button>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 uppercase tracking-tight truncate">Order #{orderId}</h1>
+                <p className="text-[10px] sm:text-xs font-bold text-gray-500 truncate">
+                  {order?.customerName ?? 'Guest'} • {order?.customerPhone ?? ''}
+                </p>
+              </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate(-1)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-            >
-              ← Back
-            </button>
-            <button
-              onClick={printReceipt}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              Print
-            </button>
-          </div>
+          <button
+            onClick={printReceipt}
+            className="h-10 px-6 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+          >
+            Print Receipt
+          </button>
         </div>
 
         {/* Status Card */}
-        <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-8 mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
-              <p className="text-xs text-blue-600 font-black uppercase tracking-widest mb-1">Current Status</p>
-              <p className="text-3xl font-black text-gray-900 mt-1">
+        <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/20 border border-gray-100 p-6 sm:p-8 mb-6">
+          <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6">
+            <div className="text-center lg:text-left">
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Current Status</p>
+              <p className="text-2xl sm:text-3xl font-black text-gray-900 uppercase">
                 {order.status ?? order.orderStatus}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2">
               <button
                 disabled={saving}
                 onClick={() => changeStatus('PREPARING')}
-                className="px-6 py-3 border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-all active:scale-95"
+                className="h-11 px-6 border border-gray-100 bg-gray-50/50 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-all active:scale-95 flex-1 sm:flex-none"
               >
-                Start Preparing
+                Prepare
               </button>
               <button
                 disabled={saving}
                 onClick={() => changeStatus('READY')}
-                className="px-6 py-3 bg-green-500 text-white rounded-2xl text-sm font-bold hover:bg-green-600 disabled:opacity-50 shadow-lg shadow-green-500/20 transition-all active:scale-95"
+                className="h-11 px-6 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-600 disabled:opacity-50 shadow-lg shadow-green-500/20 transition-all active:scale-95 flex-1 sm:flex-none"
               >
-                Mark Ready
+                Ready
               </button>
               <button
                 disabled={saving}
                 onClick={() => changeStatus('SERVED')}
-                className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+                className="h-11 px-6 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex-1 sm:flex-none"
               >
-                Mark Served
+                Served
               </button>
             </div>
           </div>
         </div>
 
-        {/* Order Details Card */}
-        <div className="bg-white rounded-[40px] shadow-xl shadow-gray-200/50 border border-gray-100 p-10">
-          {/* Header Section */}
-          <div className="border-b-4 border-gray-900 pb-6 mb-8">
-            <p className="text-2xl font-bold text-gray-900 mb-2">Restaurant: {restaurantId}</p>
-            <p className="text-gray-600 mb-1">Order ID: #{orderId}</p>
-            <p className="text-gray-600 mb-4">Table ID: #{order?.tableId ?? 'N/A'}</p>
-            <p className="text-gray-900">
-              <strong>{order?.customerName ?? 'Customer'}</strong> • {order?.customerPhone ?? ''}
-            </p>
-            <p className="text-gray-600 mt-1">Customer note: {order?.customerNote ?? 'N/A'}</p>
-          </div>
+        {/* Order Details Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/20 border border-gray-100 p-6 sm:p-8">
+              <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center gap-2">
+                Order Items
+                <span className="text-[10px] font-black bg-gray-100 px-2 py-0.5 rounded-full text-gray-500">{items.length}</span>
+              </h2>
 
-          {/* Items Table */}
-          <div className="mb-6">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-100 border-b-2 border-gray-900">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm uppercase tracking-wide">
-                    Item
-                  </th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-900 text-sm uppercase tracking-wide">
-                    Qty
-                  </th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-900 text-sm uppercase tracking-wide">
-                    Price
-                  </th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-900 text-sm uppercase tracking-wide">
-                    Subtotal
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {(order?.items ?? []).map((it: LineItem, idx: number) => (
-                  <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="py-4 px-4 text-gray-900 font-medium">
-                      {it.name ?? it.dishName}{' '}
-                      {it.note && <div className="text-xs text-gray-500 mt-1">Note: {it.note}</div>}
-                    </td>
-                    <td className="py-4 px-4 text-center text-gray-700">{it.quantity ?? 1}</td>
-                    <td className="py-4 px-4 text-right text-gray-700">
-                      ₹ {(it.priceAtOrder ?? 0).toFixed(2)}
-                    </td>
-                    <td className="py-4 px-4 text-right text-gray-900 font-semibold">
-                      ₹ {((it.priceAtOrder ?? 0) * (it.quantity ?? 1)).toFixed(2)}
-                    </td>
-                  </tr>
+              {/* Mobile Card List */}
+              <div className="sm:hidden space-y-4">
+                {items.map((it: LineItem, idx: number) => (
+                  <div key={idx} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+                    <div className="flex justify-between items-start gap-4 mb-2">
+                      <div className="min-w-0">
+                        <div className="text-sm font-black text-gray-900">{it.name ?? it.dishName}</div>
+                        {it.note && <div className="text-[10px] font-bold text-gray-500 mt-1 italic">"{it.note}"</div>}
+                      </div>
+                      <div className="text-sm font-black text-gray-900">₹{((it.priceAtOrder ?? 0) * (it.quantity ?? 1)).toFixed(2)}</div>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                       <span>Qty: {it.quantity ?? 1}</span>
+                       <span>Rate: ₹{(it.priceAtOrder ?? 0).toFixed(2)}</span>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
 
-          {/* Totals */}
-          <div className="">
-            <div className="flex justify-between pb-3">
-              <span className="text-gray-700">Subtotal</span>
-              <span className="text-gray-700">
-                ₹ {order?.total ?? order?.amount ?? order?.grandTotal ?? order?.totalAmount ?? 0}
-              </span>
-            </div>
-            <div className="flex justify-between border-t-4 border-gray-900 pt-4">
-              <span className="text-xl font-bold text-gray-900">Total Amount</span>
-              <span className="text-xl font-bold text-gray-900">
-                ₹ {order?.total ?? order?.amount ?? order?.grandTotal ?? order?.totalAmount ?? 0}
-              </span>
-            </div>
-          </div>
-        </div>
+              {/* Desktop Table View */}
+              <div className="hidden sm:block">
+                <table className="w-full">
+                  <thead className="border-b border-gray-100">
+                    <tr>
+                      <th className="text-left py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Item</th>
+                      <th className="text-center py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Qty</th>
+                      <th className="text-right py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Price</th>
+                      <th className="text-right py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {items.map((it: LineItem, idx: number) => (
+                      <tr key={idx} className="group">
+                        <td className="py-4 min-w-0">
+                          <div className="text-sm font-black text-gray-900 leading-tight truncate">{it.name ?? it.dishName}</div>
+                          {it.note && <div className="text-[10px] font-bold text-gray-500 mt-1 italic italic">Note: {it.note}</div>}
+                        </td>
+                        <td className="py-4 text-center text-sm font-black text-gray-700">{it.quantity ?? 1}</td>
+                        <td className="py-4 text-right text-sm font-bold text-gray-500">₹{(it.priceAtOrder ?? 0).toFixed(2)}</td>
+                        <td className="py-4 text-right text-sm font-black text-gray-900">₹{((it.priceAtOrder ?? 0) * (it.quantity ?? 1)).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-        {/* Timeline Card */}
-        <div className="bg-white rounded-[40px] shadow-xl shadow-gray-200/50 border border-gray-100 p-10 mt-8">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Timeline</h3>
-          <div className="space-y-4">
-            {timeline.map((t: any, i: number) => (
-              <div key={i} className="flex items-start gap-4">
-                <div className="w-3 h-3 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />
-                <div>
-                  <p className="text-gray-900 font-medium">{t.label}</p>
-                  <p className="text-sm text-gray-600">{t.at ?? t.time ?? ''}</p>
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Subtotal</span>
+                  <span className="text-sm font-black text-gray-700">₹{(order?.total ?? order?.amount ?? 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-base font-black text-gray-900 uppercase tracking-widest">Total Amount</span>
+                  <span className="text-2xl font-black text-blue-600">₹{(order?.total ?? order?.amount ?? 0).toFixed(2)}</span>
                 </div>
               </div>
-            ))}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/20 border border-gray-100 p-6 sm:p-8">
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 border-b border-gray-50 pb-2">Customer Details</h3>
+              <div className="space-y-4">
+                 <div>
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Customer Name</p>
+                    <p className="text-sm font-black text-gray-900">{order?.customerName ?? 'Guest'}</p>
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Table Info</p>
+                    <p className="text-sm font-black text-gray-900">Table #{order?.tableId ?? 'Counter'}</p>
+                 </div>
+                 {order?.customerPhone && (
+                   <div>
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Phone Number</p>
+                      <p className="text-sm font-black text-gray-900">{order?.customerPhone}</p>
+                   </div>
+                 )}
+                 {order?.customerNote && (
+                   <div>
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Instructions</p>
+                      <p className="text-sm font-bold text-gray-600 italic leading-relaxed">"{order?.customerNote}"</p>
+                   </div>
+                 )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/20 border border-gray-100 p-6 sm:p-8">
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 border-b border-gray-50 pb-2">Timeline</h3>
+              <div className="space-y-6">
+                {(timeline ?? []).map((t: any, i: number) => (
+                  <div key={i} className="flex items-start gap-4">
+                    <div className="relative flex-shrink-0 mt-1">
+                       <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-lg shadow-blue-500/50" />
+                       {i < (timeline.length - 1) && <div className="absolute top-2.5 left-1 w-0.5 h-10 bg-blue-100" />}
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black text-gray-900 uppercase tracking-wide leading-none">{t.label}</p>
+                      <p className="text-[10px] font-bold text-gray-400 mt-1">{t.at ?? t.time ?? ''}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
