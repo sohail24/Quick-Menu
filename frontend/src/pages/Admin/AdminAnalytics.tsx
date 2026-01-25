@@ -20,9 +20,9 @@ import { useAuthStore } from '../../app/store';
 
 function StatCard({ title, value }: { title: string; value: string | number }) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-lg shadow-gray-200/50 border border-gray-100 hover:scale-[1.02] transition-transform duration-300">
-      <div className="text-sm text-gray-500 font-medium">{title}</div>
-      <div className="text-2xl font-black text-gray-900 mt-2">{value}</div>
+    <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg shadow-gray-200/50 border border-gray-100 hover:scale-[1.02] transition-transform duration-300">
+      <div className="text-[10px] sm:text-sm text-gray-500 font-bold uppercase tracking-wider">{title}</div>
+      <div className="text-xl sm:text-2xl font-black text-gray-900 mt-1 sm:mt-2 truncate">{value}</div>
     </div>
   );
 }
@@ -30,7 +30,7 @@ function StatCard({ title, value }: { title: string; value: string | number }) {
 function SparkBar({ value, max }: { value: number; max: number }) {
   const pct = Math.round((value / Math.max(max, 1)) * 100);
   return (
-    <div className="w-28 h-2 bg-gray-200 rounded">
+    <div className="w-16 sm:w-28 h-2 bg-gray-200 rounded overflow-hidden">
       <div className="h-full bg-blue-600 rounded" style={{ width: `${pct}%` }} />
     </div>
   );
@@ -153,9 +153,9 @@ export default function AdminAnalytics() {
       </div>
 
       {/* controls */}
-      <div className="flex flex-wrap gap-4 bg-white p-6 rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100">
         <select
-          className="border border-gray-200 p-2.5 rounded-xl bg-gray-50 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+          className="border border-blue-100 p-2.5 rounded-xl bg-blue-50/20 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all w-full sm:w-auto flex-1 h-11"
           value={restaurantId}
           onChange={(e) => setRestaurantId(e.target.value)}
         >
@@ -167,7 +167,7 @@ export default function AdminAnalytics() {
         </select>
 
         <select
-          className="border border-gray-200 p-2.5 rounded-xl bg-gray-50 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+          className="border border-gray-100 p-2.5 rounded-xl bg-gray-50 text-sm font-semibold focus:ring-2 focus:ring-blue-500/10 outline-none transition-all w-full sm:w-auto h-11"
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
         >
@@ -179,36 +179,38 @@ export default function AdminAnalytics() {
         </select>
 
         {/* Date Filter */}
-        <div className="flex items-center gap-3 border border-gray-200 p-2 rounded-xl bg-gray-50 shadow-inner">
-          <input
-            type="datetime-local"
-            className="text-sm bg-transparent border-none outline-none p-1"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-          <span className="text-gray-400 font-bold">→</span>
-          <input
-            type="datetime-local"
-            className="text-sm bg-transparent border-none outline-none p-1"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border border-blue-50 p-2 rounded-xl bg-blue-50/10 w-full sm:w-auto overflow-hidden">
+          <div className="flex items-center gap-2 flex-1">
+            <input
+              type="datetime-local"
+              className="text-[10px] sm:text-xs bg-transparent border-none outline-none p-1 font-bold text-gray-700 flex-1 min-w-0"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+            <span className="text-gray-300 font-black">→</span>
+            <input
+              type="datetime-local"
+              className="text-[10px] sm:text-xs bg-transparent border-none outline-none p-1 font-bold text-gray-700 flex-1 min-w-0"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
           {(startDate || endDate) && (
             <button
               onClick={() => {
                 setStartDate('');
                 setEndDate('');
               }}
-              className="ml-2 p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+              className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors self-end sm:self-auto"
             >
-               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           )}
         </div>
       </div>
 
       {/* stat cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <StatCard title="Total Orders" value={loading ? '…' : ordersToday} />
         <StatCard title="Total Revenue" value={loading ? '…' : `₹ ${revenueToday}`} />
       </div>
@@ -216,21 +218,21 @@ export default function AdminAnalytics() {
       {/* charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top dishes */}
-        <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
-          <h3 className="text-lg font-black text-gray-900 tracking-tight mb-6">Top Dishes (Today)</h3>
+        <div className="bg-white rounded-2xl sm:rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-5 sm:p-8">
+          <h3 className="text-base sm:text-lg font-black text-gray-900 tracking-tight mb-4 sm:mb-6 uppercase tracking-widest text-[10px] sm:text-lg">Top Dishes (Today)</h3>
 
           {topDishes.length === 0 ? (
-            <div className="text-sm text-gray-600">No orders yet</div>
+            <div className="text-sm text-gray-500 italic font-medium">No orders yet</div>
           ) : (
             topDishes.map((d) => (
-              <div key={d.dishId} className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="text-sm font-medium">{d.name}</div>
-                  <div className="text-xs text-gray-500">₹ {d.totalRevenue}</div>
+              <div key={d.dishId} className="flex items-center justify-between mb-3 last:mb-0">
+                <div className="flex-1 min-w-0 pr-4">
+                  <div className="text-xs sm:text-sm font-black text-gray-800 truncate">{d.name}</div>
+                  <div className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-tighter">₹ {d.totalRevenue}</div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <SparkBar value={d.totalQty} max={maxDishQty} />
-                  <div className="text-sm">{d.totalQty}</div>
+                  <div className="text-xs sm:text-sm font-black text-blue-600">{d.totalQty}</div>
                 </div>
               </div>
             ))
@@ -238,27 +240,27 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Hourly orders */}
-        <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
-          <h3 className="text-lg font-black text-gray-900 tracking-tight mb-6">Hourly Orders (Today)</h3>
+        <div className="bg-white rounded-2xl sm:rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-5 sm:p-8">
+          <h3 className="text-base sm:text-lg font-black text-gray-900 tracking-tight mb-4 sm:mb-6 uppercase tracking-widest text-[10px] sm:text-lg">Hourly Orders (Today)</h3>
 
           <div style={{ height: 260 }}>
             <ResponsiveContainer>
               <BarChart data={hourly}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hour" />
-                <YAxis allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="hour" tick={{fontSize: 10}} />
+                <YAxis allowDecimals={false} tick={{fontSize: 10}} />
                 <Tooltip />
-                <Bar dataKey="orders" fill="#2563eb" />
+                <Bar dataKey="orders" fill="#2563eb" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Category Breakdown (Pie Chart) */}
-        <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-8 lg:col-span-2">
-          <h3 className="text-lg font-black text-gray-900 tracking-tight mb-6">Orders by Category</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div style={{ height: 300 }}>
+        <div className="bg-white rounded-2xl sm:rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-5 sm:p-8 lg:col-span-2">
+          <h3 className="text-base sm:text-lg font-black text-gray-900 tracking-tight mb-4 sm:mb-6 uppercase tracking-widest text-[10px] sm:text-lg">Orders by Category</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div style={{ height: 300 }} className="relative">
               {categoryStats.length > 0 ? (
                 <ResponsiveContainer>
                   <PieChart>
@@ -268,36 +270,35 @@ export default function AdminAnalytics() {
                       nameKey="categoryName"
                       cx="50%"
                       cy="50%"
-                      outerRadius={100}
+                      outerRadius={80}
                       fill="#8884d8"
-                      label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ percent }: any) => `${(percent * 100).toFixed(0)}%`}
                     >
                       {categoryStats.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
-                    <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
-                  No category data available
+                <div className="flex items-center justify-center h-full text-xs text-gray-400 font-bold uppercase tracking-widest">
+                  No data available
                 </div>
               )}
             </div>
             {/* Text Summary */}
-            <div className="flex flex-col justify-center">
+            <div className="flex flex-col justify-center space-y-1">
               {categoryStats.map((c, i) => (
-                <div key={i} className="flex justify-between p-2 border-b last:border-0">
-                  <span className="flex items-center gap-2">
+                <div key={i} className="flex justify-between p-3 bg-gray-50/50 rounded-xl border border-gray-100 shadow-sm">
+                  <span className="flex items-center gap-2 text-xs font-bold text-gray-700">
                     <span
-                      className="w-3 h-3 rounded-full"
+                      className="w-2.5 h-2.5 rounded-full shadow-sm"
                       style={{ backgroundColor: COLORS[i % COLORS.length] }}
                     ></span>
                     {c.categoryName}
                   </span>
-                  <span className="font-semibold">{c.count} orders</span>
+                  <span className="font-black text-gray-900 text-xs">{c.count} <span className="text-[10px] text-gray-400 font-medium">orders</span></span>
                 </div>
               ))}
             </div>

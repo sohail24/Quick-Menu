@@ -403,9 +403,9 @@ function MetricCard({
 
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div>
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="text-sm font-medium">{value ?? '—'}</div>
+    <div className="min-w-0">
+      <div className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider">{label}</div>
+      <div className="text-sm font-black text-gray-900 truncate" title={String(value)}>{value ?? '—'}</div>
     </div>
   );
 }
