@@ -72,15 +72,18 @@ export default function OrderSummaryModal({
       .get(`/api/restaurants/${restaurantId}/tables`)
       .then((res) => {
         const d = res.data ?? {};
-        const arr = Array.isArray(d)
+        const arr: any[] = Array.isArray(d)
           ? d
           : Array.isArray(d.content)
             ? d.content
             : (d?.items ?? d?.tables ?? []);
         
-        setTables(arr);
-        if (!selectedTable && arr.length > 0) {
-          setSelectedTable(arr[0].id);
+        // Only show available tables, but keep the currently selected one if it exists
+        const available = arr.filter(t => !t.occupied || t.id === selectedTable);
+        setTables(available);
+
+        if (!selectedTable && available.length > 0) {
+          setSelectedTable(available[0].id);
         }
       })
       .catch((err) => {
@@ -88,7 +91,7 @@ export default function OrderSummaryModal({
         setTables([]);
       })
       .finally(() => setLoadingTables(false));
-  }, [isOpen, restaurantId]);
+  }, [isOpen, restaurantId, selectedTable]);
 
   function changeQty(index: number, delta: number) {
     setLocalCart((prev) =>
@@ -103,7 +106,13 @@ export default function OrderSummaryModal({
 
   async function submitNewOrder() {
     if (!selectedTable) return setError('Please select a table');
-    if (!customerName || !customerPhone) return setError('Please provide your name and phone');
+    if (!customerName) return setError('Please provide your name');
+    
+    // Phone validation: must be exactly 10 digits
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!customerPhone) return setError('Please provide your phone number');
+    if (!phoneRegex.test(customerPhone)) return setError('Phone number must be exactly 10 digits');
+
     if (!restaurantId) return setError('Missing restaurant');
     setSubmitting(true);
     setError(null);
@@ -287,9 +296,13 @@ export default function OrderSummaryModal({
                       <Phone className="w-5 h-5" />
                     </div>
                     <input
+                      type="tel"
                       value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="Phone Number"
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+                        setCustomerPhone(val);
+                      }}
+                      placeholder="Phone Number (10 digits)"
                       className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none transition-all font-medium"
                     />
                   </div>
