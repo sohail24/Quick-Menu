@@ -10,6 +10,7 @@ import BellButton from '../../components/BellButton';
 import { getActiveOrderFor } from '../../lib/orderStorage';
 import { Search, ChevronLeft, MapPin, Star, Clock, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import { getOptimizedUrl } from '../../lib/imageUtils';
 
 type CartItem = {
   dishId: string;
@@ -255,7 +256,7 @@ export default function RestaurantMenu() {
       <div className="relative h-64 md:h-80 overflow-hidden">
         {/* Restaurant Cover Image */}
         <img 
-          src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+          src={getOptimizedUrl("https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80")} 
           alt="Restaurant" 
           className="w-full h-full object-cover"
         />

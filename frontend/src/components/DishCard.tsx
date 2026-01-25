@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
 import Button from './ui/Button';
+import { getOptimizedUrl } from '../lib/imageUtils';
 
 interface DishCardProps {
   dish: {
@@ -14,13 +15,15 @@ interface DishCardProps {
 }
 
 export default function DishCard({ dish, onAdd }: DishCardProps) {
+  const optimizedImageUrl = getOptimizedUrl(dish.imageUrl);
+
   return (
     <div className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full">
       {/* Image Section */}
       <div className="relative aspect-[4/3] overflow-hidden">
         {dish.imageUrl ? (
           <img 
-            src={dish.imageUrl} 
+            src={optimizedImageUrl} 
             alt={dish.name} 
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
           />
