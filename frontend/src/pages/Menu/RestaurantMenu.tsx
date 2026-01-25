@@ -411,7 +411,7 @@ export default function RestaurantMenu() {
                       </h2>
                       <div className="h-0.5 flex-1 bg-gray-100 ml-6 rounded-full"></div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                       {catDishes.map((d: any) => (
                         <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
                       ))}
@@ -428,7 +428,7 @@ export default function RestaurantMenu() {
                       </h2>
                       <div className="h-0.5 flex-1 bg-gray-100 ml-6 rounded-full"></div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                     {uncategorizedDishes.map((d: any) => (
                       <DishCard key={d.id} dish={d} onAdd={() => addToCart(d)} />
                     ))}
