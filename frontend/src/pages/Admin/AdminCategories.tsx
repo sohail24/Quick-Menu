@@ -38,35 +38,38 @@ export default function AdminCategories() {
 
   return (
     <div className="p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Categories</h1>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <h1 className="text-xl sm:text-2xl font-black text-gray-900 uppercase tracking-tight">Categories</h1>
+        <div className="flex flex-col gap-1 min-w-0 sm:w-64">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Restaurant</label>
+          {loading ? (
+            <div className="text-[10px] text-gray-400 italic">Loading...</div>
+          ) : (
+            <select
+              value={selectedRest ?? ''}
+              onChange={(e) => setSelectedRest(e.target.value || null)}
+              className="p-2 border border-blue-50 bg-blue-50/20 rounded-xl w-full text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all h-10"
+            >
+              <option value="">-- select --</option>
+              {restaurants.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name ?? r.restaurantName}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
-      <div className="mb-4">
-        <label className="text-sm block">Select restaurant</label>
-        {loading ? (
-          <div className="text-sm text-gray-600">Loading...</div>
+      <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-4 sm:p-6">
+        {selectedRest ? (
+          <CategoryManager restaurantId={selectedRest} />
         ) : (
-          <select
-            value={selectedRest ?? ''}
-            onChange={(e) => setSelectedRest(e.target.value || null)}
-            className="p-2 border rounded"
-          >
-            <option value="">-- select --</option>
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name ?? r.restaurantName}
-              </option>
-            ))}
-          </select>
+          <div className="text-center py-12 bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200">
+            <div className="text-sm text-gray-400 font-bold uppercase tracking-widest">Select a restaurant to manage categories</div>
+          </div>
         )}
       </div>
-
-      {selectedRest ? (
-        <CategoryManager restaurantId={selectedRest} />
-      ) : (
-        <div className="text-sm text-gray-600">Select a restaurant to manage categories</div>
-      )}
     </div>
   );
 }

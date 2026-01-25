@@ -5,6 +5,7 @@ import ImageUploader from '../../components/ImageUploader';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../app/store';
 import RestaurantEditModal from '../../components/RestaurantEditModal';
+import Button from '../../components/ui/Button';
 
 type Restaurant = {
   id: string;
@@ -152,71 +153,92 @@ export default function AdminRestaurants() {
 
   return (
     <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Restaurants</h1>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <h1 className="text-xl sm:text-2xl font-black text-gray-900 uppercase tracking-tight">Restaurants</h1>
         <div className="flex items-center gap-2">
-          <button onClick={openCreate} className="px-3 py-1 bg-blue-600 text-white rounded">
-            Create
-          </button>
-          <button onClick={load} className="px-3 py-1 border rounded">
+          <Button onClick={openCreate} size="sm" className="flex-1 sm:flex-none font-bold shadow-lg shadow-blue-600/20">
+            Create New
+          </Button>
+          <button 
+            onClick={load} 
+            className="h-9 px-4 border border-gray-100 rounded-xl text-xs font-black text-gray-500 hover:bg-gray-50 transition-colors flex items-center justify-center bg-gray-50/30"
+          >
             Refresh
           </button>
         </div>
       </div>
 
-      {loading && <div className="text-sm text-gray-600">Loading restaurants…</div>}
-      {error && <div className="text-red-600 mb-3">{error}</div>}
+      {loading && (
+        <div className="flex items-center justify-center py-10">
+          <div className="w-8 h-8 border-4 border-blue-600/10 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+      )}
+      {error && <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-bold mb-4">{error}</div>}
 
       <div className="space-y-3">
         {list.length === 0 && !loading ? (
-          <div className="text-gray-600">No restaurants found.</div>
+          <div className="text-center py-12 bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200">
+            <div className="text-sm text-gray-400 font-bold uppercase tracking-widest">No restaurants found</div>
+          </div>
         ) : (
           list.map((r) => (
             <div
               key={r.id}
-              className="p-5 bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20 hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex items-center justify-between"
+              className="p-4 sm:p-5 bg-white rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center border border-gray-100 shadow-sm shrink-0">
-                  {r.bannerUrl ? (
-                    <img
-                      src={r.bannerUrl}
-                      alt={r.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <div className="text-xs text-gray-500 p-2">No image</div>
-                  )}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-100 shadow-inner shrink-0">
+                    {r.bannerUrl ? (
+                      <img
+                        src={r.bannerUrl}
+                        alt={r.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-[10px] text-gray-300 font-black uppercase tracking-tighter p-2 text-center leading-tight">No image</div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                       <span className="text-base sm:text-lg font-black text-gray-900 truncate">{r.name}</span>
+                       <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 uppercase tracking-widest border border-blue-100/50">
+                         {r.planId || 'free'}
+                       </span>
+                    </div>
+                    <div className="text-[11px] text-gray-500 font-bold line-clamp-1 mb-1">{r.description || 'No description provided'}</div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                       <span className="truncate">{r.address || 'No address set'}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-medium">{r.name}</div>
-                  <div className="text-xs text-gray-500">{r.description}</div>
-                  <div className="text-xs text-gray-500">{r.address}</div>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  className="px-2 py-1 border rounded text-sm"
-                  onClick={() => window.open(`${window.location.origin}/menu/${r.id}`, '_blank')}
-                >
-                  Open
-                </button>
-                <button
-                  onClick={() => navigate(`/admin/restaurants/${r.id}/qr`)}
-                  className="px-2 py-1 border rounded text-blue-600"
-                >
-                  QR / Landing
-                </button>
-                <button className="px-2 py-1 border rounded text-sm" onClick={() => openEdit(r)}>
-                  Edit
-                </button>
-                <button
-                  className="px-2 py-1 border rounded text-sm text-red-600"
-                  onClick={() => confirmDelete(r)}
-                >
-                  Delete
-                </button>
+                <div className="flex flex-wrap items-center gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-50">
+                  <button
+                    className="h-8 px-4 bg-blue-50 hover:bg-blue-100 text-blue-600 font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-blue-100/30 flex-1 sm:flex-none"
+                    onClick={() => window.open(`${window.location.origin}/menu/${r.id}`, '_blank')}
+                  >
+                    Open
+                  </button>
+                  <button
+                    onClick={() => navigate(`/admin/restaurants/${r.id}/qr`)}
+                    className="h-8 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-indigo-100/30 flex-1 sm:flex-none"
+                  >
+                    QR
+                  </button>
+                  <button 
+                    className="h-8 px-4 bg-gray-50 hover:bg-gray-100 text-gray-600 font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-gray-100 flex-1 sm:flex-none" 
+                    onClick={() => openEdit(r)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="h-8 px-3 bg-red-50 hover:bg-red-100 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-red-100/30"
+                    onClick={() => confirmDelete(r)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))

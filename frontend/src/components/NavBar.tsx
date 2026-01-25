@@ -22,6 +22,23 @@ export default function NavBar() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/admin');
 
+  // Logic to identify demo accounts
+  const isDemoAccount = 
+    user?.email?.endsWith('@quickmenu.local') || 
+    (user as any)?.isDemo === true;
+
+  const isActive = (path: string) => {
+    if (path === '/admin') return isAdminPath;
+    return location.pathname === path;
+  };
+
+  const navLinkClass = (path: string) => 
+    `text-sm font-bold flex items-center gap-2 transition-all px-4 py-1.5 rounded-full ${
+      isActive(path) 
+        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+        : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+    }`;
+
   return (
     <nav className="bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
       <div className="flex items-center gap-4">
@@ -46,21 +63,23 @@ export default function NavBar() {
         <Link to="/" className="font-bold text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
           QuickMenu
         </Link>
-        <div className="hidden md:flex items-center gap-4 ml-4 border-l pl-4 h-6 border-gray-200">
-           <Link to="/menu/demo" className="text-sm font-medium text-gray-500 hover:text-blue-600 flex items-center gap-2 transition">
-             <Utensils className="w-4 h-4" /> Demo Menu
-           </Link>
+        <div className="hidden md:flex items-center gap-2 ml-4 border-l pl-4 h-8 border-gray-100">
+           {isDemoAccount && (
+             <Link to="/menu/demo" className={navLinkClass('/menu/demo')}>
+               <Utensils className="w-4 h-4" /> Demo Menu
+             </Link>
+           )}
            
            {token && !isAdmin && (
-            <Link to="/staff" className="text-sm font-medium text-gray-500 hover:text-blue-600 flex items-center gap-2 transition">
-              <LayoutDashboard className="w-4 h-4" /> Staff Board
-            </Link>
+             <Link to="/staff" className={navLinkClass('/staff')}>
+               <LayoutDashboard className="w-4 h-4" /> Staff Board
+             </Link>
            )}
            
            {token && isAdmin && (
-            <Link to="/admin" className="text-sm font-medium text-gray-500 hover:text-blue-600 flex items-center gap-2 transition">
-              <LayoutDashboard className="w-4 h-4" /> Dashboard
-            </Link>
+             <Link to="/admin" className={navLinkClass('/admin')}>
+               <LayoutDashboard className="w-4 h-4" /> Dashboard
+             </Link>
            )}
         </div>
       </div>

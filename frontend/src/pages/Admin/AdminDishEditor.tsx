@@ -84,17 +84,19 @@ export default function AdminDishEditor() {
 
   return (
     <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">{dishId ? 'Edit Dish' : 'Create Dish'}</h1>
-        <div className="mb-4">
-          <label className="text-sm font-medium">Select Restaurant</label>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <h1 className="text-xl sm:text-2xl font-black text-gray-900 uppercase tracking-tight">
+          {dishId ? 'Edit Dish' : 'Create Dish'}
+        </h1>
+        <div className="flex flex-col gap-1 min-w-0 sm:w-64">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Restaurant</label>
           <select
             value={restaurantId ?? ''}
             onChange={(e) => setRestaurantId(e.target.value)}
-            className="mt-1 p-2 border rounded w-full"
+            className="p-2 border border-blue-50 bg-blue-50/20 rounded-xl w-full text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all h-10"
           >
             <option value="" disabled>
-              Select a restaurant
+              -- select --
             </option>
             {restaurants.map((r) => (
               <option key={r.id} value={r.id}>
@@ -105,7 +107,8 @@ export default function AdminDishEditor() {
         </div>
       </div>
 
-      {error && <div className="text-red-600 mb-2">{error}</div>}
+      <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
+        {error && <div className="p-4 mx-6 mt-6 bg-red-50 text-red-600 rounded-2xl text-sm font-bold">{error}</div>}
 
       <DishForm
         restaurantId={restaurantId}
@@ -116,6 +119,7 @@ export default function AdminDishEditor() {
           dishId ? (saving ? 'Saving...' : 'Save changes') : saving ? 'Creating...' : 'Create dish'
         }
       />
+    </div>
     </div>
   );
 }
