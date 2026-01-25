@@ -178,14 +178,9 @@ export default function AdminOrders() {
         ),
       );
       alert('Bulk update success');
-      // refresh list
+      setSelected({});
       setPage(0);
-      // small delay to let backend persist
-      setTimeout(() => {
-        setSelected({});
-        // trigger reload by toggling selectedRest (cheap)
-        setSelectedRest((s) => (s ? s + '' : s));
-      }, 300);
+      fetchOrders(true);
     } catch (err: any) {
       console.error('Bulk update error', err);
       alert('Bulk update failed: ' + (err?.response?.data?.message ?? err?.message ?? 'unknown'));
