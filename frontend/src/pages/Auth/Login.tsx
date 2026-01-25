@@ -39,11 +39,22 @@ export default function Login() {
   }
 
   function scrollToDemo() {
-    demoRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (demoRef.current) {
+      const offset = 64; // NavBar height
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = demoRef.current.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
   }
 
   function scrollToTop() {
-    formRef.current?.scrollIntoView({ behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function doLogin(e: string, p: string) {
@@ -142,7 +153,7 @@ export default function Login() {
           onClick={scrollToDemo}
           className="lg:hidden absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-80 animate-in fade-in slide-in-from-bottom duration-1000 cursor-pointer hover:opacity-100 transition-all z-20"
         >
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600/60 whitespace-nowrap mb-1">Try it for free</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600/60 whitespace-nowrap mb-1">Click for quick demo</span>
           <ChevronDown className="w-5 h-5 text-blue-500 animate-bounce" />
         </div>
       </div>
