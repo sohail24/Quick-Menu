@@ -1,135 +1,125 @@
-# 🍽️ QuickMenu: QR-Based Real-Time Restaurant Management
+# 🍽️ QuickMenu: High-Performance Digital Ordering Ecosystem
 
-QuickMenu is a sophisticated, full-stack digital ordering platform designed to modernize the dining experience. By leveraging QR-code technology, real-time WebSockets, and a robust micro-service inspired architecture, it provides a seamless flow from customer ordering to staff fulfillment and admin analytics.
+QuickMenu is a full-stack, real-time restaurant management platform designed to eliminate the friction between customers and service staff. Built with a modular monorepo architecture, it showcases modern engineering practices in **Spring Boot (Java 21)** and **React 19**.
 
 ---
 
-## 🏗️ Architecture Overview
+## �️ System Architecture Deep Dive
 
-The system is built as a modular monorepo with a clear separation between the high-performance Spring Boot backend and the dynamic React frontend.
+The architecture follows a decoupled, event-driven-ready design, ensuring high availability and low latency for critical restaurant operations.
 
 ```mermaid
 graph TD
-    subgraph "Frontend (React + Vite)"
-        Landing[Landing Page]
-        AdminDash[Admin Dashboard]
-        StaffDash[Staff Dashboard]
-        Menu[QR Menu]
+    subgraph "Frontend Layer (React + Vite)"
+        Landing[Landing Site]
+        CustomerUI[QR-Menu & Cart]
+        AdminApp[Admin Analytics & CMS]
+        StaffWS[Real-time Staff Dashboard]
     end
 
-    subgraph "Backend (Spring Boot)"
-        Auth[Auth/JWT Service]
-        OrderSvc[Order Management]
-        BellSvc[Bell/Call Service]
-        MetricsSvc[Analytics Engine]
-        RestoreSvc[Demo Restoration]
+    subgraph "Logic Layer (Spring Boot 3.5)"
+        Gateway[Spring Security / JWT Gate]
+        WS_Broker[STOMP/WebSocket Broker]
+        OrderOrch[Order Orchestrator]
+        BellMgr[Bell Notification Engine]
+        MetricsEngine[PostgreSQL Analytics]
+        Scheduler[Demo Reset Worker]
     end
 
-    subgraph "Storage & External"
-        Postgres[(PostgreSQL)]
-        Cloudinary[(Cloudinary/Uploads)]
-        WebSocket[STOMP/WebSocket]
+    subgraph "Storage & Infrastructure"
+        PG_DB[(PostgreSQL)]
+        H2_DB[(H2 In-Memory - Dev)]
+        CDN[(Cloudinary Image Storage)]
+        Mail[SendGrid / JavaMail]
     end
 
-    Menu -->|Place Order| OrderSvc
-    Menu -->|Ring Bell| BellSvc
-    OrderSvc <-->|Real-time| WebSocket
-    BellSvc <-->|Real-time| WebSocket
-    WebSocket --> StaffDash
-    AdminDash --> MetricsSvc
-    OrderSvc --> Postgres
-    Auth --> Postgres
+    CustomerUI -->|REST / HTTPS| Gateway
+    CustomerUI -->|STOMP| WS_Broker
+    StaffWS <-->|Full Duplex| WS_Broker
+    Gateway --> OrderOrch
+    Gateway --> BellMgr
+    OrderOrch --> PG_DB
+    MetricsEngine --> PG_DB
+    OrderOrch --> WS_Broker
+    BellMgr --> WS_Broker
 ```
 
----
+### � Security Architecture
+- **Stateless JWT Flow:** Implemented a custom `JwtAuthenticationFilter` that intercepts requests, validates RSA-signed tokens, and populates the `SecurityContext`.
+- **Role-Based Access Control (RBAC):** Using `@PreAuthorize` annotations across controllers to strictly enforce `ADMIN`, `STAFF`, and `CUSTOMER` roles.
+- **Credential Safety:** Passwords are salted and hashed using **BCrypt** (10+ rounds) before persistence.
 
-## 🛠️ Tech Stack
+### 🔔 Real-time Notification Engine
+- **STOMP over WebSockets:** Leveraged `Spring WebSocket` with the STOMP protocol to provide full-duplex communication.
+- **Dynamic Topics:** Orders and Bell alerts are published to unique restaurant-scoped topics (e.g., `/topic/restaurants/{id}/orders`), ensuring data isolation.
 
-### Backend
-- **Core:** Java 21, Spring Boot 3.5.x
-- **Security:** Spring Security + JWT (Stateless Authentication)
-- **Data:** Spring Data JPA, PostgreSQL (Production) / H2 (Dev)
-- **Real-time:** Spring WebSocket + STOMP
-- **API Documentation:** Springdoc OpenAPI (Swagger UI)
-- **Utils:** Lombok, Google ZXing (QR Generation), SendGrid (Email), Cloudinary (Images)
-
-### Frontend
-- **Core:** React 19, TypeScript, Vite
-- **Styling:** Tailwind CSS 3.4
-- **State Management:** Zustand
-- **Routing:** React Router 7
-- **Visuals:** Lucide React (Icons), Recharts (Analytics)
-- **Networking:** Axios, @stomp/stompjs
+### 🧵 Concurrency & Data Integrity
+- **Pessimistic Locking:** Using `@Lock(LockModeType.PESSIMISTIC_WRITE)` in the [TableRepository](backend/src/main/java/com/quickmenu/menu/repo/TableRepository.java) to prevent race conditions during table check-ins and order placement.
+- **Transactional Consistency:** Critical business logic in [OrderService](backend/src/main/java/com/quickmenu/orders/service/OrderService.java) is wrapped in `@Transactional` to ensure atomicity across Order items and Table state updates.
 
 ---
 
-## ✨ Key Features
+## 🛠️ Technical Stack & Tooling
 
-### 👤 For Customers (No App Required)
-- **Scan & View:** Instant access to the digital menu via table-specific QR codes.
-- **Direct Ordering:** Add items to cart and place orders without waiting for a server.
-- **Ring the Bell:** Notify staff for water, bill, or assistance instantly.
-- **Order Tracking:** Live status updates for placed orders.
+### Backend (The Robust Engine)
+- **Framework:** Spring Boot 3.5.x (Java 21 - Records, Virtual Threads ready)
+- **Data Persistence:** Spring Data JPA + Hibernate (Auto-mapping to Postgres/H2)
+- **Documentation:** [Swagger UI](backend/src/main/resources/static/openapi.yaml) via Springdoc for interactive API testing.
+- **Utilities:** 
+    - **Lombok:** Boilerplate reduction.
+    - **ZXing:** QR algorithm for table-specific code generation.
+    - **Cloudinary:** Efficient multipart image handling for restaurant banners and dish photos.
 
-### 👩‍🍳 For Staff
-- **Real-time Order Feed:** Instant notifications when new orders are placed.
-- **Bell Management:** Acknowledgment flow for customer call events.
-- **Order Fulfillment:** Ability to update order status (Confirm, Done, etc.).
-
-### 📊 For Admins
-- **Analytics Dashboard:** Deep dive into revenue, order volume, and top-performing dishes.
-- **Menu Management:** Dynamic control over categories, dishes, and availability.
-- **Restaurant Onboarding:** Manage restaurant metadata, address, and branding.
-- **QR Generator:** Automatic generation of table-specific QR codes.
-
----
-
-## 🧪 Demo Excellence Features
-
-QuickMenu includes specific features to maintain a clean demo environment for recruiters and visitors:
-
-- **Soft Delete Pattern:** Demo data is never permanently deleted; it's marked with a timestamp.
-- **Auto-Restoration Scheduler:** A background task runs every 30 minutes to restore the demo environment to its pristine state.
-- **Role-Based Demo Logins:** One-click login options for both Admin and Staff roles to explore the dashboard immediately.
+### Frontend (The Dynamic Hub)
+- **Framework:** React 19 + TypeScript (Enforcing strict typing)
+- **State Orchestration:** 
+    - **Zustand:** Used for lightweight global state (Auth, UI toggles). *Rationale: Significant reduction in boilerplate compared to Redux, while providing better performance than Context API for frequent updates.*
+- **Data Fetching:** Axios with custom interceptors for JWT injection and centralized error handling.
+- **Data Visualization:** **Recharts** for real-time sales and performance monitoring.
 
 ---
 
-## 🚀 Getting Started
+## ✨ Engineering Features
 
-### Prerequisites
-- JDK 21+
-- Node.js 18+
-- Maven 3.9+
+### 🏢 Multi-User Role Workflows
+- **Recruiter-Friendly Logins:** Specialized [Login Page](frontend/src/pages/Auth/Login.tsx) logic that pre-fills demo credentials to allow immediate exploration of Admin/Staff features.
+- **QR Generator:** Integrated QR code generation that maps a physical table ID to a unique restaurant menu URL, enabling the "Scan-to-Order" flow.
 
-### Backend Setup
-1. Navigate to `/backend`
-2. Copy `.env.example` to `.env` and configure your database/API keys.
-3. Run: `./mvnw spring-boot:run`
-
-### Frontend Setup
-1. Navigate to `/frontend`
-2. Copy `.env.example` to `.env`
-3. Run: `npm install && npm run dev`
+### 🏗️ Demo Integrity & Soft Deletes
+- **Logic:** Demo entities are marked with `deletedAt` rather than dropped from the DB.
+- **The Worker:** A [Scheduled Task](backend/src/main/java/com/quickmenu/scheduler/DemoDataScheduler.java) resets the environment every 30 minutes, ensuring the project remains presentable to every user without manual intervention.
 
 ---
 
-## 🌐 API Endpoints Summary
+## ⚖️ Trade-offs & Decisions
 
-| Endpoint | Method | Role | Description |
-|----------|--------|------|-------------|
-| `/api/auth/login` | POST | ALL | Authenticate and get JWT |
-| `/api/restaurants` | POST | ADMIN | Create new restaurant |
-| `/api/{rid}/dishes` | GET | ALL | Fetch restaurant menu |
-| `/api/{rid}/orders` | POST | ALL | Place a new order |
-| `/api/admin/metrics` | GET | ADMIN | Fetch analytics data |
-| `/api/{rid}/bells` | POST | ALL | Ring table bell |
+| Feature | Decision | Rationale |
+|---------|----------|-----------|
+| **DB Performance** | H2 for Dev, Postgres for Prod | Speed of development vs. relational reliability at scale. |
+| **Real-time** | Simple In-Memory Broker | Optimized for single-server latency; avoids complexity of External MQ (like RabbitMQ) for early-stage MVP. |
+| **State** | Zustand | Prioritized simplicity and developer velocity while maintaining reactive UI performance. |
+| **Images** | Multipart -> Cloudinary | Offloaded heavy binary storage from the DB to a specialized CDN, improving response times. |
 
 ---
 
-## 📸 UI Showcase
+## 🚀 Future Roadmap
 
-*Admin Dashboard with Real-time Analytics*
-![Admin Dash](frontend/public/screenshots/admin_dashboard.png)
+- **Microservices Shift:** Decouple the monolithic Order service into a separate high-throughput service.
+- **Distributed Caching:** Integrate **Redis** to handle WebSocket session management and rate-limiting for Bell events.
+- **Payment Integration:** Stripe/Razorpay integration for unified digital payments at the table.
+- **AI Insights:** Automated "Popular Item" recommendations based on historical order clusters.
 
-*Interactive QR Menu for Customers*
-![Customer Menu](frontend/public/screenshots/customer_menu.png)
+---
+
+## � Setup & Development
+
+Refer to the individual [Backend README](backend/Readme.md) and [Frontend README](frontend/README.md) for detailed configuration options.
+
+### Quick Monorepo Start
+```bash
+# Terminal 1: Backend
+cd backend && ./mvnw spring-boot:run
+
+# Terminal 2: Frontend
+cd frontend && npm install && npm run dev
+```
