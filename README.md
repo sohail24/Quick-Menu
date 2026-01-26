@@ -1,6 +1,8 @@
-# 📖 QuickMenu: The Complete Developer Handbook & System Architecture
+# 🍽️ QuickMenu: High-Performance Digital Ordering Ecosystem
 
-> **Version:** 2.0.0  
+QuickMenu is a full-stack, real-time restaurant management platform designed to eliminate the friction between customers and service staff. Built with a modular monorepo architecture, it showcases modern engineering practices in **Spring Boot (Java 21)** and **React 19**.
+
+> **Version:** 1.0
 > **Status:** Production / Demo Ready  
 > **Maintainer:** Sohail  
 > **License:** MIT  
