@@ -1,4 +1,4 @@
-# 🍽️ QuickMenu: High-Performance Digital Ordering Ecosystem
+# 🍽️ QuickMenu: QR-Based Real-Time Restaurant Management
 
 QuickMenu is a full-stack, real-time restaurant management platform designed to eliminate the friction between customers and service staff. Built with a modular monorepo architecture, it showcases modern engineering practices in **Spring Boot (Java 21)** and **React 19**.
 
