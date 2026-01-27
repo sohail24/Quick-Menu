@@ -21,32 +21,32 @@ export default function Hero() {
           
           {/* Text Content */}
           <div className="max-w-4xl mx-auto">
-            <div className="inline-block mb-4 px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-semibold border border-blue-100">
+            <div className="inline-block mb-4 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-100">
               🚀 The Future of Dining is Here
             </div>
             
-            <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-7xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
               Contactless Ordering for <br/>
               <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Modern Restaurants</span>
             </h1>
 
-            <p className="text-xl text-gray-600 mb-10 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-gray-600 mb-8 sm:mb-10 leading-relaxed max-w-2xl mx-auto px-2">
               Boost efficiency and sales with our premium digital menu platform. 
               No app download required—just scan, order, and enjoy.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-row items-center justify-center gap-3 w-full max-w-md mx-auto px-2">
               {token ? (
-                <Link to={dashboardPath} className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full">Go to Dashboard</Button>
+                <Link to={dashboardPath} className="flex-1">
+                  <Button className="w-full lg:px-8 lg:py-4 lg:text-lg whitespace-nowrap">Dashboard</Button>
                 </Link>
               ) : (
-                <Link to="/login" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full">Try it for free</Button>
+                <Link to="/demo-selection" className="flex-1">
+                  <Button className="w-full lg:px-8 lg:py-4 lg:text-lg whitespace-nowrap px-2">Live Demo</Button>
                 </Link>
               )}
-              <Link to="/menu/demo" className="w-full sm:w-auto">
-                <Button variant="white" size="lg" className="w-full">View Demo Menu</Button>
+              <Link to="/menu/demo" className="flex-1">
+                <Button variant="primary" className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 lg:px-8 lg:py-4 lg:text-lg whitespace-nowrap px-2">View Menu</Button>
               </Link>
             </div>
           </div>
