@@ -27,6 +27,7 @@ import LandingPage from '../pages/Landing/LandingPage';
 import AdminSettings from '../pages/Admin/AdminSettings';
 import ForgotPassword from '../pages/Auth/ForgotPassword';
 import ResetPassword from '../pages/Auth/ResetPassword';
+import DemoSelection from '../pages/Auth/DemoSelection';
 
 import PublicOnlyRoute from '../components/PublicOnlyRoute';
 
@@ -53,6 +54,14 @@ export default function AppRoutes() {
           element={
             <PublicOnlyRoute>
               <Signup />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/demo-selection"
+          element={
+            <PublicOnlyRoute>
+               <DemoSelection />
             </PublicOnlyRoute>
           }
         />
