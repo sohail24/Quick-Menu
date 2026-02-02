@@ -14,6 +14,7 @@ export default function AdminOrders() {
   const [selectedRest, setSelectedRest] = useState<string | null>(null);
 
   const [orders, setOrders] = useState<Order[]>([]);
+  const [tableMap, setTableMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [loadingRestaurants, setLoadingRestaurants] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +75,29 @@ export default function AdminOrders() {
       mounted = false;
     };
   }, []);
+  
+  // load tables for mapping
+  useEffect(() => {
+    if (!selectedRest) {
+      setTableMap({});
+      return;
+    }
+    api.get(`/api/restaurants/${selectedRest}/tables`)
+      .then(res => {
+        const d = res.data ?? {};
+        const arr = Array.isArray(d)
+          ? d
+          : Array.isArray(d.content)
+            ? d.content
+            : (d?.items ?? d?.tables ?? []);
+        const map: Record<string, string> = {};
+        arr.forEach((t: any) => {
+          map[t.id] = t.name || t.tableName || 'Unnamed';
+        });
+        setTableMap(map);
+      })
+      .catch(e => console.warn('Failed to load tables for mapping', e));
+  }, [selectedRest]);
 
   // build query params (use debounced search)
   const queryParams = useMemo(() => {
@@ -357,7 +381,7 @@ export default function AdminOrders() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">#{id}</span>
+                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID: {id}</span>
                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border ${
                          status === 'PLACED' ? 'bg-amber-50 text-amber-700 border-amber-100/50' :
                          status === 'READY' ? 'bg-green-50 text-green-700 border-green-100/50' :
@@ -366,7 +390,11 @@ export default function AdminOrders() {
                        }`}>
                          {status}
                        </span>
-                       {o.tableId && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100/50">T-{o.tableId}</span>}
+                       {o.tableId && (
+                         <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100/50">
+                           {tableMap[o.tableId] ? `${tableMap[o.tableId]} ` : ''}(Table ID: {o.tableId})
+                         </span>
+                       )}
                     </div>
                     
                     <div className="flex flex-col gap-0.5 mb-2">
