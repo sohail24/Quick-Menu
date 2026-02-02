@@ -135,11 +135,11 @@ export default function AdminOrderDetail() {
         <div class="totals">
           <div class="total-row">
             <span>Subtotal</span>
-            <span>₹ ${order?.total ?? order?.amount ?? order?.grandTotal ?? order?.totalAmount ?? 0}</span>
+            <span>₹ ${order?.totalAmount ?? order?.total ?? order?.amount ?? order?.grandTotal ?? 0}</span>
           </div>
           <div class="total-row final">
             <span>Total Amount</span>
-            <span>₹ ${order?.total ?? order?.amount ?? order?.grandTotal ?? order?.totalAmount ?? 0}</span>
+            <span>₹ ${order?.totalAmount ?? order?.total ?? order?.amount ?? order?.grandTotal ?? 0}</span>
           </div>
         </div>
         <div class="divider"></div>
@@ -289,11 +289,11 @@ export default function AdminOrderDetail() {
               <div className="mt-8 pt-6 border-t border-gray-100">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Subtotal</span>
-                  <span className="text-sm font-black text-gray-700">₹{(order?.total ?? order?.amount ?? 0).toFixed(2)}</span>
+                  <span className="text-sm font-black text-gray-700">₹{(order?.totalAmount ?? order?.total ?? order?.amount ?? 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-base font-black text-gray-900 uppercase tracking-widest">Total Amount</span>
-                  <span className="text-2xl font-black text-blue-600">₹{(order?.total ?? order?.amount ?? 0).toFixed(2)}</span>
+                  <span className="text-2xl font-black text-blue-600">₹{(order?.totalAmount ?? order?.total ?? order?.amount ?? 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>

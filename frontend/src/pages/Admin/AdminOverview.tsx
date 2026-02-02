@@ -297,7 +297,7 @@ export default function AdminOverview() {
                   label="Created At"
                   value={
                     selectedRestaurant.createdAt
-                      ? new Date(selectedRestaurant.createdAt).toLocaleDateString()
+                      ? new Date(selectedRestaurant.createdAt).toLocaleString()
                       : '—'
                   }
                 />
