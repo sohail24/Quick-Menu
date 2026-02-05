@@ -1558,6 +1558,927 @@ public class GlobalExceptionHandler {
    - Reservation system
 
 ---
+## 8. Advanced Critical Interview Questions (Grilling Deep-Dive) 🔥
+
+> **Note**: These are the "curveball" questions interviewers love to ask. Master these to demonstrate deep understanding.
+
+---
+
+### Communication Protocols
+
+#### Q15: Why WebSocket and not Webhook for real-time notifications?
+
+**Answer**:
+
+| Aspect | WebSocket | Webhook |
+|--------|-----------|---------|
+| **Direction** | Bidirectional (server ↔ client) | Unidirectional (server → known endpoint) |
+| **Connection** | Persistent TCP connection | HTTP POST to registered URL |
+| **Latency** | Instant (already connected) | HTTP overhead on each call |
+| **Use Case** | Browser/app real-time updates | Server-to-server notifications |
+| **Client Type** | Browsers, mobile apps | Backend services with public URLs |
+
+**Why WebSocket for QuickMenu**:
+1. **Frontend clients (browsers)**: Don't have webhook endpoints - they can't receive HTTP requests
+2. **Instant updates**: Staff dashboard needs sub-second order notifications
+3. **Multiple subscribers**: Many staff devices watching same restaurant
+4. **No polling**: WebSocket eliminates the need for repeated GET requests
+
+**When Webhook would be appropriate**:
+- Server-to-server: Notifying a kitchen display system (KDS) with its own backend
+- External integrations: Sending order events to a POS system
+- One-way notifications: Email triggers, Slack notifications
+
+```mermaid
+flowchart LR
+    subgraph WebSocket
+        A[Browser] <--> B[Server]
+        C[Mobile App] <--> B
+    end
+    
+    subgraph Webhook
+        D[Server A] -->|POST| E[Server B Endpoint]
+    end
+```
+
+---
+
+#### Q16: What is STOMP and why use it over raw WebSocket?
+
+**Answer**:
+
+**STOMP** = **Simple Text Oriented Messaging Protocol**
+
+**Raw WebSocket**:
+- Low-level bidirectional channel
+- Just sends/receives bytes or text
+- No built-in concept of destinations, subscriptions, or message types
+- You build everything from scratch
+
+**STOMP over WebSocket**:
+- Adds **messaging semantics** on top of WebSocket
+- **Destinations**: `/topic/orders`, `/queue/user-123`
+- **Commands**: `SUBSCRIBE`, `SEND`, `MESSAGE`, `UNSUBSCRIBE`
+- **Headers**: Custom metadata with each message
+- **Acknowledgments**: Built-in delivery confirmation
+
+```
+// Raw WebSocket - you define everything
+ws.send(JSON.stringify({type: 'SUBSCRIBE', channel: 'orders'}));
+
+// STOMP - standard protocol
+stompClient.subscribe('/topic/restaurants/123/orders', callback);
+```
+
+**Why STOMP in QuickMenu**:
+1. **Topic-based routing**: `/topic/restaurants/{id}/orders` - automatic fan-out to all subscribers
+2. **Spring Integration**: `@EnableWebSocketMessageBroker` handles everything
+3. **SockJS fallback**: Works even if WebSocket is blocked
+4. **Standardized**: Interoperable with any STOMP client
+
+---
+
+#### Q17: How do you handle WebSocket disconnection and scaling across multiple server instances?
+
+**Answer**:
+
+**Disconnection Handling**:
+
+```javascript
+// Frontend (SockJS/STOMP)
+stompClient.onStompError = (frame) => {
+    console.error('STOMP error', frame);
+};
+
+sock.onclose = () => {
+    // Exponential backoff reconnection
+    setTimeout(() => reconnect(), retryDelay);
+    retryDelay = Math.min(retryDelay * 2, 30000);
+};
+```
+
+**Multi-Instance Scaling Problem**:
+```
+Instance A receives order → broadcasts to its connected clients
+Instance B's connected clients → never receive the message! ❌
+```
+
+**Solution Options**:
+
+| Strategy | How it Works | Pros | Cons |
+|----------|-------------|------|------|
+| **Sticky Sessions** | Load balancer routes client to same server | Simple, no extra infra | Uneven load, failover issues |
+| **Redis Pub/Sub** | All instances subscribe to Redis channel | Horizontal scaling, simple | Redis becomes SPOF |
+| **RabbitMQ/Kafka** | External message broker for fan-out | Durable, scalable | More complex setup |
+| **Spring Cloud Gateway** | Centralized WebSocket handling | Single point for connections | Gateway becomes bottleneck |
+
+**Recommended Approach (Redis Pub/Sub)**:
+
+```java
+// Configure Spring to use Redis as broker relay
+@Override
+public void configureMessageBroker(MessageBrokerRegistry registry) {
+    registry.enableStompBrokerRelay("/topic", "/queue")
+            .setRelayHost("redis-host")
+            .setRelayPort(6379);
+}
+```
+
+```mermaid
+flowchart TB
+    C1[Client 1] -->|WS| S1[Server 1]
+    C2[Client 2] -->|WS| S1
+    C3[Client 3] -->|WS| S2[Server 2]
+    C4[Client 4] -->|WS| S2
+    
+    S1 -->|Publish| R[(Redis Pub/Sub)]
+    S2 -->|Publish| R
+    R -->|Subscribe| S1
+    R -->|Subscribe| S2
+    
+    style R fill:#f96
+```
+
+---
+
+### Concurrency & Locking
+
+#### Q18: Why pessimistic locking instead of optimistic locking for table booking?
+
+**Answer**:
+
+| Aspect | Pessimistic Locking | Optimistic Locking |
+|--------|--------------------|--------------------|
+| **When** | Lock before operation | Check version at save time |
+| **How** | `SELECT ... FOR UPDATE` | `@Version` column |
+| **Conflict** | Waits or fails immediately | Throws `OptimisticLockException` |
+| **Best for** | High contention, short transactions | Low contention, long reads |
+
+**Why Pessimistic for Table Booking**:
+
+1. **High contention scenario**: Popular restaurant, limited tables
+2. **Critical operation**: Double-booking is unacceptable (unlike a retry-able operation)
+3. **Short transaction**: Lock → check → update → release (milliseconds)
+4. **User experience**: Better to wait than get "table just taken" error
+
+**Code Comparison**:
+
+```java
+// Pessimistic (current approach)
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+Optional<TableEntity> findByIdForUpdate(@Param("id") String id);
+
+// If we used Optimistic:
+@Entity
+public class TableEntity {
+    @Version
+    private Long version;  // Auto-incremented on save
+}
+
+// Problem: Customer A and B both read version=1
+// Both try to save with version=1
+// One succeeds, one gets OptimisticLockException
+// Customer B sees error message - poor UX!
+```
+
+**When Optimistic would be better**:
+- Low contention (editing restaurant settings)
+- Long-running operations (user editing a form for minutes)
+- Read-heavy workloads
+
+---
+
+### Security Concepts
+
+#### Q19: Where do you store JWT in the frontend? What are the trade-offs?
+
+**Answer**:
+
+| Storage | XSS Vulnerable? | CSRF Vulnerable? | Persists Tab Close? |
+|---------|-----------------|------------------|---------------------|
+| **localStorage** | ✅ Yes | ❌ No | ✅ Yes |
+| **sessionStorage** | ✅ Yes | ❌ No | ❌ No |
+| **httpOnly Cookie** | ❌ No | ✅ Yes | ✅ Yes |
+| **Memory (variable)** | ❌ No | ❌ No | ❌ No |
+
+**Current QuickMenu Approach**: `localStorage`
+```javascript
+// Frontend stores token
+localStorage.setItem('token', response.data.token);
+
+// Sent with each request
+axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+```
+
+**Risks**:
+- XSS attack can steal token from localStorage
+- Any injected script has full access
+
+**Recommended Production Approach**:
+1. **httpOnly Cookie** for access token (immune to XSS)
+2. **CSRF token** for state-changing requests
+3. **Short expiry** (15 min) + refresh token flow
+
+```java
+// Backend sets httpOnly cookie
+ResponseCookie cookie = ResponseCookie.from("token", jwt)
+    .httpOnly(true)
+    .secure(true)  // HTTPS only
+    .sameSite("Strict")
+    .maxAge(Duration.ofHours(1))
+    .path("/")
+    .build();
+response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+```
+
+---
+
+#### Q20: What is CSRF and CORS? Why did you disable CSRF but enable CORS?
+
+**Answer**:
+
+**CSRF (Cross-Site Request Forgery)**:
+- Attack where malicious site tricks browser into making authenticated requests
+- Browser automatically sends cookies to the target site
+- Example: Hidden form submitting POST to `/api/transfer-money`
+
+**Why Disabled**:
+```java
+.csrf(AbstractHttpConfigurer::disable)
+```
+- We use **JWT in Authorization header**, not cookies
+- CSRF only exploits **automatic cookie inclusion**
+- Header-based auth requires explicit JavaScript action (attacker can't force it)
+
+**CORS (Cross-Origin Resource Sharing)**:
+- Browser security preventing frontend (localhost:5173) from calling backend (localhost:8080)
+- Same-origin policy blocks cross-origin requests by default
+
+**Why Enabled**:
+```java
+@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowedOrigins(List.of("http://localhost:5173", "https://quickmenu.com"));
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
+    config.setAllowCredentials(true);
+}
+```
+- Frontend and backend are on different ports/domains
+- Need to allow legitimate cross-origin requests
+- `allowCredentials: true` allows cookies/auth headers
+
+---
+
+### Architecture Patterns
+
+#### Q21: Are you using Event-Driven Architecture or Pub/Sub? What's the difference?
+
+**Answer**:
+
+```mermaid
+flowchart TB
+    subgraph "Event-Driven Architecture (EDA)"
+        E1[Event Producer] -->|OrderPlaced| EB[Event Bus/Broker]
+        EB -->|OrderPlaced| C1[Inventory Service]
+        EB -->|OrderPlaced| C2[Analytics Service]
+        EB -->|OrderPlaced| C3[Notification Service]
+    end
+    
+    subgraph "Pub/Sub Pattern"
+        P[Publisher] -->|Publish to Topic| T[Topic: orders]
+        T --> S1[Subscriber 1]
+        T --> S2[Subscriber 2]
+    end
+```
+
+**Event-Driven Architecture (EDA)**:
+- **Architectural style** - how systems are designed
+- Events represent facts that happened (immutable)
+- Multiple services react independently
+- Often uses event sourcing, CQRS
+
+**Pub/Sub Pattern**:
+- **Messaging pattern** - how messages are delivered
+- Publisher doesn't know subscribers
+- Can be used within EDA or independently
+
+**QuickMenu uses**:
+- **Pub/Sub pattern** via STOMP WebSocket
+- **Not full EDA** because:
+  - Single monolithic service
+  - Events aren't persisted as source of truth
+  - No event replay capability
+
+```java
+// Current: Simple Pub/Sub for real-time UI updates
+messagingTemplate.convertAndSend("/topic/restaurants/" + id + "/orders", payload);
+
+// Full EDA would look like:
+eventStore.append(new OrderPlacedEvent(orderId, items, timestamp));
+// Separate consumers would read and react
+```
+
+---
+
+#### Q22: What rate limiting strategies could you use? Compare them.
+
+**Answer**:
+
+| Strategy | How It Works | Pros | Cons |
+|----------|-------------|------|------|
+| **Fixed Window** | Count requests per time window (e.g., 100/min) | Simple to implement | Burst at window boundary |
+| **Sliding Window** | Rolling time window | Smoother limiting | More memory |
+| **Token Bucket** | Tokens added at fixed rate, consumed per request | Allows controlled bursts | Slightly complex |
+| **Leaky Bucket** | Requests "leak" at fixed rate | Smooth output rate | Delays requests |
+
+**Current QuickMenu Implementation** (Fixed Window):
+```java
+// Simple fixed window with in-memory map
+private final Map<String, Instant> lastEventAt = new ConcurrentHashMap<>();
+
+if (now.isBefore(last.plusSeconds(cooldownSeconds))) {
+    throw new IllegalStateException("Rate limited");
+}
+```
+
+**Production-Ready Token Bucket with Redis**:
+```java
+public boolean isAllowed(String key, int maxTokens, int refillRate) {
+    String script = """
+        local tokens = redis.call('GET', KEYS[1]) or maxTokens
+        if tonumber(tokens) > 0 then
+            redis.call('DECR', KEYS[1])
+            redis.call('EXPIRE', KEYS[1], 60)
+            return 1
+        end
+        return 0
+    """;
+    return redisTemplate.execute(script, List.of(key), maxTokens);
+}
+```
+
+**Choosing a Strategy**:
+- **API rate limiting**: Token bucket (allows bursts, protects backend)
+- **Bell feature**: Fixed window (simple, user behavior-focused)
+- **DDoS protection**: Leaky bucket at gateway level
+
+---
+
+### Design Patterns Deep-Dive
+
+#### Q23: What famous Creational, Structural, and Behavioral design patterns did you use? Can you integrate 2 of each?
+
+**Answer**:
+
+#### **Creational Patterns (2)**
+
+**1. Builder Pattern** (Already using via Lombok):
+```java
+Order order = Order.builder()
+    .restaurantId(restaurantId)
+    .tableId(tableId)
+    .customerName(name)
+    .totalAmount(total)
+    .status(Order.Status.PLACED)
+    .build();
+```
+
+**2. Factory Pattern** (Could integrate for notification creation):
+```java
+public interface NotificationFactory {
+    Notification create(String type, String message);
+}
+
+@Component
+public class NotificationFactoryImpl implements NotificationFactory {
+    public Notification create(String type, String message) {
+        return switch (type) {
+            case "ORDER" -> new OrderNotification(message);
+            case "BELL" -> new BellNotification(message);
+            case "ALERT" -> new AlertNotification(message);
+            default -> throw new IllegalArgumentException("Unknown type");
+        };
+    }
+}
+```
+
+---
+
+#### **Structural Patterns (2)**
+
+**1. Adapter Pattern** (Email service abstraction):
+```java
+// Interface
+public interface EmailSender {
+    void sendPasswordResetEmail(String to, String token);
+}
+
+// Adapter for SendGrid
+@Component
+public class SendGridEmailAdapter implements EmailSender {
+    private final SendGrid sendGrid;
+    
+    public void sendPasswordResetEmail(String to, String token) {
+        // Adapt our interface to SendGrid's API
+        Mail mail = new Mail(from, subject, new Email(to), content);
+        sendGrid.api(new Request(Method.POST, "mail/send", mail));
+    }
+}
+
+// Could easily swap to SMTP adapter
+@Component
+@Profile("smtp")
+public class SmtpEmailAdapter implements EmailSender {
+    private final JavaMailSender mailSender;
+    // Different implementation, same interface
+}
+```
+
+**2. Facade Pattern** (OrderService as facade):
+```java
+@Service
+public class OrderService {  // Facade
+    private final OrderRepository orderRepo;
+    private final DishRepository dishRepo;
+    private final TableRepository tableRepo;
+    private final SimpMessagingTemplate messaging;
+    
+    // Client just calls placeOrder() - complexity hidden
+    public Map<String, Object> placeOrder(String restaurantId, OrderRequest req) {
+        // Coordinates: validation, table locking, dish lookup,
+        // order creation, WebSocket broadcast
+    }
+}
+```
+
+---
+
+#### **Behavioral Patterns (2)**
+
+**1. Strategy Pattern** (Could integrate for different auth strategies):
+```java
+public interface AuthenticationStrategy {
+    AuthResponse authenticate(LoginRequest request);
+}
+
+@Component("jwt")
+public class JwtAuthStrategy implements AuthenticationStrategy {
+    public AuthResponse authenticate(LoginRequest request) {
+        // Validate password, generate JWT
+    }
+}
+
+@Component("oauth")
+public class OAuthAuthStrategy implements AuthenticationStrategy {
+    public AuthResponse authenticate(LoginRequest request) {
+        // OAuth flow
+    }
+}
+
+// Controller selects strategy
+@PostMapping("/login")
+public ResponseEntity<?> login(@RequestBody LoginRequest req,
+                               @RequestParam(defaultValue = "jwt") String method) {
+    AuthenticationStrategy strategy = strategies.get(method);
+    return ResponseEntity.ok(strategy.authenticate(req));
+}
+```
+
+**2. Observer Pattern** (Already using via WebSocket):
+```java
+// Subject (Publisher)
+messagingTemplate.convertAndSend("/topic/restaurants/" + id + "/orders", event);
+
+// Observers (Subscribers) - registered on frontend
+stompClient.subscribe('/topic/restaurants/123/orders', (message) => {
+    // React to order event
+    updateOrderList(message.body);
+});
+```
+
+---
+
+#### **Combined Pattern: Template Method + Strategy**
+```java
+// Template method defines skeleton
+public abstract class OrderProcessor {
+    public final Order process(OrderRequest req) {
+        validate(req);                    // Fixed step
+        TableEntity table = lockTable(req.getTableId());  // Fixed step
+        BigDecimal total = calculateTotal(req);  // Can be overridden
+        Order order = createOrder(req, total);   // Fixed step
+        notify(order);                    // Can be overridden
+        return order;
+    }
+    
+    protected abstract BigDecimal calculateTotal(OrderRequest req);
+    protected abstract void notify(Order order);
+}
+
+@Component
+public class StandardOrderProcessor extends OrderProcessor {
+    protected BigDecimal calculateTotal(OrderRequest req) {
+        return req.getItems().stream()
+            .map(i -> dishRepo.findById(i.getDishId()).getPrice().multiply(i.getQty()))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+    
+    protected void notify(Order order) {
+        messagingTemplate.convertAndSend("/topic/orders", order);
+    }
+}
+
+@Component
+public class DiscountOrderProcessor extends OrderProcessor {
+    protected BigDecimal calculateTotal(OrderRequest req) {
+        BigDecimal base = super.calculateTotal(req);
+        return base.multiply(new BigDecimal("0.9"));  // 10% discount
+    }
+}
+```
+
+---
+
+### JWT & Authentication
+
+#### Q24: Why no refresh tokens in your JWT implementation? What would you change?
+
+**Answer**:
+
+**Current Implementation**:
+```java
+jwt:
+  expirationMs: 3600000  # 1 hour - single token
+```
+
+**Problems with Single Token**:
+1. **Long expiry = security risk**: If stolen, attacker has access for 1 hour
+2. **Short expiry = bad UX**: User gets logged out frequently
+3. **No revocation**: Can't invalidate token before expiry
+
+**Refresh Token Solution**:
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as Auth Server
+    
+    C->>A: Login (email, password)
+    A-->>C: Access Token (15min) + Refresh Token (7 days)
+    
+    Note over C: Access token expires
+    
+    C->>A: POST /auth/refresh (refresh token)
+    A->>A: Validate refresh token
+    A-->>C: New Access Token (15min)
+    
+    Note over C: Refresh token expires or revoked
+    
+    C->>A: POST /auth/refresh (expired refresh)
+    A-->>C: 401 Unauthorized - Re-login required
+```
+
+**Implementation Changes**:
+
+```java
+// New AuthResponse
+public class AuthResponse {
+    private String accessToken;   // Short-lived (15 min)
+    private String refreshToken;  // Long-lived (7 days), stored in DB
+    private long accessExpiresIn;
+    private long refreshExpiresIn;
+}
+
+// New RefreshToken entity
+@Entity
+public class RefreshToken {
+    @Id private String id;
+    private String userId;
+    private String token;
+    private Instant expiresAt;
+    private boolean revoked;
+}
+
+// Refresh endpoint
+@PostMapping("/auth/refresh")
+public ResponseEntity<?> refresh(@RequestBody RefreshRequest req) {
+    RefreshToken stored = refreshTokenRepo.findByToken(req.getRefreshToken())
+        .filter(t -> !t.isRevoked() && t.getExpiresAt().isAfter(Instant.now()))
+        .orElseThrow(() -> new InvalidTokenException());
+    
+    String newAccessToken = tokenProvider.generateAccessToken(stored.getUserId());
+    return ResponseEntity.ok(new TokenResponse(newAccessToken));
+}
+```
+
+---
+
+### Database & Performance
+
+#### Q25: What aggregation queries are you using? Won't they kill your DB at scale?
+
+**Answer**:
+
+**Current Aggregation Queries**:
+
+```sql
+-- 1. Hourly orders (dashboard)
+SELECT DATE_TRUNC('hour', placed_at), COUNT(*)
+FROM orders
+WHERE restaurant_id = ? AND placed_at BETWEEN ? AND ?
+GROUP BY DATE_TRUNC('hour', placed_at);
+
+-- 2. Top dishes (analytics)
+SELECT dish_id, SUM(quantity), SUM(price_at_order * quantity)
+FROM order_items oi
+JOIN orders o ON oi.order_id = o.id
+WHERE o.restaurant_id = ? AND o.placed_at BETWEEN ? AND ?
+GROUP BY dish_id
+ORDER BY SUM(quantity) DESC
+LIMIT 5;
+
+-- 3. Category breakdown
+SELECT c.name, SUM(oi.quantity)
+FROM order_items oi
+JOIN dishes d ON oi.dish_id = d.id
+JOIN categories c ON d.category_id = c.id
+GROUP BY c.id;
+```
+
+**Scaling Problems**:
+1. **Full table scan** on large datasets
+2. **GROUP BY** is expensive
+3. **Multiple JOINs** compound the problem
+4. **Real-time dashboard** = constant queries
+
+**Optimization Strategies**:
+
+| Strategy | When | How |
+|----------|------|-----|
+| **Indexing** | First step | `CREATE INDEX idx_orders_rest_placed ON orders(restaurant_id, placed_at)` |
+| **Materialized Views** | Daily/hourly reports | Pre-computed, refreshed periodically |
+| **Pre-aggregation tables** | High traffic | Separate `daily_stats` table updated on each order |
+| **CQRS** | Scale reads | Separate read model optimized for queries |
+| **Caching** | Repeated queries | Redis cache with 5-min TTL |
+| **Time-series DB** | Analytics at scale | InfluxDB, TimescaleDB for metrics |
+
+**Production-Ready Approach**:
+
+```java
+// 1. Pre-aggregate on order creation
+@Transactional
+public void placeOrder(OrderRequest req) {
+    Order order = saveOrder(req);
+    
+    // Update pre-aggregated stats
+    dailyStatsRepo.incrementOrders(restaurantId, LocalDate.now());
+    dailyStatsRepo.addRevenue(restaurantId, LocalDate.now(), order.getTotalAmount());
+}
+
+// 2. Dashboard reads from aggregated table
+public DashboardStats getStats(String restaurantId) {
+    return cacheService.getOrCompute(
+        "stats:" + restaurantId,
+        () -> dailyStatsRepo.getRecentStats(restaurantId),
+        Duration.ofMinutes(5)
+    );
+}
+```
+
+---
+
+### Testing
+
+#### Q26: How do you test pessimistic locking? How do you verify it actually works?
+
+**Answer**:
+
+**Approach 1: Concurrent Integration Test**
+
+```java
+@SpringBootTest
+@Transactional
+class PessimisticLockingTest {
+    
+    @Autowired OrderService orderService;
+    @Autowired TableRepository tableRepository;
+    
+    @Test
+    void shouldPreventDoubleBooking() throws Exception {
+        String tableId = createFreeTable();
+        
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger conflictCount = new AtomicInteger(0);
+        
+        // Two threads try to book same table simultaneously
+        for (int i = 0; i < 2; i++) {
+            executor.submit(() -> {
+                startLatch.await();  // Wait for signal
+                try {
+                    orderService.placeOrder("rest1", createOrderRequest(tableId));
+                    successCount.incrementAndGet();
+                } catch (TableOccupiedException e) {
+                    conflictCount.incrementAndGet();
+                }
+            });
+        }
+        
+        startLatch.countDown();  // Start both threads
+        executor.awaitTermination(5, TimeUnit.SECONDS);
+        
+        // Only one should succeed
+        assertThat(successCount.get()).isEqualTo(1);
+        assertThat(conflictCount.get()).isEqualTo(1);
+    }
+}
+```
+
+**Approach 2: Lock Timeout Test**
+
+```java
+@Test
+void shouldTimeout_whenLockHeldTooLong() {
+    // Thread 1: Acquire lock and hold it
+    CompletableFuture.runAsync(() -> {
+        transactionTemplate.execute(status -> {
+            tableRepository.findByIdForUpdate("table1");
+            Thread.sleep(10000);  // Hold lock for 10 seconds
+            return null;
+        });
+    });
+    
+    Thread.sleep(100);  // Ensure Thread 1 has the lock
+    
+    // Thread 2: Should timeout
+    assertThrows(PessimisticLockingFailureException.class, () -> {
+        transactionTemplate.execute(status -> {
+            tableRepository.findByIdForUpdate("table1");
+            return null;
+        });
+    });
+}
+```
+
+**Approach 3: Database-Level Verification**
+
+```sql
+-- In PostgreSQL, check active locks
+SELECT l.pid, l.mode, c.relname, a.query
+FROM pg_locks l
+JOIN pg_class c ON l.relation = c.oid
+JOIN pg_stat_activity a ON l.pid = a.pid
+WHERE c.relname = 'restaurant_tables';
+```
+
+---
+
+### System Design
+
+#### Q27: If you had to delete 30% of this code tomorrow, what would you remove first?
+
+**Answer**:
+
+**Priority for Removal** (Based on MVP principles):
+
+| Priority | Component | % of Codebase | Why Removable |
+|----------|-----------|---------------|---------------|
+| 1 | Demo data seeding/scheduler | ~8% | Only needed for showcase, not production |
+| 2 | Admin analytics/metrics | ~7% | Nice-to-have, core ordering works without it |
+| 3 | Bell feature | ~6% | Actually useful but not critical for ordering |
+| 4 | Password reset via email | ~4% | Admin can reset manually |
+| 5 | Swagger/OpenAPI config | ~2% | Docs, not runtime |
+| 6 | Soft delete logic | ~3% | Simplify to hard delete |
+
+**Files I'd Remove First**:
+
+```
+# Priority 1: Demo Infrastructure (~8%)
+- DemoDataScheduler.java
+- DemoDataService.java  
+- DataInitializer.java (most of it)
+- DemoInfoController.java
+
+# Priority 2: Analytics (~7%)
+- AdminMetricsService.java
+- AdminMetricsController.java
+- MetricDtos.java
+- Complex aggregation queries
+
+# Priority 3: Bell Feature (~6%)
+- bell/ (entire package)
+- BellEvent.java
+- BellController.java
+- BellService.java
+
+# Total: ~21% - would need to cut more
+```
+
+**What I'd NEVER Remove**:
+- Auth module (security core)
+- Order placement flow (core business)
+- Restaurant/Table/Dish entities (data model)
+- SecurityConfig (without auth, no app)
+
+**Refactoring Approach**:
+```java
+// Instead of full removal, simplify:
+
+// Before: Complex analytics
+public MetricsResponse getMetrics(String restaurantId, Instant start, Instant end) {
+    // 3 complex queries, aggregations, DTOs...
+}
+
+// After: Simple counts
+public SimpleStats getStats(String restaurantId) {
+    return new SimpleStats(
+        orderRepo.countByRestaurantId(restaurantId),
+        orderRepo.sumTotalAmountByRestaurantId(restaurantId)
+    );
+}
+```
+
+---
+
+### Bonus: "Gotcha" Questions
+
+#### Q28: What happens if Cloudinary is down during image upload?
+
+**Answer**:
+Current code throws exception → 500 error to user.
+
+**Better Approach**:
+```java
+public String uploadWithFallback(MultipartFile file) {
+    try {
+        return cloudinaryService.upload(file);  // Primary
+    } catch (Exception e) {
+        log.warn("Cloudinary failed, using local storage");
+        return localStorageService.upload(file);  // Fallback
+    }
+}
+```
+
+---
+
+#### Q29: A customer places an order, but WebSocket broadcast fails. What happens?
+
+**Answer**:
+Currently: Order is saved, but staff never sees it until page refresh.
+
+**Current Implementation** (fire-and-forget):
+```java
+try {
+    messagingTemplate.convertAndSend("/topic/orders", payload);
+    saved.setDelivered(true);
+} catch (Exception ex) {
+    // Logged but order still created
+    saved.setDelivered(false);
+}
+```
+
+**Better Approach**:
+1. **Polling fallback**: Staff dashboard periodically fetches recent orders
+2. **Retry mechanism**: Queue failed broadcasts for retry
+3. **Outbox pattern**: Store events in DB, separate processor sends them
+
+---
+
+#### Q30: Your JWT secret gets leaked. What's your incident response?
+
+**Answer**:
+
+**Immediate Actions** (within minutes):
+1. **Rotate secret** in all environments
+2. **All existing tokens become invalid** (users must re-login)
+3. **Review logs** for suspicious activity during exposure window
+
+**Code Change**:
+```java
+// Support secret rotation with grace period
+public class JwtTokenProvider {
+    private final List<SecretKey> validKeys;  // Current + previous
+    
+    public boolean validateToken(String token) {
+        for (SecretKey key : validKeys) {
+            try {
+                Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+                return true;
+            } catch (JwtException ignored) {}
+        }
+        return false;
+    }
+}
+```
+
+**Prevention**:
+- Store secrets in vault (AWS Secrets Manager, HashiCorp Vault)
+- Environment variables, never in code
+- Regular rotation schedule
+
+---
 
 ## Quick Reference Card
 
