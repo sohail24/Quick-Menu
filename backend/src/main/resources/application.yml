@@ -74,6 +74,23 @@ app:
     api-secret: ${CLOUDINARY_API_SECRET:your-api-secret}
   cors:
     allowed-origins: http://localhost:5173
+  ai:
+    gemini:
+      api-key: ${GEMINI_API_KEY:} # Provide this in .env
+    huggingface:
+      token: ${HUGGING_FACE_TOKEN:} # Provide this in .env
+
+# Resilience4j Config
+resilience4j:
+  retry:
+    instances:
+      aiService:
+        max-attempts: 3
+        wait-duration: 1s
+  timelimiter:
+    instances:
+      aiService:
+        timeout-duration: 5s
 
 # Demo data configuration
 demo:

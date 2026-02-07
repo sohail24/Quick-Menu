@@ -1,0 +1,422 @@
+{
+	"info": {
+		"_postman_id": "e91eefeb-2aab-4189-a7f4-966c37908b4d",
+		"name": "Quick Menu - API V2 (Full AI & Idempotency)",
+		"description": "Updated Postman collection for Quick Menu. Includes Authentication, Restaurant Management, Menu Management, Orders (Idempotent), Real-time Bells, and new AI Features (Descriptions, Insights, Images).\n\nSet {{baseUrl}} (default http://localhost:8080) and use the 'Auth' folder to obtain a token.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32596693"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Signup (auto-login)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Signup: save token if returned",
+									"try {",
+									"  const json = pm.response.json();",
+									"  if (json && json.token) {",
+									"    pm.environment.set(\"token\", json.token);",
+									"    pm.environment.set(\"authHeader\", \"Bearer \" + json.token);",
+									"    console.log(\"Saved token from signup\");",
+									"  }",
+									"} catch (e) {",
+									"  console.log(\"No JSON body or token not found\");",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Owner\",\n  \"email\": \"owner@qm.local\",\n  \"password\": \"Owner123!\",\n  \"role\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/signup",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signup"
+							]
+						},
+						"description": "Registers and returns an access token (auto-login)."
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Login: save token automatically",
+									"try {",
+									"  const json = pm.response.json();",
+									"  if (json && json.token) {",
+									"    pm.environment.set(\"token\", json.token);",
+									"    pm.environment.set(\"authHeader\", \"Bearer \" + json.token);",
+									"    console.log(\"Saved token from login\");",
+									"  } else {",
+									"    console.log(\"Login response did not include token\");",
+									"  }",
+									"} catch (e) {",
+									"  console.log(\"Login: response parsing failed\", e);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@quickmenu.local\",\n  \"password\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login returns { token, tokenType, expiresInMs } - copy token into {{token}} variable."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "AI Features (Resiliency Tier)",
+			"item": [
+				{
+					"name": "Get Dish Description",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/ai/dish-description?dishName=Spicy%20Paneer%20Burger&category=Burgers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ai",
+								"dish-description"
+							],
+							"query": [
+								{
+									"key": "dishName",
+									"value": "Spicy%20Paneer%20Burger"
+								},
+								{
+									"key": "category",
+									"value": "Burgers"
+								}
+							]
+						},
+						"description": "Generates a 2-sentence description using the Primary-Secondary-Tertiary fallback system."
+					}
+				},
+				{
+					"name": "Get Admin Insights",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"restaurantName\": \"{{restaurantId}}\",\n  \"analyticsData\": \"Total sales high on weekends, low on Tuesdays.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/ai/admin-insights",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ai",
+								"admin-insights"
+							]
+						}
+					}
+				},
+				{
+					"name": "Generate Dish Image",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/ai/generate-image?dishName=Margherita%20Pizza&restaurantId={{restaurantId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ai",
+								"generate-image"
+							],
+							"query": [
+								{
+									"key": "dishName",
+									"value": "Margherita%20Pizza"
+								},
+								{
+									"key": "restaurantId",
+									"value": "{{restaurantId}}"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Restaurants",
+			"item": [
+				{
+					"name": "Create Restaurant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"try {",
+									"  const json = pm.response.json();",
+									"  if (json && json.id) {",
+									"    pm.environment.set(\"restaurantId\", json.id);",
+									"  }",
+									"} catch (e) {}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Bistro\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"currency\": \"INR\",\n  \"address\": \"123 AI Street\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/restaurants",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"restaurants"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Restaurant",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/restaurants/{{restaurantId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"restaurants",
+								"{{restaurantId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders (IDEMPOTENT)",
+			"item": [
+				{
+					"name": "Place Order (Customer - Idempotent)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"try {",
+									"  const json = pm.response.json();",
+									"  if (json && json.id) {",
+									"    pm.environment.set(\"orderId\", json.id);",
+									"    console.log(\"Order Created/Retrieved with ID:\", json.id);",
+									"  }",
+									"} catch (e) {}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"tableId\": \"{{tableId}}\",\n  \"customerName\": \"Idempotent John\",\n  \"customerPhone\": \"9876543210\",\n  \"items\": [{ \"dishId\": \"{{dishId}}\", \"quantity\": 2, \"note\": \"spicy\" }],\n  \"discountStrategy\": \"HAPPY_HOUR\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/{{restaurantId}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"{{restaurantId}}",
+								"orders"
+							]
+						},
+						"description": "This request is IDEMPOTENT. If you send the same {{requestId}} twice, the server will return the existing order instead of creating a duplicate."
+					},
+					"response": []
+				},
+				{
+					"name": "List Orders (paged) - staff",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/{{restaurantId}}/orders?page=0&size=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"{{restaurantId}}",
+								"orders"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"// Collection-level Pre-request script: set Authorization header if token exists",
+					"if (pm.environment.get(\"token\")) {",
+					"  pm.request.headers.upsert({ key: \"Authorization\", value: \"Bearer \" + pm.environment.get(\"token\") });",
+					"}",
+					"// Generate a random UUID for requestId if not set",
+					"if (!pm.environment.get(\"requestId\")) {",
+					"    pm.environment.set(\"requestId\", 'req-' + Math.random().toString(36).substring(2, 9));",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "restaurantId",
+			"value": ""
+		},
+		{
+			"key": "tableId",
+			"value": ""
+		},
+		{
+			"key": "dishId",
+			"value": ""
+		},
+		{
+			"key": "requestId",
+			"value": ""
+		}
+	]
+}
