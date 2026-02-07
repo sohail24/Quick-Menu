@@ -37,81 +37,90 @@ public class AIService {
     );
 
     public String generateContent(String prompt) {
-        String rawKey = geminiApiKey != null ? geminiApiKey.trim() : "";
-        String cleanKey = rawKey.replaceAll("^\"|\"$", "");
-
-        if (cleanKey.isEmpty()) {
-            return "AI Currently Unavailable: Please configure GEMINI_API_KEY in your .env file.";
-        }
-
         StringBuilder rca = new StringBuilder();
         
-        // 1. Primary Attempt: Sequentially try Gemini Flash models (Prioritizing Lite for 1,500 req/day quota)
-        for (String modelName : FLASH_MODELS) {
-            try {
-                log.info("AI: Attempting Gemini efficient model: {}", modelName);
-                String result = tryGemini(prompt, "v1beta", modelName, cleanKey);
-                log.info("AI: SUCCESS using Gemini model: {}", modelName);
-                return result;
-            } catch (Exception e) {
-                log.warn("AI: Gemini model {} unavailable or quota hit: {}", modelName, e.getMessage());
-                rca.append(String.format("[G:%s: %s] ", modelName, e.getMessage()));
+        // Tier 1: Gemini (Primary - 1,500 req/day)
+        String rawKey = geminiApiKey != null ? geminiApiKey.trim() : "";
+        String cleanKey = rawKey.replaceAll("^\"|\"$", "");
+        if (!cleanKey.isEmpty()) {
+            for (String modelName : FLASH_MODELS) {
+                try {
+                    log.info("AI: Attempting Gemini model: {}", modelName);
+                    return tryGemini(prompt, "v1beta", modelName, cleanKey);
+                } catch (Exception e) {
+                    log.warn("AI: Gemini {} failed: {}", modelName, e.getMessage());
+                    rca.append("[G:").append(modelName).append("] ");
+                }
             }
         }
 
-        // 2. Secondary Tier: MLVoca (Alternative Keyless Provider - Resilient to Pollinations outages)
+        // Tier 2: Hugging Face (Secondary - Professional Free Choice)
         try {
-            log.info("AI: Gemini exhausted. Attempting Tier-2 fallback (MLVoca TinyLlama)...");
-            String result = tryMLVoca(prompt);
-            log.info("AI: SUCCESS using Tier-2 fallback: MLVoca");
-            return result;
+            log.info("AI: Attempting Hugging Face Text (Mistral-7B)...");
+            String result = tryHuggingFaceText(prompt);
+            if (result != null) return result;
         } catch (Exception e) {
-            log.warn("AI: Tier-2 (MLVoca) failed: {}", e.getMessage());
-            rca.append(String.format("[M:%s] ", e.getMessage()));
+            log.warn("AI: Hugging Face Text failed: {}", e.getMessage());
+            rca.append("[HF] ");
         }
 
-        // 3. Tertiary Tier: Pollinations (Multi-Model Redundancy)
-        String[] secondaryModels = {"openai", "mistral", "qwen"};
-        for (String model : secondaryModels) {
-            try {
-                log.info("AI: (TEST MODE) Attempting Tier-3 fallback (Pollinations {})...", model);
-                String result = tryPollinations(prompt, model);
-                log.info("AI: SUCCESS using Tier-3 fallback: Pollinations/{}", model);
-                return result;
-            } catch (Exception e) {
-                log.warn("AI: Tier-3 model {} failed: {}", model, e.getMessage());
-                rca.append(String.format("[P:%s: %s] ", model, e.getMessage()));
+        // Tier 3: MLVoca (Cloud Fallback - Keyless & Free)
+        try {
+            log.info("AI: Falling back to MLVoca (TinyLlama Cloud)...");
+            String result = tryMLVoca(prompt);
+            if (result != null) return result;
+        } catch (Exception e) {
+            log.warn("AI: MLVoca failed: {}", e.getMessage());
+            rca.append("[MLVoca] ");
+        }
+
+        return "AI Currently Unavailable. Fallbacks exhausted: " + rca.toString();
+    }
+
+    private String tryHuggingFaceText(String prompt) {
+        String token = huggingFaceToken != null ? huggingFaceToken.trim() : "";
+        if (token.isEmpty()) return null;
+
+        try {
+            // Using a high-quality instruction model
+            String model = "mistralai/Mistral-7B-Instruct-v0.1";
+            String url = "https://router.huggingface.co/hf-inference/models/" + model;
+
+            com.fasterxml.jackson.databind.JsonNode response = restClient.post()
+                    .uri(url)
+                    .header("Authorization", "Bearer " + token)
+                    .body(java.util.Map.of("inputs", prompt))
+                    .retrieve()
+                    .body(com.fasterxml.jackson.databind.JsonNode.class);
+
+            if (response != null && response.isArray()) {
+                return response.get(0).get("generated_text").asText();
             }
+        } catch (Exception e) {
+            log.warn("Hugging Face Text failed: {}", e.getMessage());
         }
-
-        // Final RCA Recovery
-        log.error("AI: All primary, secondary, and tertiary providers failed.");
-        return "AI Currently Unavailable. (Technical Analysis: All providers failed | Details: " + rca.toString() + ")";
+        return null;
     }
 
     private String tryMLVoca(String prompt) {
-        // MLVoca uses the Ollama-style API
-        java.util.Map<String, Object> request = new java.util.HashMap<>();
-        request.put("model", "tinyllama");
-        request.put("prompt", prompt);
-        request.put("stream", false);
+        try {
+            java.util.Map<String, Object> request = java.util.Map.of(
+                "model", "tinyllama",
+                "prompt", prompt,
+                "stream", false
+            );
 
-        return restClient.post()
-                .uri("https://mlvoca.com/api/generate")
-                .body(request)
-                .retrieve()
-                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) -> {
-                    throw new RuntimeException("MLVoca error " + res.getStatusCode());
-                })
-                .body(MLVocaResponse.class)
-                .getResponse();
-    }
-
-    @lombok.Data
-    @lombok.NoArgsConstructor
-    @lombok.AllArgsConstructor
-    private static class MLVocaResponse {
-        private String response;
+            // MLVoca provides a cloud-hosted Ollama-compatible endpoint
+            return restClient.post()
+                    .uri("https://mlvoca.com/api/generate")
+                    .body(request)
+                    .retrieve()
+                    .body(com.fasterxml.jackson.databind.JsonNode.class)
+                    .get("response").asText();
+        } catch (Exception e) {
+            log.warn("MLVoca Cloud failed: {}", e.getMessage());
+        }
+        return null;
     }
 
     private String tryGemini(String prompt, String version, String model, String key) {
@@ -139,19 +148,6 @@ public class AIService {
                 .getFirstText();
     }
 
-    private String tryPollinations(String prompt, String model) {
-        String encodedPrompt = java.net.URLEncoder.encode(prompt, java.nio.charset.StandardCharsets.UTF_8);
-        int seed = new java.util.Random().nextInt(100000);
-        String url = String.format("https://text.pollinations.ai/%s?model=%s&seed=%d", encodedPrompt, model, seed);
-
-        return restClient.get()
-                .uri(url)
-                .retrieve()
-                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) -> {
-                    throw new RuntimeException("Pollinations " + model + " error " + res.getStatusCode());
-                })
-                .body(String.class);
-    }
 
     public String generateDishDescription(String dishName, String category) {
         String prompt = String.format("Write a short, appetizing 2 sentence description for a dish named '%s' in the category '%s'. Keep it concise for a restaurant menu.", 
@@ -166,9 +162,9 @@ public class AIService {
     }
     
     /**
-     * AI Image Generation (Zero-Config & Forever Free)
-     * No Credit Card or API Keys required for Pollinations.ai.
-     * Note: If Pollinations is slow/down, the system fails over to Professional Photography.
+     * AI Image Generation (Triple-Tier Resiliency)
+     * Priority: Google Imagen 4.0 -> Hugging Face FLUX.1 -> Professional Photography.
+     * All AI-generated images are mirrored to Cloudinary for permanent hosting.
      */
     public String generateImagePath(String dishName) {
         // Mode Toggle: Set to 'true' to force Professional Photography if AI is unstable
@@ -178,13 +174,13 @@ public class AIService {
             return getStablePhotographyUrl(dishName);
         }
 
-        // Tier 1: Hugging Face (Most Reliable Free Choice - No Credit Card)
-        String hfResult = tryHuggingFace(dishName);
-        if (hfResult != null) return hfResult;
-
-        // Tier 2: Google Imagen (Requires a Billed Google Account)
+        // Tier 1: Google Imagen (Primary - 1,500 req/day)
         String geminiImage = tryGeminiImagen(dishName);
         if (geminiImage != null) return geminiImage;
+
+        // Tier 2: Hugging Face (Secondary - Professional Fallback)
+        String hfResult = tryHuggingFace(dishName);
+        if (hfResult != null) return hfResult;
 
         log.warn("All AI Image Engines Failed: Falling back to Professional Photography.");
         return getStablePhotographyUrl(dishName);
