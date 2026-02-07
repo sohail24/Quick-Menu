@@ -27,6 +27,8 @@ export default function DishForm({
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [tagsRaw, setTagsRaw] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -101,6 +103,42 @@ export default function DishForm({
     }
   }
 
+  async function generateAIDescription() {
+    if (!name) return setError('Please enter a dish name first to generate a description.');
+    const selectedCategory = categories.find(c => c.id === categoryId)?.name || 'General';
+    setGeneratingDescription(true);
+    setError(null);
+    try {
+      const res = await api.get('/api/ai/dish-description', {
+        params: { dishName: name, category: selectedCategory }
+      });
+      setDescription(res.data?.description || "");
+    } catch (err: any) {
+      console.error('AI Description failed', err);
+      setError('AI failed to generate description. Please try again.');
+    } finally {
+      setGeneratingDescription(false);
+    }
+  }
+
+  async function generateAIImage() {
+    if (!name) return setError('Please enter a dish name first to generate an image.');
+    if (!restaurantId) return setError('Restaurant context missing. Please ensure a restaurant is selected.');
+    setGeneratingImage(true);
+    setError(null);
+    try {
+      const res = await api.get('/api/ai/generate-image', {
+        params: { dishName: name, restaurantId: restaurantId }
+      });
+      setImageUrl(res.data?.imageUrl || null);
+    } catch (err: any) {
+      console.error('AI Image failed', err);
+      setError('AI failed to generate image. Please try again.');
+    } finally {
+      setGeneratingImage(false);
+    }
+  }
+
   return (
     <form onSubmit={submit} className="p-6 sm:p-8 space-y-6">
       <div className="space-y-4">
@@ -115,7 +153,24 @@ export default function DishForm({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Description</label>
+          <div className="flex items-center justify-between pl-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Description</label>
+            <button
+              type="button"
+              onClick={generateAIDescription}
+              disabled={generatingDescription || !name}
+              className="text-[10px] font-bold text-blue-600 hover:text-blue-700 disabled:opacity-50 flex items-center gap-1 transition-all"
+            >
+              {generatingDescription ? (
+                <span className="flex items-center gap-1">
+                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  Generating...
+                </span>
+              ) : (
+                <>✨ AI Magic</>
+              )}
+            </button>
+          </div>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -186,7 +241,24 @@ export default function DishForm({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Dish Image</label>
+          <div className="flex items-center justify-between pl-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Dish Image</label>
+            <button
+              type="button"
+              onClick={generateAIImage}
+              disabled={generatingImage || !name}
+              className="text-[10px] font-bold text-blue-600 hover:text-blue-700 disabled:opacity-50 flex items-center gap-1 transition-all"
+            >
+              {generatingImage ? (
+                <span className="flex items-center gap-1">
+                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  Painting...
+                </span>
+              ) : (
+                <>🎨 AI Generate</>
+              )}
+            </button>
+          </div>
           <div className="mt-1">
             <ImageUploader
               value={imageUrl ?? null}
@@ -198,7 +270,7 @@ export default function DishForm({
           </div>
           {imageUrl && (
             <div className="mt-2 text-[10px] font-bold text-blue-600 truncate border border-blue-100 bg-blue-50/30 px-3 py-1.5 rounded-lg">
-              Uploaded: <a href={imageUrl} target="_blank" rel="noreferrer" className="underline">{imageUrl}</a>
+              URL: <a href={imageUrl} target="_blank" rel="noreferrer" className="underline">{imageUrl}</a>
             </div>
           )}
         </div>
