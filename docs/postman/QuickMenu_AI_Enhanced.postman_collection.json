@@ -1,0 +1,298 @@
+{
+	"info": {
+		"_postman_id": "e91eefeb-2aab-4189-a7f4-966c37908b4d",
+		"name": "Quick Menu - API V2 (AI Enhanced)",
+		"description": "Updated Postman collection for Quick Menu with AI Integration. Includes Auth, Restaurant Mgmt, Menu, Orders, and new AI Features (Dish Descriptions, Admin Insights, Image Generation).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Signup (auto-login)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Signup: save token if returned",
+									"try {",
+									"  const json = pm.response.json();",
+									"  if (json && json.token) {",
+									"    pm.environment.set(\"token\", json.token);",
+									"    pm.environment.set(\"authHeader\", \"Bearer \" + json.token);",
+									"    console.log(\"Saved token from signup\");",
+									"  }",
+									"} catch (e) {",
+									"  console.log(\"No JSON body or token not found\");",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Owner\",\n  \"email\": \"owner@qm.local\",\n  \"password\": \"Owner123!\",\n  \"role\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/signup",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signup"
+							]
+						}
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Login: save token automatically",
+									"try {",
+									"  const json = pm.response.json();",
+									"  if (json && json.token) {",
+									"    pm.environment.set(\"token\", json.token);",
+									"    pm.environment.set(\"authHeader\", \"Bearer \" + json.token);",
+									"    console.log(\"Saved token from login\");",
+									"  } else {",
+									"    console.log(\"Login response did not include token\");",
+									"  }",
+									"} catch (e) {",
+									"  console.log(\"Login: response parsing failed\", e);",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@quickmenu.local\",\n  \"password\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "AI Features",
+			"item": [
+				{
+					"name": "Get Dish Description",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/ai/dish-description?dishName=Spicy%20Paneer%20Burger&category=Burgers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ai",
+								"dish-description"
+							],
+							"query": [
+								{
+									"key": "dishName",
+									"value": "Spicy%20Paneer%20Burger"
+								},
+								{
+									"key": "category",
+									"value": "Burgers"
+								}
+							]
+						},
+						"description": "Generates a 2-sentence appetizing description for a dish."
+					}
+				},
+				{
+					"name": "Get Admin Insights",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"restaurantName\": \"Test Bistro\",\n  \"analyticsData\": \"Total orders: 50, Top dish: Burger, Low sales on Mondays\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/ai/admin-insights",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ai",
+								"admin-insights"
+							]
+						},
+						"description": "Generates 3 actionable insights based on performance data."
+					}
+				},
+				{
+					"name": "Generate Dish Image",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/ai/generate-image?dishName=Pepperoni%20Pizza&restaurantId={{restaurantId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ai",
+								"generate-image"
+							],
+							"query": [
+								{
+									"key": "dishName",
+									"value": "Pepperoni%20Pizza"
+								},
+								{
+									"key": "restaurantId",
+									"value": "{{restaurantId}}"
+								}
+							]
+						},
+						"description": "Generates a professional AI food photography URL for the dish."
+					}
+				}
+			]
+		},
+		{
+			"name": "Restaurants",
+			"item": [
+				{
+					"name": "Create Restaurant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"try {",
+									"  const json = pm.response.json();",
+									"  if (json && json.id) {",
+									"    pm.environment.set(\"restaurantId\", json.id);",
+									"  }",
+									"} catch (e) {}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Bistro\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"currency\": \"INR\",\n  \"address\": \"123 Street\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/restaurants",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"restaurants"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (pm.environment.get(\"token\")) {",
+					"  pm.request.headers.upsert({ key: \"Authorization\", value: \"Bearer \" + pm.environment.get(\"token\") });",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "restaurantId",
+			"value": ""
+		}
+	]
+}

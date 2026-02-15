@@ -34,23 +34,34 @@ public class OrderService {
     private final SimpMessagingTemplate messagingTemplate;
     private final TableRepository tableRepository;
     private final BellService bellService;
+    private final com.quickmenu.orders.strategy.DiscountService discountService;
 
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
                         DishRepository dishRepository,
                         SimpMessagingTemplate messagingTemplate,
                         TableRepository tableRepository,
-                        BellService bellService) {
+                        BellService bellService,
+                        com.quickmenu.orders.strategy.DiscountService discountService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.dishRepository = dishRepository;
         this.messagingTemplate = messagingTemplate;
         this.tableRepository = tableRepository;
         this.bellService = bellService;
+        this.discountService = discountService;
     }
 
     @Transactional
     public Map<String, Object> placeOrder(String restaurantId, OrderDto.CreateOrderRequest req) {
+        // Idempotency check
+        if (req.getRequestId() != null && !req.getRequestId().isEmpty()) {
+            java.util.Optional<Order> existingOrder = orderRepository.findByRequestId(req.getRequestId());
+            if (existingOrder.isPresent()) {
+                return enrichOrderForResponse(existingOrder.get());
+            }
+        }
+
         // find table row with pessimistic lock (for concurrency) or check occupied flag
         TableEntity table = tableRepository.findByIdForUpdate(req.getTableId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid table"));
@@ -85,6 +96,10 @@ public class OrderService {
             items.add(oi);
         }
 
+        // apply discount strategy
+        com.quickmenu.orders.strategy.DiscountStrategy strategy = discountService.getStrategy(req.getDiscountStrategy());
+        BigDecimal finalTotal = strategy.applyDiscount(null, total);
+
         // build order and set back-reference on items
         Order order = Order.builder()
                 .restaurantId(restaurantId)
@@ -92,7 +107,9 @@ public class OrderService {
                 .customerName(req.getCustomerName())
                 .customerPhone(req.getCustomerPhone())
                 .customerNote(req.getCustomerNote())
-                .totalAmount(total)
+                .totalAmount(finalTotal)
+                .requestId(req.getRequestId())
+                .appliedDiscountStrategy(strategy.getStrategyName())
                 .status(Order.Status.PLACED)
                 .items(items)
                 .build();

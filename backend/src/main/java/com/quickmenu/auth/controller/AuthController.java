@@ -1,4 +1,5 @@
 package com.quickmenu.auth.controller;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 
 import com.quickmenu.auth.dto.AuthResponse;
@@ -53,6 +54,7 @@ public class AuthController {
 
     @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Signup Endpoint", description = "Used for registering a new User (ADMIN/STAFF/CUSTOMER")
+    @RateLimiter(name = "authApi")
     public ResponseEntity<?> register(@Valid @RequestBody SignUpRequest request) {
         User created = userService.registerUser(request);
         String token = tokenProvider.generateToken(created.getId(), created.getEmail(), created.getRole());
@@ -61,6 +63,7 @@ public class AuthController {
 
     @PostMapping(value = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Login Endpoint", description = "Used for logging existing User to the application (ADMIN/STAFF/CUSTOMER)")
+    @RateLimiter(name = "authApi")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
         if (currentAuth != null && currentAuth.isAuthenticated()

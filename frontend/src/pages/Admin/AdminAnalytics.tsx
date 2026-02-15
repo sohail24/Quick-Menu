@@ -56,6 +56,9 @@ export default function AdminAnalytics() {
   const [topDishes, setTopDishes] = useState<any[]>([]);
   const [hourly, setHourly] = useState<any[]>([]);
   const [categoryStats, setCategoryStats] = useState<any[]>([]);
+  const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [aiModel, setAiModel] = useState<string | null>(null);
+  const [loadingInsights, setLoadingInsights] = useState(false);
 
   const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
 
@@ -140,16 +143,59 @@ export default function AdminAnalytics() {
 
   const maxDishQty = Math.max(...topDishes.map((d) => d.totalQty), 1);
 
+  async function fetchAIInsights() {
+    if (!restaurantId) return;
+    setLoadingInsights(true);
+    setAiInsights(null);
+    
+    // Aggregating analytics data for the AI
+    const restaurantName = restaurants.find(r => r.id === restaurantId)?.name || 'This Restaurant';
+    const topDishesText = topDishes.map(d => `${d.name} (${d.totalQty} sold)`).join(', ');
+    const categoryText = categoryStats.map(c => `${c.categoryName}: ${c.count} orders`).join(', ');
+    
+    const analyticsSummary = `
+      Total Orders Today: ${ordersToday}, 
+      Total Revenue Today: ₹${revenueToday}. 
+      Top Dishes: ${topDishesText || 'No sales yet'}. 
+      Category Breakdown: ${categoryText || 'No data yet'}.
+    `.trim();
+
+    try {
+      const res = await api.post('/api/ai/admin-insights', {
+        restaurantName,
+        analyticsData: analyticsSummary
+      });
+      setAiInsights(res.data.insights || res.data);
+      setAiModel(res.data.modelName || 'Unknown AI');
+    } catch (err) {
+      console.error('AI Insights failed', err);
+      setError('Failed to generate AI insights.');
+    } finally {
+      setLoadingInsights(false);
+    }
+  }
+
   // Colors for Pie Chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   return (
     <div className="p-4 space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Admin Analytics</h1>
-        <button onClick={exportCsv} className="border px-3 py-1 rounded">
-          Export CSV
-        </button>
+        <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Admin Analytics</h1>
+        <div className="flex gap-2">
+          <button 
+            onClick={fetchAIInsights} 
+            disabled={loadingInsights || !restaurantId}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+          >
+            {loadingInsights ? (
+               <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            ) : '✨ AI Insights'}
+          </button>
+          <button onClick={exportCsv} className="border border-gray-100 bg-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50 transition-colors">
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {/* controls */}
@@ -208,6 +254,44 @@ export default function AdminAnalytics() {
           )}
         </div>
       </div>
+
+      {/* AI Insights Card */}
+      {aiInsights && (
+        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-[32px] p-6 sm:p-8 shadow-xl shadow-indigo-100/30 relative overflow-hidden">
+          <button 
+            onClick={() => setAiInsights(null)}
+            className="absolute top-4 right-4 p-2 text-indigo-400 hover:text-indigo-600 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-indigo-600 p-2 rounded-lg text-white">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor font-black"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              </div>
+              <h2 className="text-sm sm:text-lg font-black text-indigo-900 uppercase tracking-widest">AI Consultant Insights</h2>
+            </div>
+            {aiModel && (
+              <span className="bg-white/50 border border-indigo-100 text-[9px] font-black text-indigo-500 px-2 py-1 rounded-full uppercase tracking-tighter">
+                Model: {aiModel}
+              </span>
+            )}
+          </div>
+          <div className="prose prose-sm prose-indigo">
+             <div className="text-indigo-900 font-bold space-y-3 leading-relaxed">
+                {typeof aiInsights === 'string' ? aiInsights.split('\n').map((line, i) => (
+                  <p key={i} className="flex gap-3">
+                    {line.trim().startsWith('-') || line.trim().startsWith('•') || line.match(/^\d\./) ? (
+                      <span className="min-w-0">{line}</span>
+                    ) : (
+                      line
+                    )}
+                  </p>
+                )) : JSON.stringify(aiInsights)}
+             </div>
+          </div>
+        </div>
+      )}
 
       {/* stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">

@@ -2,7 +2,6 @@ package com.quickmenu.orders.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Where;
 import org.hibernate.annotations.Formula;
 
@@ -25,8 +24,8 @@ public class Order {
     }
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name="uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue
+    @org.hibernate.annotations.UuidGenerator
     @Column(length = 36)
     private String id;
 
@@ -53,6 +52,10 @@ public class Order {
     private int statusPriority;
 
     private BigDecimal totalAmount;
+
+    private String requestId; // For Idempotency
+
+    private String appliedDiscountStrategy; // For Strategy Pattern tracking
 
     @Column(name = "placed_at", nullable = false)
     private Instant placedAt;

@@ -17,6 +17,8 @@ public class OrderDto {
 
     @Data
     public static class CreateOrderRequest {
+        private String requestId; // For Idempotency
+        private String discountStrategy; // For Strategy Pattern
         private String tableId;
         private String customerName;
         private String customerPhone;
