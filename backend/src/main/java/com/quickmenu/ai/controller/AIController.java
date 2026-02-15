@@ -28,8 +28,11 @@ public class AIController {
             @RequestBody Map<String, String> request) {
         String restaurantName = request.getOrDefault("restaurantName", "the restaurant");
         String analyticsData = request.getOrDefault("analyticsData", "");
-        String insights = aiService.generateAdminInsights(restaurantName, analyticsData);
-        return ResponseEntity.ok(Map.of("insights", insights));
+        com.quickmenu.ai.dto.AIContentResponse response = aiService.generateAdminInsights(restaurantName, analyticsData);
+        return ResponseEntity.ok(Map.of(
+            "insights", response.getContent(),
+            "modelName", response.getModelName()
+        ));
     }
 
     @GetMapping("/generate-image")

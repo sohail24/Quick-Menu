@@ -57,6 +57,7 @@ export default function AdminAnalytics() {
   const [hourly, setHourly] = useState<any[]>([]);
   const [categoryStats, setCategoryStats] = useState<any[]>([]);
   const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [aiModel, setAiModel] = useState<string | null>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
 
   const loggedInUserEmail = useAuthStore((s) => s.user)?.email;
@@ -165,6 +166,7 @@ export default function AdminAnalytics() {
         analyticsData: analyticsSummary
       });
       setAiInsights(res.data.insights || res.data);
+      setAiModel(res.data.modelName || 'Unknown AI');
     } catch (err) {
       console.error('AI Insights failed', err);
       setError('Failed to generate AI insights.');
@@ -262,11 +264,18 @@ export default function AdminAnalytics() {
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="bg-indigo-600 p-2 rounded-lg text-white">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor font-black"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-indigo-600 p-2 rounded-lg text-white">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor font-black"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              </div>
+              <h2 className="text-sm sm:text-lg font-black text-indigo-900 uppercase tracking-widest">AI Consultant Insights</h2>
             </div>
-            <h2 className="text-sm sm:text-lg font-black text-indigo-900 uppercase tracking-widest">AI Consultant Insights</h2>
+            {aiModel && (
+              <span className="bg-white/50 border border-indigo-100 text-[9px] font-black text-indigo-500 px-2 py-1 rounded-full uppercase tracking-tighter">
+                Model: {aiModel}
+              </span>
+            )}
           </div>
           <div className="prose prose-sm prose-indigo">
              <div className="text-indigo-900 font-bold space-y-3 leading-relaxed">

@@ -1,5 +1,6 @@
 package com.quickmenu.ai.service;
 
+import com.quickmenu.ai.dto.AIContentResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,7 @@ public class AIService {
         "gemini-flash-lite-latest"
     );
 
-    public String generateContent(String prompt) {
+    public AIContentResponse generateContent(String prompt) {
         StringBuilder rca = new StringBuilder();
         
         // Tier 1: Gemini (Primary - 1,500 req/day)
@@ -46,7 +47,8 @@ public class AIService {
             for (String modelName : FLASH_MODELS) {
                 try {
                     log.info("AI: Attempting Gemini model: {}", modelName);
-                    return tryGemini(prompt, "v1beta", modelName, cleanKey);
+                    String result = tryGemini(prompt, "v1beta", modelName, cleanKey);
+                    return new AIContentResponse(result, "Google Gemini (" + modelName + ")");
                 } catch (Exception e) {
                     log.warn("AI: Gemini {} failed: {}", modelName, e.getMessage());
                     rca.append("[G:").append(modelName).append("] ");
@@ -58,7 +60,7 @@ public class AIService {
         try {
             log.info("AI: Attempting Hugging Face Text (Mistral-7B)...");
             String result = tryHuggingFaceText(prompt);
-            if (result != null) return result;
+            if (result != null) return new AIContentResponse(result, "Hugging Face (Mistral-7B)");
         } catch (Exception e) {
             log.warn("AI: Hugging Face Text failed: {}", e.getMessage());
             rca.append("[HF] ");
@@ -68,13 +70,13 @@ public class AIService {
         try {
             log.info("AI: Falling back to MLVoca (TinyLlama Cloud)...");
             String result = tryMLVoca(prompt);
-            if (result != null) return result;
+            if (result != null) return new AIContentResponse(result, "MLVoca Cloud (TinyLlama)");
         } catch (Exception e) {
             log.warn("AI: MLVoca failed: {}", e.getMessage());
             rca.append("[MLVoca] ");
         }
 
-        return "AI Currently Unavailable. Fallbacks exhausted: " + rca.toString();
+        return new AIContentResponse("AI Currently Unavailable. Fallbacks exhausted: " + rca.toString(), "None (All Failed)");
     }
 
     private String tryHuggingFaceText(String prompt) {
@@ -152,10 +154,10 @@ public class AIService {
     public String generateDishDescription(String dishName, String category) {
         String prompt = String.format("Write a short, appetizing 2 sentence description for a dish named '%s' in the category '%s'. Keep it concise for a restaurant menu.", 
                 dishName, category);
-        return generateContent(prompt);
+        return generateContent(prompt).getContent();
     }
 
-    public String generateAdminInsights(String restaurantName, String analyticsData) {
+    public AIContentResponse generateAdminInsights(String restaurantName, String analyticsData) {
         String prompt = String.format("As an AI restaurant consultant, analyze the following performance data for '%s' and provide 3 actionable bullet points for improvement: %s", 
                 restaurantName, analyticsData);
         return generateContent(prompt);
