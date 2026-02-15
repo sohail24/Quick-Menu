@@ -11,6 +11,11 @@ app:
       api-key: ${GEMINI_API_KEY}
     huggingface:
       token: ${HUGGING_FACE_TOKEN}
+  bell:
+    cooldown-seconds: ${BELL_INITIAL_COOLDOWN:5}
+    max-cooldown-seconds: ${BELL_MAX_COOLDOWN:120}
+    reset-window-minutes: ${BELL_RESET_WINDOW:2}
+
 
 spring:
   datasource:
@@ -70,11 +75,6 @@ demo:
     enabled: ${DEMO_DATA_ENABLED:true}
     restore-interval-minutes: ${DEMO_DATA_RESTORE_INTERVAL_MINUTES:30}
 
-app:
-  bell:
-    cooldown-seconds: ${BELL_INITIAL_COOLDOWN:5}
-    max-cooldown-seconds: ${BELL_MAX_COOLDOWN:120}
-    reset-window-minutes: ${BELL_RESET_WINDOW:2}
 
 
 
