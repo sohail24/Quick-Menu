@@ -39,7 +39,29 @@ jwt:
 websocket:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
+resilience4j:
+  ratelimiter:
+    instances:
+      authApi:
+        limit-for-period: 10
+        limit-refresh-period: 1m
+        timeout-duration: 0
+      aiApi:
+        limit-for-period: 5
+        limit-refresh-period: 1m
+        timeout-duration: 0
+  retry:
+    instances:
+      aiService:
+        max-attempts: 3
+        wait-duration: 1s
+  timelimiter:
+    instances:
+      aiService:
+        timeout-duration: 5s
+
 server:
+
   port: ${PORT:8080}
 
 # Demo data configuration
@@ -47,4 +69,12 @@ demo:
   data:
     enabled: ${DEMO_DATA_ENABLED:true}
     restore-interval-minutes: ${DEMO_DATA_RESTORE_INTERVAL_MINUTES:30}
+
+app:
+  bell:
+    cooldown-seconds: ${BELL_INITIAL_COOLDOWN:5}
+    max-cooldown-seconds: ${BELL_MAX_COOLDOWN:120}
+    reset-window-minutes: ${BELL_RESET_WINDOW:2}
+
+
 

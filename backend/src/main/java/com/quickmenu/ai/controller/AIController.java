@@ -1,6 +1,7 @@
 package com.quickmenu.ai.controller;
 
 import com.quickmenu.ai.service.AIService;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ public class AIController {
     private final com.quickmenu.ai.service.RateLimiterService rateLimiterService;
 
     @GetMapping("/dish-description")
+    @RateLimiter(name = "aiApi")
     public ResponseEntity<Map<String, String>> getDishDescription(
             @RequestParam String dishName, 
             @RequestParam String category) {
@@ -24,6 +26,7 @@ public class AIController {
     }
 
     @PostMapping("/admin-insights")
+    @RateLimiter(name = "aiApi")
     public ResponseEntity<Map<String, String>> getAdminInsights(
             @RequestBody Map<String, String> request) {
         String restaurantName = request.getOrDefault("restaurantName", "the restaurant");

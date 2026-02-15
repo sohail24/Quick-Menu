@@ -20,37 +20,48 @@ public class BellService {
     private final SimpMessagingTemplate messagingTemplate;
     private final TableService tableService;
 
-    // Simple in-memory map for cooldown; key = restaurantId:tableId -> last event epoch second
-    private final Map<String, Instant> lastEventAt = new ConcurrentHashMap<>();
+    // In-memory record for exponential backoff; key = restaurantId:tableId
+    private final Map<String, BellUsage> usageRecords = new ConcurrentHashMap<>();
 
-    // cooldown seconds configurable via app.properties (default 20s)
-    private final long cooldownSeconds;
+    private final long initialCooldown;
+    private final long maxCooldown;
+    private final long resetWindowMinutes;
 
     public BellService(BellEventRepository bellRepo,
                        SimpMessagingTemplate messagingTemplate,
                        TableService tableService,
-                       @Value("${app.bell.cooldown-seconds:20}") long cooldownSeconds) {
+                       @Value("${app.bell.cooldown-seconds:20}") long initialCooldown,
+                       @Value("${app.bell.max-cooldown-seconds:600}") long maxCooldown,
+                       @Value("${app.bell.reset-window-minutes:5}") long resetWindowMinutes) {
         this.bellRepo = bellRepo;
         this.messagingTemplate = messagingTemplate;
         this.tableService = tableService;
-        this.cooldownSeconds = cooldownSeconds;
+        this.initialCooldown = initialCooldown;
+        this.maxCooldown = maxCooldown;
+        this.resetWindowMinutes = resetWindowMinutes;
     }
 
     /**
-     * Create a bell event if not rate-limited.
-     * Returns the persisted BellEvent.
-     * Throws IllegalStateException if rate-limited.
+     * Create a bell event if not rate-limited by exponential backoff.
      */
     public BellEvent createBell(String restaurantId, String tableId, String message, String source) {
-        // Basic validation: ensure table exists and belongs to restaurant
-        // TableService throws if not found
         tableService.getTable(restaurantId, tableId);
 
         String key = restaurantId + ":" + tableId;
         Instant now = Instant.now();
-        Instant last = lastEventAt.get(key);
-        if (last != null && now.isBefore(last.plusSeconds(cooldownSeconds))) {
-            throw new IllegalStateException("Too many bell requests. Please wait a moment before ringing again.");
+
+        // Atomic update of usage record
+        BellUsage usage = usageRecords.compute(key, (k, v) -> {
+            if (v == null || now.isAfter(v.lastRingAt.plus(java.time.Duration.ofMinutes(resetWindowMinutes)))) {
+                return new BellUsage(now, 0); // Reset after inactivity or new entry
+            }
+            return v;
+        });
+
+        long currentCooldown = calculateCooldown(usage.count);
+        if (usage.count > 0 && now.isBefore(usage.lastRingAt.plusSeconds(currentCooldown))) {
+            long waitTime = (usage.lastRingAt.plusSeconds(currentCooldown).getEpochSecond()) - now.getEpochSecond();
+            throw new IllegalStateException("Please wait " + waitTime + " seconds before ringing again.");
         }
 
         // persist
@@ -67,12 +78,12 @@ public class BellService {
 
         BellEvent saved = bellRepo.save(event);
 
-        // update last seen timestamp for cooldown
-        lastEventAt.put(key, now);
+        // Update usage after successful persisting
+        usage.lastRingAt = now;
+        usage.count++;
 
-        // publish to WebSocket topic for staff dashboards
+        // publish to WebSocket
         try {
-            // payload to send; you can design the payload as needed by frontend
             var payload = Map.of(
                     "id", saved.getId(),
                     "tableId", saved.getTableId(),
@@ -81,17 +92,32 @@ public class BellService {
                     "type", "BELL_CREATED"
             );
             messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/bells", payload);
-            // mark delivered true and increment attempts
             saved.setDelivered(true);
             saved.setAttempts(saved.getAttempts() == null ? 1 : saved.getAttempts() + 1);
             bellRepo.save(saved);
         } catch (Exception ex) {
-            // If publish fails, leave delivered=false; attempts incremented optionally
             saved.setAttempts(saved.getAttempts() == null ? 1 : saved.getAttempts() + 1);
             bellRepo.save(saved);
         }
 
         return saved;
+    }
+
+    private long calculateCooldown(int count) {
+        if (count <= 0) return 0;
+        // 20, 40, 80, 160...
+        long cooldown = initialCooldown * (long) Math.pow(2, count - 1);
+        return Math.min(cooldown, maxCooldown);
+    }
+
+    private static class BellUsage {
+        Instant lastRingAt;
+        int count;
+
+        BellUsage(Instant lastRingAt, int count) {
+            this.lastRingAt = lastRingAt;
+            this.count = count;
+        }
     }
 
     public BellEvent ackBell(String restaurantId, String bellId, String ackBy) {
@@ -104,7 +130,6 @@ public class BellService {
         e.setAckAt(Instant.now());
         BellEvent updated = bellRepo.save(e);
 
-        // broadcast ack to UI (so other staff/customer UIs can update)
         var payload = Map.of(
                 "id", updated.getId(),
                 "tableId", updated.getTableId(),
@@ -117,3 +142,4 @@ public class BellService {
         return updated;
     }
 }
+
