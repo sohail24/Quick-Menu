@@ -23,6 +23,7 @@ public class OrderDto {
         private String customerName;
         private String customerPhone;
         private String customerNote;
+        private String paymentMethod; // CASH, ONLINE
         private List<CreateOrderItem> items;
     }
 
@@ -35,6 +36,8 @@ public class OrderDto {
         private String customerPhone;
         private String customerNote;
         private String status;
+        private String paymentMethod;
+        private String paymentStatus;
         private BigDecimal totalAmount;
         private List<OrderItemResponse> items;
         private Instant placedAt;

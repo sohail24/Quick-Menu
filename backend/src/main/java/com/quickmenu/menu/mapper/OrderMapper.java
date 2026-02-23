@@ -15,6 +15,8 @@ public class OrderMapper {
         dto.setCustomerPhone(order.getCustomerPhone());
         dto.setCustomerNote(order.getCustomerNote());
         dto.setStatus(order.getStatus().name());
+        dto.setPaymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : "CASH");
+        dto.setPaymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : "PENDING");
         dto.setTotalAmount(order.getTotalAmount());
         dto.setPlacedAt(order.getPlacedAt());
 

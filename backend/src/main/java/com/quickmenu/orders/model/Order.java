@@ -23,6 +23,14 @@ public class Order {
         PLACED, PENDING, IN_PROGRESS, READY, SERVED, CANCELLED, PREPARING
     }
 
+    public enum PaymentMethod {
+        CASH, ONLINE
+    }
+
+    public enum PaymentStatus {
+        PENDING, PAID, CANCELLED
+    }
+
     @Id
     @GeneratedValue
     @org.hibernate.annotations.UuidGenerator
@@ -54,6 +62,14 @@ public class Order {
     private BigDecimal totalAmount;
 
     private String requestId; // For Idempotency
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private PaymentMethod paymentMethod = PaymentMethod.CASH;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
     private String appliedDiscountStrategy; // For Strategy Pattern tracking
 

@@ -1,14 +1,12 @@
 package com.quickmenu.orders.service;
 
 import com.quickmenu.bell.service.BellService;
-import com.quickmenu.config.WebSocketConfig;
 import com.quickmenu.config.customExceptions.TableOccupiedException;
 import com.quickmenu.menu.model.TableEntity;
 import com.quickmenu.menu.repo.TableRepository;
 import com.quickmenu.orders.dto.OrderDto;
 import com.quickmenu.menu.model.Dish;
 import com.quickmenu.menu.repo.DishRepository;
-import com.quickmenu.orders.dto.OrderRequest;
 import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.model.OrderItem;
 import com.quickmenu.orders.repo.OrderItemRepository;
@@ -18,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +32,7 @@ public class OrderService {
     private final TableRepository tableRepository;
     private final BellService bellService;
     private final com.quickmenu.orders.strategy.DiscountService discountService;
+    private final com.quickmenu.orders.payments.PaymentService paymentService;
 
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
@@ -42,7 +40,8 @@ public class OrderService {
                         SimpMessagingTemplate messagingTemplate,
                         TableRepository tableRepository,
                         BellService bellService,
-                        com.quickmenu.orders.strategy.DiscountService discountService) {
+                        com.quickmenu.orders.strategy.DiscountService discountService,
+                        com.quickmenu.orders.payments.PaymentService paymentService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.dishRepository = dishRepository;
@@ -50,6 +49,7 @@ public class OrderService {
         this.tableRepository = tableRepository;
         this.bellService = bellService;
         this.discountService = discountService;
+        this.paymentService = paymentService;
     }
 
     @Transactional
@@ -113,6 +113,9 @@ public class OrderService {
                 .status(Order.Status.PLACED)
                 .items(items)
                 .build();
+
+        // process payment via strategy
+        paymentService.process(order, req.getPaymentMethod() != null ? req.getPaymentMethod() : "CASH");
 
         // set the parent reference on each item
         for (OrderItem it : items) {
@@ -185,15 +188,19 @@ public class OrderService {
                 .collect(Collectors.toList())
                 : List.of();
 
-        return Map.of(
-                "id", order.getId(),
-                "tableId", order.getTableId(),
-                "status", order.getStatus().toString(),
-                "placedAt", order.getPlacedAt().toString(),
-                "customerName", order.getCustomerName() != null ? order.getCustomerName() : "",
-                "customerPhone", order.getCustomerPhone() != null ? order.getCustomerPhone() : "",
-                "totalAmount", order.getTotalAmount(),
-                "items", itemsWithDetails
-        );
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", order.getId());
+        response.put("tableId", order.getTableId());
+        response.put("restaurantId", order.getRestaurantId());
+        response.put("status", order.getStatus() != null ? order.getStatus().toString() : "PENDING");
+        response.put("placedAt", order.getPlacedAt() != null ? order.getPlacedAt().toString() : "");
+        response.put("customerName", order.getCustomerName() != null ? order.getCustomerName() : "");
+        response.put("customerPhone", order.getCustomerPhone() != null ? order.getCustomerPhone() : "");
+        response.put("paymentMethod", order.getPaymentMethod() != null ? order.getPaymentMethod().toString() : "CASH");
+        response.put("paymentStatus", order.getPaymentStatus() != null ? order.getPaymentStatus().toString() : "PENDING");
+        response.put("totalAmount", order.getTotalAmount());
+        response.put("items", itemsWithDetails);
+
+        return response;
     }
 }
