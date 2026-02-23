@@ -295,7 +295,7 @@ public class DataInitializer {
                     .orElseThrow();
             List<Dish> dishes = dishRepo.findByRestaurantId(r.getId());
 
-            // First demo order
+            // First demo order: PAID CASH
             Order order1 = Order.builder()
                     .restaurantId(r.getId())
                     .tableId(demoTable1.getId())
@@ -303,6 +303,8 @@ public class DataInitializer {
                     .customerPhone("9999999999")
                     .customerNote("Extra spicy please")
                     .status(Order.Status.SERVED)
+                    .paymentStatus(Order.PaymentStatus.PAID)
+                    .paymentMethod(Order.PaymentMethod.CASH)
                     .placedAt(Instant.now().minusSeconds(3600)) // 1 hour ago
                     .isDemo(true)
                     .build();
@@ -330,14 +332,17 @@ public class DataInitializer {
                             .add(dishes.get(1).getPrice())
             );
 
-            // Second demo order
+            // Second demo order: PAID ONLINE (Stripe)
             Order order2 = Order.builder()
                     .restaurantId(r.getId())
                     .tableId(demoTable2.getId())
                     .customerName("Jane Smith")
                     .customerPhone("8888888888")
                     .customerNote("Serve quickly")
-                    .status(Order.Status.SERVED)
+                    .status(Order.Status.PLACED)
+                    .paymentStatus(Order.PaymentStatus.PAID)
+                    .paymentMethod(Order.PaymentMethod.ONLINE)
+                    .stripeSessionId("cs_test_demo_123")
                     .placedAt(Instant.now().minusSeconds(1800)) // 30 mins ago
                     .isDemo(true)
                     .build();
@@ -365,7 +370,7 @@ public class DataInitializer {
             );
 
             orderRepo.saveAll(List.of(order1, order2));
-            log.info("Seeded 2 demo orders in SERVED state for restaurant: {}", r.getName());
+            log.info("Seeded 2 demo orders in PAID state for restaurant: {}", r.getName());
         }
 
         // Print summary for quick testing

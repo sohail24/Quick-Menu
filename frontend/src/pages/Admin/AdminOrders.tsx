@@ -234,12 +234,10 @@ export default function AdminOrders() {
         <h1 className="text-2xl font-semibold">Orders</h1>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              fetchOrders();
-            }}
-            className="px-3 py-1 border rounded hover:bg-gray-100"
+            onClick={() => { fetchOrders(); }}
+            className="px-4 py-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded-full text-xs font-bold transition-all active:scale-95"
           >
-            Refresh
+            ↻ Refresh
           </button>
         </div>
       </div>
