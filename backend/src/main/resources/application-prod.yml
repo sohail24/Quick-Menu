@@ -75,6 +75,7 @@ demo:
     enabled: ${DEMO_DATA_ENABLED:true}
     restore-interval-minutes: ${DEMO_DATA_RESTORE_INTERVAL_MINUTES:30}
 
-
-
-
+# Stripe Configuration
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY}

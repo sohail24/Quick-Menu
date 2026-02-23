@@ -2,7 +2,6 @@ package com.quickmenu.orders.controller;
 
 import com.quickmenu.config.customExceptions.TableOccupiedException;
 import com.quickmenu.menu.mapper.OrderMapper;
-import com.quickmenu.orders.dto.OrderRequest;
 import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.repo.OrderRepository;
 import com.quickmenu.orders.service.OrderService;
@@ -129,6 +128,31 @@ public class OrderController {
 
         Page<OrderDto.OrderResponse> dtoPage = orders.map(OrderMapper::toResponse);
         return ResponseEntity.ok(dtoPage);
+    }
+
+    @PostMapping("/{orderId}/verify")
+    @Operation(summary = "Verify payment", description = "Verify Stripe PaymentIntent.")
+    public ResponseEntity<?> verifyPayment(@PathVariable String restaurantId,
+                                           @PathVariable String orderId,
+                                           @RequestBody OrderDto.StripeVerifyRequest req) {
+        try {
+            Map<String, Object> verified = orderService.verifyPayment(restaurantId, orderId, req);
+            return ResponseEntity.ok(verified);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{orderId}/cancel")
+    @Operation(summary = "Cancel order", description = "Clean up unpaid online order.")
+    public ResponseEntity<?> cancelOrder(@PathVariable String restaurantId,
+                                         @PathVariable String orderId) {
+        try {
+            orderService.cancelOrder(restaurantId, orderId);
+            return ResponseEntity.ok().build();
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
     }
 
     private Sort.Order[] parseSort(String[] sort) {

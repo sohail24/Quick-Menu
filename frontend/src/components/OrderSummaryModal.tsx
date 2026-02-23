@@ -69,21 +69,13 @@ export default function OrderSummaryModal({
   useEffect(() => {
     if (!isOpen || !restaurantId) return;
     setLoadingTables(true);
-    // Fetch all tables instead of just available ones for better UX in demo/ordering flow
     api
       .get(`/api/restaurants/${restaurantId}/tables`)
       .then((res) => {
         const d = res.data ?? {};
-        const arr: any[] = Array.isArray(d)
-          ? d
-          : Array.isArray(d.content)
-            ? d.content
-            : (d?.items ?? d?.tables ?? []);
-        
-        // Only show available tables, but keep the currently selected one if it exists
+        const arr: any[] = Array.isArray(d) ? d : Array.isArray(d.content) ? d.content : (d?.items ?? d?.tables ?? []);
         const available = arr.filter(t => !t.occupied || t.id === selectedTable);
         setTables(available);
-
         if (!selectedTable && available.length > 0) {
           setSelectedTable(available[0].id);
         }
@@ -109,7 +101,6 @@ export default function OrderSummaryModal({
   async function submitNewOrder() {
     if (!selectedTable) return setError('Please select a table');
     if (!customerName) return setError('Please provide your name');
-    
     if (!restaurantId) return setError('Missing restaurant');
     
     setSubmitting(true);
@@ -127,21 +118,24 @@ export default function OrderSummaryModal({
     try {
       const res = await api.post(`/api/${restaurantId}/orders`, payload);
       const resp = res.data;
+      
       const id = resp?.id ?? resp?.orderId ?? null;
       if (id) {
         setActiveOrder(restaurantId, selectedTable, id, resp?.placedAt ?? new Date().toISOString());
-        try {
-          localStorage.setItem('qm_last_order_id', id);
-        } catch (e) {}
+        localStorage.setItem('qm_last_order_id', id);
       }
       
-      // Close modal first, then notify parent to navigate
+      if (paymentMethod === 'ONLINE' && resp.stripeCheckoutUrl) {
+         // Redirect to Stripe Hosted Checkout
+         window.location.href = resp.stripeCheckoutUrl;
+         return;
+      }
+      
       onClose();
       onOrderPlaced(resp);
     } catch (err: any) {
       console.error('Order submit failed', err);
       setError(err?.response?.data?.message || 'Failed to place order');
-    } finally {
       setSubmitting(false);
     }
   }
@@ -149,16 +143,11 @@ export default function OrderSummaryModal({
   function stopTracking() {
     if (!restaurantId || !selectedTable) return;
     removeActiveOrder(restaurantId, selectedTable);
-    try {
-      localStorage.removeItem('qm_last_order_id');
-    } catch {}
     setExistingOrderId(null);
     setExistingOrderTableId(null);
     setSelectedTable(null);
     setTables([]);
     setCustomerName('');
-    setCustomerPhone('');
-    setCustomerNote('');
     onClose();
     onStopTracking?.();
   }
@@ -181,21 +170,21 @@ export default function OrderSummaryModal({
         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <div className="flex items-center gap-3">
              <div className="bg-blue-600 p-2.5 rounded-2xl text-white shadow-lg shadow-blue-600/20">
-                {step === 1 ? <ShoppingBasket className="w-6 h-6" /> : step === 2 ? <MapPin className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
+                {step === 1 ? <ShoppingBasket className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
              </div>
              <div>
                 <h3 className="text-xl font-black text-gray-900 tracking-tight">
-                  {existingOrderId ? 'Order Progress' : step === 1 ? 'Order Details' : 'Payment Method'}
+                   {existingOrderId ? 'Order Progress' : step === 1 ? 'Order Details' : 'Payment Method'}
                 </h3>
                 <div className="flex items-center gap-1.5 mt-1">
-                  {[1, 2].map((s) => (
-                    <div 
-                      key={s} 
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        s === step ? 'w-6 bg-blue-600' : 'w-1.5 bg-gray-200'
-                      }`}
-                    />
-                  ))}
+                   {[1, 2].map((s) => (
+                     <div 
+                       key={s} 
+                       className={`h-1.5 rounded-full transition-all duration-300 ${
+                         s === step ? 'w-6 bg-blue-600' : 'w-1.5 bg-gray-200'
+                       }`}
+                     />
+                   ))}
                 </div>
              </div>
           </div>
@@ -215,7 +204,7 @@ export default function OrderSummaryModal({
               </div>
               <h4 className="text-2xl font-black text-gray-900 mb-2">Active Order Found!</h4>
               <p className="text-gray-500 max-w-xs mx-auto mb-8 font-medium">
-                You already have an order placed for <span className="text-blue-600 font-bold">{tables.find(t => t.id === existingOrderTableId)?.name || 'Table'} ({existingOrderTableId})</span>.
+                You already have an order placed for <span className="text-blue-600 font-bold">{tables.find(t => t.id === existingOrderTableId)?.name || 'Table'}</span>.
               </p>
               
               <div className="flex flex-col gap-3">
@@ -240,7 +229,6 @@ export default function OrderSummaryModal({
             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               {step === 1 && (
                 <>
-                  {/* Order Items */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-4">
                        <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Your Items</h4>
@@ -277,7 +265,6 @@ export default function OrderSummaryModal({
                     ))}
                   </div>
 
-                  {/* Table Selection */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
                        <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Select Your Table</h4>
@@ -287,8 +274,6 @@ export default function OrderSummaryModal({
                       <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
                          {[1,2,3,4].map(i => <div key={i} className="w-24 h-12 bg-gray-100 rounded-xl animate-pulse"></div>)}
                       </div>
-                    ) : tables.length === 0 && !selectedTable ? (
-                      <div className="p-6 bg-red-50 text-red-600 rounded-3xl text-center font-bold">No tables available.</div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {tables.map((t: any) => (
@@ -309,7 +294,6 @@ export default function OrderSummaryModal({
                     )}
                   </div>
 
-                  {/* Contact Details */}
                   <div className="space-y-6">
                     <div className="flex items-center gap-2">
                        <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Contact Details</h4>
@@ -376,23 +360,23 @@ export default function OrderSummaryModal({
                       {paymentMethod === 'CASH' && <CheckCircle2 className="w-6 h-6 text-white" />}
                     </button>
 
-                      <button
-                        onClick={() => setPaymentMethod('ONLINE')}
-                        className={`w-full p-6 rounded-[32px] border-2 transition-all flex items-center gap-6 ${
-                          paymentMethod === 'ONLINE'
-                          ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-600/20 scale-[1.02]'
-                          : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200 hover:bg-gray-50/50'
-                        }`}
-                      >
-                        <div className={`p-4 rounded-2xl ${paymentMethod === 'ONLINE' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600'}`}>
-                          <CreditCard className="w-8 h-8" />
-                        </div>
-                        <div className="text-left flex-1">
-                          <div className="text-xl font-black mb-1">Pay Online Now</div>
-                          <div className={`text-sm ${paymentMethod === 'ONLINE' ? 'text-blue-100' : 'text-gray-400'} font-bold`}>Fast, secure & contactless</div>
-                        </div>
-                        {paymentMethod === 'ONLINE' && <CheckCircle2 className="w-6 h-6 text-white" />}
-                      </button>
+                    <button
+                      onClick={() => setPaymentMethod('ONLINE')}
+                      className={`w-full p-6 rounded-[32px] border-2 transition-all flex items-center gap-6 ${
+                        paymentMethod === 'ONLINE'
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-600/20 scale-[1.02]'
+                        : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200 hover:bg-gray-50/50'
+                      }`}
+                    >
+                      <div className={`p-4 rounded-2xl ${paymentMethod === 'ONLINE' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600'}`}>
+                        <CreditCard className="w-8 h-8" />
+                      </div>
+                      <div className="text-left flex-1">
+                        <div className="text-xl font-black mb-1">Pay Online Now</div>
+                        <div className={`text-sm ${paymentMethod === 'ONLINE' ? 'text-blue-100' : 'text-gray-400'} font-bold`}>Fast, secure (via Stripe)</div>
+                      </div>
+                      {paymentMethod === 'ONLINE' && <CheckCircle2 className="w-6 h-6 text-white" />}
+                    </button>
                   </div>
                 </div>
               )}
@@ -400,7 +384,6 @@ export default function OrderSummaryModal({
           )}
         </div>
 
-        {/* Footer */}
         {!existingOrderId && (
           <div className="p-6 border-t border-gray-100 bg-gray-50/50">
             <div className="flex items-center justify-between mb-6">
@@ -426,14 +409,14 @@ export default function OrderSummaryModal({
                   {step > 1 && (
                     <Button 
                       variant="outline"
-                      onClick={() => setStep((s) => (s - 1) as any)}
+                      onClick={() => setStep(1)}
                       className="h-16 px-8 rounded-2xl border-2 border-gray-200"
                     >
                       <ChevronLeft className="w-6 h-6" />
                     </Button>
                   )}
                   <Button 
-                    onClick={step < 2 ? () => setStep((s) => (s + 1) as any) : submitNewOrder}
+                    onClick={step < 2 ? () => setStep(2) : submitNewOrder}
                     disabled={submitting || (step === 1 && (!selectedTable || !customerName))}
                     size="lg"
                     className="flex-1 h-16 text-xl shadow-xl shadow-blue-600/30 rounded-2xl font-black italic tracking-tight"
@@ -441,12 +424,12 @@ export default function OrderSummaryModal({
                     {submitting ? (
                       <span className="flex items-center gap-3">
                         <Loader2 className="w-6 h-6 animate-spin" />
-                        PLACING ORDER...
+                        {paymentMethod === 'ONLINE' ? 'REDIRECTING TO STRIPE...' : 'PLACING ORDER...'}
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
                         {step === 2 ? <Send className="w-6 h-6 mr-1" /> : <ChevronRight className="w-6 h-6 mr-1" />}
-                        {step === 2 ? 'CONFIRM & PAY' : 'PROCEED TO PAYMENT'}
+                        {step === 2 ? (paymentMethod === 'ONLINE' ? 'PROCEED TO PAY' : 'CONFIRM ORDER') : 'PROCEED TO PAYMENT'}
                       </span>
                     )}
                   </Button>
@@ -454,7 +437,6 @@ export default function OrderSummaryModal({
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

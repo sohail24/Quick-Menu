@@ -51,4 +51,9 @@ public class OrderDto {
         private BigDecimal priceAtOrder;
         private String note;
     }
+
+    @Data
+    public static class StripeVerifyRequest {
+        private String sessionId;
+    }
 }

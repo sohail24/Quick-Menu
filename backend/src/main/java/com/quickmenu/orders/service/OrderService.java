@@ -14,6 +14,8 @@ import com.quickmenu.orders.repo.OrderRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.stripe.model.PaymentIntent;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -33,6 +35,12 @@ public class OrderService {
     private final BellService bellService;
     private final com.quickmenu.orders.strategy.DiscountService discountService;
     private final com.quickmenu.orders.payments.PaymentService paymentService;
+
+    @Value("${stripe.secret-key}")
+    private String stripeSecretKey;
+
+    @Value("${stripe.publishable-key}")
+    private String stripePublishableKey;
 
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
@@ -114,21 +122,55 @@ public class OrderService {
                 .items(items)
                 .build();
 
-        // process payment via strategy
-        paymentService.process(order, req.getPaymentMethod() != null ? req.getPaymentMethod() : "CASH");
-
         // set the parent reference on each item
         for (OrderItem it : items) {
             it.setOrder(order);
         }
 
-        // save order; cascade will save items automatically
-        Order saved = orderRepository.save(order);
+        // 1. Save order first to generate ID (required for Stripe success_url)
+        Order saved = orderRepository.saveAndFlush(order);
+
+        // 2. Process payment via strategy (now saved.getId() is available)
+        paymentService.process(saved, req.getPaymentMethod() != null ? req.getPaymentMethod() : "CASH");
+
+        // 3. Save again to persist Stripe session info set by the strategy
+        saved = orderRepository.save(saved);
 
         Map<String, Object> orderPayload = enrichOrderForResponse(saved);
-        messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+        
+        // IMPORTANT: Only notify staff via STOMP if it's CASH (immediate)
+        // For ONLINE, we notify in verifyPayment() after payment is successful
+        if (saved.getPaymentMethod() != Order.PaymentMethod.ONLINE) {
+            messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+        }
 
         return orderPayload;
+    }
+
+    @Transactional
+    public void cancelOrder(String restaurantId, String orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        if (!order.getRestaurantId().equals(restaurantId)) {
+            throw new IllegalArgumentException("Order does not belong to this restaurant");
+        }
+
+        // Only allow cancellation of PENDING online orders
+        if (order.getPaymentMethod() == Order.PaymentMethod.ONLINE && 
+            order.getPaymentStatus() == Order.PaymentStatus.PENDING) {
+            
+            // Free the table
+            TableEntity table = tableRepository.findById(order.getTableId())
+                    .orElse(null);
+            if (table != null) {
+                table.setOccupied(false);
+                tableRepository.save(table);
+            }
+
+            // Delete the order (or mark as CANCELED, but deleting is cleaner if it never happened)
+            orderRepository.delete(order);
+        }
     }
 
 
@@ -199,8 +241,42 @@ public class OrderService {
         response.put("paymentMethod", order.getPaymentMethod() != null ? order.getPaymentMethod().toString() : "CASH");
         response.put("paymentStatus", order.getPaymentStatus() != null ? order.getPaymentStatus().toString() : "PENDING");
         response.put("totalAmount", order.getTotalAmount());
+        response.put("stripeSessionId", order.getStripeSessionId());
+        response.put("stripeCheckoutUrl", order.getStripeCheckoutUrl());
+        if (order.getPaymentMethod() == Order.PaymentMethod.ONLINE) {
+            response.put("stripePublishableKey", stripePublishableKey);
+        }
         response.put("items", itemsWithDetails);
 
         return response;
+    }
+
+    @Transactional
+    public Map<String, Object> verifyPayment(String restaurantId, String orderId, OrderDto.StripeVerifyRequest verifyReq) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        if (!order.getRestaurantId().equals(restaurantId)) {
+            throw new IllegalArgumentException("Order does not belong to this restaurant");
+        }
+
+        try {
+            // We verify by session ID now, or we can still verify by payment intent if we extract it from session
+            // But checking the session status is cleaner for hosted checkout
+            com.stripe.model.checkout.Session session = com.stripe.model.checkout.Session.retrieve(order.getStripeSessionId());
+
+            if ("complete".equals(session.getStatus()) || "paid".equals(session.getPaymentStatus())) {
+                order.setPaymentStatus(Order.PaymentStatus.PAID);
+                orderRepository.save(order);
+                
+                Map<String, Object> orderPayload = enrichOrderForResponse(order);
+                messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+                return orderPayload;
+            } else {
+                throw new RuntimeException("Payment not completed. Status: " + session.getPaymentStatus());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Payment verification failed: " + e.getMessage(), e);
+        }
     }
 }

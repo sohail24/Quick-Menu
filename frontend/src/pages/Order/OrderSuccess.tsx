@@ -17,14 +17,41 @@ export default function OrderSuccess() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    api
-      .get(`/api/orders/${id}`)
-      .then((res) => setOrder(res.data))
-      .catch((err) => {
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const sessionId = searchParams.get('session_id');
+
+    const fetchOrder = async () => {
+      try {
+        const res = await api.get(`/api/orders/${id}`);
+        const orderData = res.data;
+        
+        // If it's an online payment and pending, but we have a session_id, verify it
+        if (orderData.paymentMethod === 'ONLINE' && orderData.paymentStatus === 'PENDING' && sessionId) {
+           try {
+             const verifyRes = await api.post(`/api/${orderData.restaurantId}/orders/${id}/verify`, { sessionId });
+             setOrder(verifyRes.data);
+           } catch (err) {
+             console.error('Auto-verification failed', err);
+             setOrder(orderData);
+           }
+        } else {
+          setOrder(orderData);
+        }
+        
+        // Persist globally for OrderStatusFloating
+        if (id) {
+          localStorage.setItem('qm_last_order_id', id);
+        }
+      } catch (err) {
         console.error('Failed fetching order', err);
         setError('Failed to fetch order details');
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
   }, [id]);
 
   useEffect(() => {

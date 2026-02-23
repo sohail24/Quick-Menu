@@ -73,6 +73,11 @@ public class Order {
 
     private String appliedDiscountStrategy; // For Strategy Pattern tracking
 
+    @Column(length = 1000)
+    private String stripeSessionId;
+    @Column(length = 1000)
+    private String stripeCheckoutUrl;
+
     @Column(name = "placed_at", nullable = false)
     private Instant placedAt;
 

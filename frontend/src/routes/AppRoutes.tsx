@@ -8,6 +8,7 @@ import StaffDashboard from '../pages/Staff/Dashboard';
 import NavBar from '../components/NavBar';
 import ProtectedRoute from '../components/ProtectedRoutes';
 import OrderSuccess from '../pages/Order/OrderSuccess';
+import OrderCancel from '../pages/Order/OrderCancel';
 import AdminCreateRestaurant from '../pages/Admin/AdminCreateRestaurant';
 import AdminLayout from '../layouts/AdminLayout';
 import AdminOverview from '../pages/Admin/AdminOverview';
@@ -97,6 +98,7 @@ export default function AppRoutes() {
         />
         {/* order success */}
         <Route path="/order/success/:id" element={<OrderSuccess />} />
+        <Route path="/order/cancel/:id" element={<OrderCancel />} />
         <Route path="*" element={<div className="p-6">404 - Not Found</div>} />
         {/* AppRoutes or AdminRoutes */}
         <Route

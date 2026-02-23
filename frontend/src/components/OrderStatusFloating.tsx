@@ -31,8 +31,20 @@ export default function OrderStatusFloating({ restaurantId }: { restaurantId?: s
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
-    setOrderId(storedOrderId);
-  }, [storedOrderId]);
+    const handleStorage = () => {
+      const newId = localStorage.getItem('qm_last_order_id');
+      if (newId !== orderId) setOrderId(newId);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    // Also poll slightly for local changes which don't trigger 'storage' in same tab
+    const interval = setInterval(handleStorage, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
+  }, [orderId]);
 
   useEffect(() => {
     if (!orderId) return;

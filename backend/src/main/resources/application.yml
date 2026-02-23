@@ -98,4 +98,7 @@ demo:
     enabled: true
     restore-interval-minutes: 30
 
-
+# Stripe Configuration
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:sk_test_dummy}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_dummy}
