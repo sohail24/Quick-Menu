@@ -390,6 +390,11 @@ export default function AdminOrders() {
                        }`}>
                          {status}
                        </span>
+                       <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border ${
+                         o.paymentStatus === 'PAID' ? 'bg-green-50 text-green-700 border-green-100/50' : 'bg-yellow-50 text-yellow-700 border-yellow-100/50'
+                       }`}>
+                         {o.paymentStatus === 'PAID' ? 'PAID' : 'UNPAID'}
+                       </span>
                        {o.tableId && (
                          <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100/50">
                            {tableMap[o.tableId] ? `${tableMap[o.tableId]} ` : ''}(Table ID: {o.tableId})

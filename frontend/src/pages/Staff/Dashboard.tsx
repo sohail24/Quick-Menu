@@ -247,6 +247,19 @@ export default function StaffDashboard() {
     }
   }
 
+  async function markOrderAsPaid(orderId: string) {
+    if (!restaurantId) return;
+    try {
+      setError(null);
+      await api.patch(`/api/${restaurantId}/orders/${orderId}`, { paymentStatus: 'PAID' });
+      // Update local state
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, paymentStatus: 'PAID' } : o)));
+    } catch (err: any) {
+      console.error('markOrderAsPaid error', err);
+      setError(err?.response?.data?.message || 'Failed to update payment status');
+    }
+  }
+
   async function ackBell(bellId: string) {
     if (!restaurantId) {
       setError('No restaurant assigned');
@@ -359,6 +372,13 @@ export default function StaffDashboard() {
                       <div className="mb-2">
                         Status: <strong>{status || '—'}</strong>
                       </div>
+                      <div className="mb-3">
+                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${
+                          o.paymentStatus === 'PAID' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
+                        }`}>
+                          {o.paymentStatus === 'PAID' ? 'PAID' : 'UNPAID'} ({o.paymentMethod})
+                        </span>
+                      </div>
                       {isCompleted ? (
                         <div className="flex items-center gap-2 text-green-600 font-semibold">
                           <svg
@@ -399,9 +419,23 @@ export default function StaffDashboard() {
                           {status !== 'SERVED' && (
                             <button
                               onClick={() => changeOrderStatus(o.id, 'SERVED')}
-                              className="px-2 py-1 bg-green-600 rounded text-sm text-white"
+                              disabled={o.paymentStatus !== 'PAID'}
+                              className={`px-2 py-1 rounded text-sm text-white transition-opacity ${
+                                o.paymentStatus !== 'PAID' 
+                                ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                                : 'bg-green-600 hover:bg-green-700'
+                              }`}
+                              title={o.paymentStatus !== 'PAID' ? 'Order must be paid before serving' : ''}
                             >
                               Serve
+                            </button>
+                          )}
+                          {o.paymentStatus !== 'PAID' && (
+                            <button
+                              onClick={() => markOrderAsPaid(o.id)}
+                              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-bold mt-2 shadow-sm active:scale-95 transition-all"
+                            >
+                              Mark Paid
                             </button>
                           )}
                         </div>

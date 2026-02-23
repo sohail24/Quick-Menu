@@ -28,6 +28,12 @@ public class OrderDto {
     }
 
     @Data
+    public static class UpdateOrderRequest {
+        private String status;
+        private String paymentStatus;
+    }
+
+    @Data
     public static class OrderResponse {
         private String id;
         private String restaurantId;

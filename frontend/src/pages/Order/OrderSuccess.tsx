@@ -5,6 +5,7 @@ import api from '../../lib/api';
 import useStomp from '../../hooks/useStomp';
 import { CheckCircle2, ChevronLeft, MapPin, ClipboardList, Clock, ArrowRight, Home, Receipt, HelpCircle, Wallet, CreditCard, Sparkles, ChefHat, UtensilsCrossed, PackageCheck, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import { setActiveOrder } from '../../lib/orderStorage';
 
 export default function OrderSuccess() {
   const { id } = useParams<{ id?: string }>();
@@ -30,18 +31,30 @@ export default function OrderSuccess() {
         if (orderData.paymentMethod === 'ONLINE' && orderData.paymentStatus === 'PENDING' && sessionId) {
            try {
              const verifyRes = await api.post(`/api/${orderData.restaurantId}/orders/${id}/verify`, { sessionId });
-             setOrder(verifyRes.data);
-           } catch (err) {
+             const verifiedOrder = verifyRes.data;
+             setOrder(verifiedOrder);
+             
+             // Persist globally for OrderStatusFloating (Verified Online)
+             if (id && verifiedOrder.paymentStatus === 'PAID') {
+               setActiveOrder(verifiedOrder.restaurantId, verifiedOrder.tableId, id, verifiedOrder.placedAt || new Date().toISOString());
+               localStorage.setItem('qm_last_order_id', id);
+             }
+           } catch (err: any) {
              console.error('Auto-verification failed', err);
+             if (err.response?.status === 409) {
+               setError(err.response.data.message || 'Table was taken while you were paying.');
+               setOrder(null);
+               return;
+             }
              setOrder(orderData);
            }
         } else {
           setOrder(orderData);
-        }
-        
-        // Persist globally for OrderStatusFloating
-        if (id) {
-          localStorage.setItem('qm_last_order_id', id);
+          // Persist globally for OrderStatusFloating (CASH or Already Paid Online)
+          if (id && (orderData.paymentStatus === 'PAID' || orderData.paymentMethod === 'CASH')) {
+            setActiveOrder(orderData.restaurantId, orderData.tableId, id, orderData.placedAt || new Date().toISOString());
+            localStorage.setItem('qm_last_order_id', id);
+          }
         }
       } catch (err) {
         console.error('Failed fetching order', err);
@@ -96,15 +109,32 @@ export default function OrderSuccess() {
   const currentStep = order ? getStatusStep(order.status) : 1;
 
   if (error) {
+     const isConflict = error.toLowerCase().includes('table') || error.toLowerCase().includes('taken');
      return (
        <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-          <div className="bg-white rounded-3xl p-8 shadow-xl max-w-sm w-full text-center">
-             <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <X className="w-8 h-8" />
+          <div className="bg-white rounded-[32px] p-10 shadow-2xl max-w-sm w-full text-center animate-in zoom-in-95 duration-500">
+             <div className="w-20 h-20 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+                {isConflict ? <UtensilsCrossed className="w-10 h-10" /> : <X className="w-10 h-10" />}
              </div>
-             <h4 className="text-xl font-black text-gray-900 mb-2">Error Loading Order</h4>
-             <p className="text-gray-500 mb-8 text-sm">{error}</p>
-             <Button className="w-full" onClick={() => window.location.reload()}>Try Again</Button>
+             <h4 className="text-2xl font-black text-gray-900 mb-4 italic uppercase tracking-tight">
+                {isConflict ? 'Seating Conflict' : 'Oops! Error'}
+             </h4>
+             <p className="text-gray-500 mb-10 text-sm font-medium leading-relaxed leading-relaxed">{error}</p>
+             {isConflict ? (
+                <Button 
+                  className="w-full h-16 rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-blue-600/20" 
+                  onClick={() => navigate('/')}
+                >
+                  <ArrowRight className="w-5 h-5 mr-1" /> Pick Another Table
+                </Button>
+             ) : (
+                <Button 
+                  className="w-full h-16 rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-blue-600/20" 
+                  onClick={() => window.location.reload()}
+                >
+                  Try Again
+                </Button>
+             )}
           </div>
        </div>
      );

@@ -36,6 +36,11 @@ public class OnlinePaymentStrategy implements PaymentStrategy {
                             .build())
                     .putMetadata("order_id", order.getId())
                     .putMetadata("restaurant_id", order.getRestaurantId())
+                    .setPaymentIntentData(
+                            SessionCreateParams.PaymentIntentData.builder()
+                                    .setCaptureMethod(SessionCreateParams.PaymentIntentData.CaptureMethod.MANUAL)
+                                    .build()
+                    )
                     .build();
 
             Session session = Session.create(params);

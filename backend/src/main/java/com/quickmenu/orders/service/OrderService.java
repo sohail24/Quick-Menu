@@ -78,9 +78,12 @@ public class OrderService {
             throw new TableOccupiedException();
         }
 
-        // mark table occupied
-        table.setOccupied(true);
-        tableRepository.save(table);
+        // mark table occupied ONLY if it's CASH (immediate placement)
+        // For ONLINE, we defer occupancy until payment is verified
+        if (!"ONLINE".equalsIgnoreCase(req.getPaymentMethod())) {
+            table.setOccupied(true);
+            tableRepository.save(table);
+        }
 
         // validate dishes and compute total
         BigDecimal total = BigDecimal.ZERO;
@@ -183,10 +186,23 @@ public class OrderService {
     }
 
     @Transactional
-    public Order updateOrderStatus(String restaurantId, String orderId, Order.Status status) {
+    public Order updateOrderStatus(String restaurantId, String orderId, Order.Status status, Order.PaymentStatus paymentStatus) {
         Order ord = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
-        ord.setStatus(status);
+        
+        if (status != null) {
+            ord.setStatus(status);
+        }
+        
+        if (paymentStatus != null) {
+            // Protection: Don't allow changing back to PENDING if already PAID
+            if (ord.getPaymentStatus() == Order.PaymentStatus.PAID && paymentStatus == Order.PaymentStatus.PENDING) {
+                // Ignore or throw exception; ignoring is safer for bulk updates
+            } else {
+                ord.setPaymentStatus(paymentStatus);
+            }
+        }
+
         Order updated = orderRepository.save(ord);
 
         // Free the table if order is SERVED
@@ -261,20 +277,49 @@ public class OrderService {
         }
 
         try {
-            // We verify by session ID now, or we can still verify by payment intent if we extract it from session
-            // But checking the session status is cleaner for hosted checkout
             com.stripe.model.checkout.Session session = com.stripe.model.checkout.Session.retrieve(order.getStripeSessionId());
 
             if ("complete".equals(session.getStatus()) || "paid".equals(session.getPaymentStatus())) {
+                
+                // --- TABLE INTEGRITY CHECK (Pessimistic Locking) ---
+                TableEntity table = tableRepository.findByIdForUpdate(order.getTableId())
+                        .orElseThrow(() -> new IllegalArgumentException("Table not found"));
+                
+                if (Boolean.TRUE.equals(table.getOccupied())) {
+                    // CONFLICT: Table was taken while user was on Stripe!
+                    // RELEASE (VOID) the payment hold so customer isn't charged
+                    PaymentIntent intent = PaymentIntent.retrieve(session.getPaymentIntent());
+                    intent.cancel();
+                    
+                    // Mark order as CANCELLED in our system
+                    order.setStatus(Order.Status.CANCELLED);
+                    order.setPaymentStatus(Order.PaymentStatus.CANCELLED);
+                    orderRepository.save(order);
+                    
+                    throw new TableOccupiedException();
+                }
+                
+                // SUCCESS: Capture the payment hold
+                PaymentIntent intent = PaymentIntent.retrieve(session.getPaymentIntent());
+                intent.capture();
+                
+                // Finalize table status
+                table.setOccupied(true);
+                tableRepository.save(table);
+                
+                // Finalize order status
                 order.setPaymentStatus(Order.PaymentStatus.PAID);
                 orderRepository.save(order);
                 
                 Map<String, Object> orderPayload = enrichOrderForResponse(order);
                 messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
                 return orderPayload;
+                
             } else {
                 throw new RuntimeException("Payment not completed. Status: " + session.getPaymentStatus());
             }
+        } catch (TableOccupiedException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Payment verification failed: " + e.getMessage(), e);
         }

@@ -120,7 +120,7 @@ export default function OrderSummaryModal({
       const resp = res.data;
       
       const id = resp?.id ?? resp?.orderId ?? null;
-      if (id) {
+      if (id && paymentMethod === 'CASH') {
         setActiveOrder(restaurantId, selectedTable, id, resp?.placedAt ?? new Date().toISOString());
         localStorage.setItem('qm_last_order_id', id);
       }

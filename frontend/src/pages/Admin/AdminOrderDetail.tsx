@@ -76,6 +76,22 @@ export default function AdminOrderDetail() {
     }
   }
 
+  async function markPaid() {
+    if (!orderId || !restaurantId) return;
+    if (!confirm('Mark this order as PAID?')) return;
+    setSaving(true);
+    try {
+      await api.patch(`/api/${restaurantId}/orders/${orderId}`, { paymentStatus: 'PAID' });
+      await loadOrder();
+      alert('Order marked as PAID');
+    } catch (err: any) {
+      console.error('Failed to mark as paid', err);
+      alert('Failed: ' + (err?.response?.data?.message ?? err?.message));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function printReceipt() {
     const w = window.open('', '_blank');
     if (!w) return alert('Unable to open print window');
@@ -228,6 +244,27 @@ export default function AdminOrderDetail() {
                 Served
               </button>
             </div>
+          </div>
+          <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+             <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full animate-pulse ${order.paymentStatus === 'PAID' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                <div>
+                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block leading-none mb-1">Payment Status</span>
+                   <span className="text-sm font-black text-gray-900 uppercase italic">
+                      {order.paymentStatus === 'PAID' ? 'Order is Paid' : 'Payment Pending'}
+                      <span className="text-gray-400 ml-2 font-bold whitespace-nowrap">({order.paymentMethod})</span>
+                   </span>
+                </div>
+             </div>
+             {order.paymentStatus !== 'PAID' && (
+               <button
+                 disabled={saving}
+                 onClick={markPaid}
+                 className="h-10 px-6 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all active:scale-95 w-full sm:w-auto"
+               >
+                 Confirm Payment Received
+               </button>
+             )}
           </div>
         </div>
 

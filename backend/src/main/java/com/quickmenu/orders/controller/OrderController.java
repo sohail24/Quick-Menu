@@ -92,6 +92,7 @@ public class OrderController {
     public ResponseEntity<OrderDto.OrderResponse> getOrder(@PathVariable String restaurantId, @PathVariable String orderId) {
         return orderRepository.findById(orderId)
                 .filter(o -> restaurantId.equals(o.getRestaurantId()))
+                .filter(o -> o.getPaymentMethod() == Order.PaymentMethod.CASH || o.getPaymentStatus() == Order.PaymentStatus.PAID)
                 .map(order -> ResponseEntity.ok(OrderMapper.toResponse(order)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -101,8 +102,11 @@ public class OrderController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     public ResponseEntity<OrderDto.OrderResponse> updateStatus(@PathVariable String restaurantId,
                                               @PathVariable String orderId,
-                                              @RequestBody Order req) {
-        Order updated = orderService.updateOrderStatus(restaurantId, orderId, req.getStatus());
+                                              @RequestBody OrderDto.UpdateOrderRequest req) {
+        Order.Status status = req.getStatus() != null ? Order.Status.valueOf(req.getStatus().toUpperCase()) : null;
+        Order.PaymentStatus paymentStatus = req.getPaymentStatus() != null ? Order.PaymentStatus.valueOf(req.getPaymentStatus().toUpperCase()) : null;
+        
+        Order updated = orderService.updateOrderStatus(restaurantId, orderId, status, paymentStatus);
         return ResponseEntity.ok(OrderMapper.toResponse(updated));
     }
 
@@ -117,16 +121,24 @@ public class OrderController {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "placedAt"));
 
-        Page<Order> orders;
-        if (status != null && search != null) {
-            orders = orderRepository.findByRestaurantIdAndStatusAndSearch(restaurantId, status, search, pageable);
-        } else if (status != null) {
-            orders = orderRepository.findByRestaurantIdAndStatus(restaurantId, status, pageable);
-        } else  {
-            orders = orderRepository.findByRestaurantIdAndSearch(restaurantId, search, pageable);
+        // Use Specification to ensure ghost orders are filtered out even in search
+        org.springframework.data.jpa.domain.Specification<Order> spec = com.quickmenu.orders.repo.OrderSpecification.withFilters(restaurantId, status, null, null);
+        
+        // Add search criteria to specification if possible, or just keep it simple for now as it's a staff search
+        // For now, let's just make it consistent with listOrders but with the search term
+        if (search != null && !search.isBlank()) {
+            final String searchLower = search.toLowerCase();
+            spec = spec.and((root, query, cb) -> 
+                cb.or(
+                    cb.like(cb.lower(root.get("id")), "%" + searchLower + "%"),
+                    cb.like(cb.lower(root.get("customerName")), "%" + searchLower + "%"),
+                    cb.like(cb.lower(root.get("customerPhone")), "%" + searchLower + "%")
+                )
+            );
         }
 
-        Page<OrderDto.OrderResponse> dtoPage = orders.map(OrderMapper::toResponse);
+        Page<Order> p = orderRepository.findAll(spec, pageable);
+        Page<OrderDto.OrderResponse> dtoPage = p.map(OrderMapper::toResponse);
         return ResponseEntity.ok(dtoPage);
     }
 
@@ -138,6 +150,8 @@ public class OrderController {
         try {
             Map<String, Object> verified = orderService.verifyPayment(restaurantId, orderId, req);
             return ResponseEntity.ok(verified);
+        } catch (TableOccupiedException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Table was taken while you were paying. Your payment has been voided. Please try again with a different table."));
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
         }
