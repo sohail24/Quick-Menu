@@ -36,7 +36,8 @@ export default function OrderSuccess() {
              
              // Persist globally for OrderStatusFloating (Verified Online)
              if (id && verifiedOrder.paymentStatus === 'PAID') {
-               setActiveOrder(verifiedOrder.restaurantId, verifiedOrder.tableId, id, verifiedOrder.placedAt || new Date().toISOString());
+               const trackingTableId = verifiedOrder.orderType === 'TAKEAWAY' ? 'takeaway' : verifiedOrder.tableId;
+               setActiveOrder(verifiedOrder.restaurantId, trackingTableId || 'takeaway', id, verifiedOrder.placedAt || new Date().toISOString());
                localStorage.setItem('qm_last_order_id', id);
              }
            } catch (err: any) {
@@ -52,7 +53,8 @@ export default function OrderSuccess() {
           setOrder(orderData);
           // Persist globally for OrderStatusFloating (CASH or Already Paid Online)
           if (id && (orderData.paymentStatus === 'PAID' || orderData.paymentMethod === 'CASH')) {
-            setActiveOrder(orderData.restaurantId, orderData.tableId, id, orderData.placedAt || new Date().toISOString());
+            const trackingTableId = orderData.orderType === 'TAKEAWAY' ? 'takeaway' : orderData.tableId;
+            setActiveOrder(orderData.restaurantId, trackingTableId || 'takeaway', id, orderData.placedAt || new Date().toISOString());
             localStorage.setItem('qm_last_order_id', id);
           }
         }
@@ -204,8 +206,15 @@ export default function OrderSuccess() {
              <div className="p-8 pb-0">
                 <div className="flex justify-between items-end mb-8">
                    <div>
-                      <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Dine At</div>
-                      <div className="text-2xl font-black text-gray-900 italic tracking-tight">Table #{order.tableId}</div>
+                      <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">
+                          {order.orderType === 'TAKEAWAY' ? 'Order Mode' : 'Dine At'}
+                       </div>
+                       <div className="text-2xl font-black text-gray-900 italic tracking-tight">
+                          {order.orderType === 'TAKEAWAY' 
+                             ? (order.vehicleNumber ? `Takeaway (${order.vehicleNumber})` : 'Takeaway (Counter)')
+                             : `Table #${order.tableId}`
+                          }
+                       </div>
                    </div>
                    <div className="text-right">
                       <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Time</div>
@@ -266,7 +275,7 @@ export default function OrderSuccess() {
           {/* Action Buttons */}
           <div className="grid grid-cols-1 gap-3 pt-4">
              <button 
-               onClick={() => navigate(`/menu/${order.restaurantId}?tableId=${order.tableId}`)}
+               onClick={() => navigate(`/menu/${order.restaurantId}${order.orderType === 'TAKEAWAY' ? '' : `?tableId=${order.tableId}`}`)}
                className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-3 active:scale-95"
              >
                 <ArrowRight className="w-5 h-5" /> Order More Items

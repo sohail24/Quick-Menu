@@ -129,7 +129,12 @@ export default function AdminOrderDetail() {
         <div class="hdr">
           <div class="restaurant-name">Restaurant: ${restaurantId}</div>
           <div class="order-number">Order ID: #${orderId}</div>
-          <div class="table-number">Table ID: #${order?.tableId ?? 'N/A'}</div>
+          <div class="table-number">
+            ${order?.orderType === 'TAKEAWAY' 
+              ? `Takeaway (Vehicle: ${order?.vehicleNumber || 'Counter'})` 
+              : `Table ID: #${order?.tableId ?? 'N/A'}`
+            }
+          </div>
           <div class="customer-info">
             <strong>${order?.customerName ?? 'Customer'}</strong> • ${order?.customerPhone ?? ''}
             <p class="text-gray-600 mt-1">Customer note: ${order?.customerNote ?? 'N/A'}</p>
@@ -346,7 +351,12 @@ export default function AdminOrderDetail() {
                  </div>
                  <div>
                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Table Info</p>
-                    <p className="text-sm font-black text-gray-900">Table #{order?.tableId ?? 'Counter'}</p>
+                     <p className="text-sm font-black text-gray-900">
+                      {order?.orderType === 'TAKEAWAY' 
+                        ? `Takeaway (Vehicle: ${order?.vehicleNumber || 'Counter Pickup'})` 
+                        : `Table #${order?.tableId ?? 'Counter'}`
+                      }
+                     </p>
                  </div>
                  {order?.customerPhone && (
                    <div>

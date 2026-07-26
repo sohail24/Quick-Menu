@@ -37,7 +37,8 @@ public class OrderController {
         if (req.getItems() == null || req.getItems().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Order must contain at least one item"));
         }
-        if (req.getTableId() == null || req.getTableId().isBlank()) {
+        boolean isTakeaway = "TAKEAWAY".equalsIgnoreCase(req.getOrderType());
+        if (!isTakeaway && (req.getTableId() == null || req.getTableId().isBlank())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Table selection is required"));
         }
         if (req.getCustomerName() == null || req.getCustomerName().isBlank()) {
@@ -53,6 +54,27 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (TableOccupiedException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Selected table is currently occupied"));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Internal error"));
+        }
+    }
+
+    @PostMapping("/{orderId}/items")
+    @Operation(summary = "Append items to order", description = "Add new items to an existing active order (customer).")
+    public ResponseEntity<?> appendOrderItems(@PathVariable String restaurantId,
+                                             @PathVariable String orderId,
+                                             @RequestBody java.util.List<OrderDto.CreateOrderItem> items) {
+        if (items == null || items.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Must provide at least one item to add"));
+        }
+        try {
+            Map<String, Object> updated = orderService.appendOrderItems(restaurantId, orderId, items);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
         } catch (Exception ex) {

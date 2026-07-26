@@ -19,6 +19,8 @@ public class OrderDto {
     public static class CreateOrderRequest {
         private String requestId; // For Idempotency
         private String discountStrategy; // For Strategy Pattern
+        private String orderType; // DINE_IN, TAKEAWAY
+        private String vehicleNumber;
         private String tableId;
         private String customerName;
         private String customerPhone;
@@ -37,6 +39,8 @@ public class OrderDto {
     public static class OrderResponse {
         private String id;
         private String restaurantId;
+        private String orderType;
+        private String vehicleNumber;
         private String tableId;
         private String customerName;
         private String customerPhone;

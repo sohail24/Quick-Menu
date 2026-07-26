@@ -58,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/api/demo/**", "/api/health", "/favicon.ico").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/menu", "/api/*/menu/**", "/api/orders/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/restaurants/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/*/orders", "/api/*/orders/*/verify").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/*/orders", "/api/*/orders/*/verify", "/api/*/orders/*/items").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/restaurants/*/tables/*/bell").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/restaurants/*/tables/available").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/openapi.yaml").permitAll()

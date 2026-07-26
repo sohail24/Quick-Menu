@@ -32,6 +32,8 @@ export default function OrderSummaryModal({
   onOrderPlaced,
   onStopTracking,
 }: Props) {
+  const [orderType, setOrderType] = useState<'DINE_IN' | 'TAKEAWAY'>('DINE_IN');
+  const [vehicleNumber, setVehicleNumber] = useState('');
   const [localCart, setLocalCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -56,15 +58,21 @@ export default function OrderSummaryModal({
   }, [tableId]);
 
   useEffect(() => {
-    if (!restaurantId || !selectedTable) {
+    if (!restaurantId) {
       setExistingOrderId(null);
       setExistingOrderTableId(null);
       return;
     }
-    const ao = getActiveOrderFor(restaurantId, selectedTable);
+    const targetTableId = orderType === 'TAKEAWAY' ? 'takeaway' : selectedTable;
+    if (!targetTableId) {
+      setExistingOrderId(null);
+      setExistingOrderTableId(null);
+      return;
+    }
+    const ao = getActiveOrderFor(restaurantId, targetTableId);
     setExistingOrderId(ao?.orderId ?? null);
     setExistingOrderTableId(ao?.tableId ?? null);
-  }, [restaurantId, selectedTable]);
+  }, [restaurantId, selectedTable, orderType]);
 
   useEffect(() => {
     if (!isOpen || !restaurantId) return;
@@ -99,7 +107,7 @@ export default function OrderSummaryModal({
   }
 
   async function submitNewOrder() {
-    if (!selectedTable) return setError('Please select a table');
+    if (orderType === 'DINE_IN' && !selectedTable) return setError('Please select a table');
     if (!customerName) return setError('Please provide your name');
     if (!restaurantId) return setError('Missing restaurant');
     
@@ -107,7 +115,9 @@ export default function OrderSummaryModal({
     setError(null);
 
     const payload = {
-      tableId: selectedTable,
+      tableId: orderType === 'TAKEAWAY' ? null : selectedTable,
+      orderType,
+      vehicleNumber: orderType === 'TAKEAWAY' ? vehicleNumber : null,
       customerName,
       customerPhone,
       customerNote,
@@ -121,7 +131,8 @@ export default function OrderSummaryModal({
       
       const id = resp?.id ?? resp?.orderId ?? null;
       if (id && paymentMethod === 'CASH') {
-        setActiveOrder(restaurantId, selectedTable, id, resp?.placedAt ?? new Date().toISOString());
+        const targetTable = orderType === 'TAKEAWAY' ? 'takeaway' : selectedTable;
+        setActiveOrder(restaurantId, targetTable || 'takeaway', id, resp?.placedAt ?? new Date().toISOString());
         localStorage.setItem('qm_last_order_id', id);
       }
       
@@ -136,6 +147,28 @@ export default function OrderSummaryModal({
     } catch (err: any) {
       console.error('Order submit failed', err);
       setError(err?.response?.data?.message || 'Failed to place order');
+      setSubmitting(false);
+    }
+  }
+
+  async function submitAppendOrder() {
+    if (!existingOrderId) return;
+    if (!restaurantId) return setError('Missing restaurant');
+    
+    setSubmitting(true);
+    setError(null);
+
+    const items = localCart.map((c) => ({ dishId: c.dishId, quantity: c.quantity, note: c.note || '' }));
+
+    try {
+      const res = await api.post(`/api/${restaurantId}/orders/${existingOrderId}/items`, items);
+      const resp = res.data;
+      
+      onClose();
+      onOrderPlaced(resp);
+    } catch (err: any) {
+      console.error('Order append failed', err);
+      setError(err?.response?.data?.message || 'Failed to add items to active order');
       setSubmitting(false);
     }
   }
@@ -197,14 +230,14 @@ export default function OrderSummaryModal({
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar p-6">
-          {existingOrderId ? (
+          {existingOrderId && localCart.length === 0 ? (
             <div className="text-center py-8">
               <div className="inline-flex p-4 bg-yellow-50 rounded-3xl text-yellow-600 mb-6">
                  <Clock className="w-12 h-12" />
               </div>
               <h4 className="text-2xl font-black text-gray-900 mb-2">Active Order Found!</h4>
               <p className="text-gray-500 max-w-xs mx-auto mb-8 font-medium">
-                You already have an order placed for <span className="text-blue-600 font-bold">{tables.find(t => t.id === existingOrderTableId)?.name || 'Table'}</span>.
+                You already have an active order.
               </p>
               
               <div className="flex flex-col gap-3">
@@ -229,6 +262,20 @@ export default function OrderSummaryModal({
             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               {step === 1 && (
                 <>
+                  {existingOrderId && (
+                    <div className="p-5 bg-blue-50/50 border-2 border-blue-100/50 rounded-3xl text-blue-800 text-sm font-medium flex flex-col gap-1.5 animate-in slide-in-from-top-4 duration-300">
+                      <div className="font-black text-xs uppercase tracking-widest text-blue-600 flex items-center gap-1.5">
+                         <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
+                         Active Order Detected
+                      </div>
+                      <div>
+                        You are adding items to your active order. Extra amount will be settled at the counter.
+                      </div>
+                      <div className="text-xs font-black text-blue-500 mt-1 uppercase">
+                        {existingOrderTableId === 'takeaway' ? 'Order Type: Takeaway' : `Table: #${existingOrderTableId}`}
+                      </div>
+                    </div>
+                  )}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-4">
                        <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Your Items</h4>
@@ -265,72 +312,126 @@ export default function OrderSummaryModal({
                     ))}
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                       <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Select Your Table</h4>
-                       <div className="h-px flex-1 bg-gray-100"></div>
+                  {!existingOrderId && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                         <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Order Type</h4>
+                         <div className="h-px flex-1 bg-gray-100"></div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setOrderType('DINE_IN')}
+                          className={`flex-1 py-3 rounded-2xl font-bold transition-all border-2 text-center text-sm ${
+                            orderType === 'DINE_IN'
+                            ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/10'
+                            : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200'
+                          }`}
+                        >
+                          Dine-In 🍽️
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOrderType('TAKEAWAY')}
+                          className={`flex-1 py-3 rounded-2xl font-bold transition-all border-2 text-center text-sm ${
+                            orderType === 'TAKEAWAY'
+                            ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/10'
+                            : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200'
+                          }`}
+                        >
+                          Takeaway 🛍️
+                        </button>
+                      </div>
                     </div>
-                    {loadingTables ? (
-                      <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                         {[1,2,3,4].map(i => <div key={i} className="w-24 h-12 bg-gray-100 rounded-xl animate-pulse"></div>)}
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {tables.map((t: any) => (
-                          <button
-                            key={t.id}
-                            onClick={() => setSelectedTable(t.id)}
-                            className={`px-4 py-3 rounded-2xl font-bold transition-all border-2 flex items-center gap-2 ${
-                              selectedTable === t.id
-                              ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20 scale-105'
-                              : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200'
-                            }`}
-                          >
-                            <MapPin className={`w-4 h-4 ${selectedTable === t.id ? 'text-white' : 'text-blue-500'}`} />
-                            <span>{t.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  )}
 
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2">
-                       <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Contact Details</h4>
-                       <div className="h-px flex-1 bg-gray-100"></div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="relative group">
-                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400">
-                          <User className="w-5 h-5" />
+                  {!existingOrderId && orderType === 'DINE_IN' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                         <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Select Your Table</h4>
+                         <div className="h-px flex-1 bg-gray-100"></div>
+                      </div>
+                      {loadingTables ? (
+                        <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                           {[1,2,3,4].map(i => <div key={i} className="w-24 h-12 bg-gray-100 rounded-xl animate-pulse"></div>)}
                         </div>
-                        <input
-                          value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                          placeholder="Your Name"
-                          className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none transition-all font-medium"
-                        />
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {tables.map((t: any) => (
+                            <button
+                              key={t.id}
+                              onClick={() => setSelectedTable(t.id)}
+                              className={`px-4 py-3 rounded-2xl font-bold transition-all border-2 flex items-center gap-2 ${
+                                selectedTable === t.id
+                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20 scale-105'
+                                : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200'
+                              }`}
+                            >
+                              <MapPin className={`w-4 h-4 ${selectedTable === t.id ? 'text-white' : 'text-blue-500'}`} />
+                              <span>{t.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {!existingOrderId && orderType === 'TAKEAWAY' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                         <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Delivery / Takeaway details</h4>
+                         <div className="h-px flex-1 bg-gray-100"></div>
                       </div>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400">
-                          <Phone className="w-5 h-5" />
-                        </div>
                         <input
-                          type="tel"
-                          value={customerPhone}
-                          onChange={(e) => setCustomerPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
-                          placeholder="Phone Number"
-                          className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none transition-all font-medium"
+                          value={vehicleNumber}
+                          onChange={(e) => setVehicleNumber(e.target.value)}
+                          placeholder="Mention Car/Bike number OR type 'Counter Pickup'"
+                          className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none transition-all font-medium text-sm"
                         />
                       </div>
                     </div>
-                    <textarea
-                      value={customerNote}
-                      onChange={(e) => setCustomerNote(e.target.value)}
-                      placeholder="Kitchen instructions (optional)..."
-                      className="w-full p-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none transition-all font-medium min-h-[80px]"
-                    />
-                  </div>
+                  )}
+
+                  {!existingOrderId && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-2">
+                         <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Contact Details</h4>
+                         <div className="h-px flex-1 bg-gray-100"></div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="relative group">
+                          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400">
+                            <User className="w-5 h-5" />
+                          </div>
+                          <input
+                            value={customerName}
+                            onChange={(e) => setCustomerName(e.target.value)}
+                            placeholder="Your Name"
+                            className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none transition-all font-medium"
+                          />
+                        </div>
+                        <div className="relative group">
+                          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400">
+                            <Phone className="w-5 h-5" />
+                          </div>
+                          <input
+                            type="tel"
+                            value={customerPhone}
+                            onChange={(e) => setCustomerPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                            placeholder="Phone Number"
+                            className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none transition-all font-medium"
+                          />
+                        </div>
+                      </div>
+                      <textarea
+                        value={customerNote}
+                        onChange={(e) => setCustomerNote(e.target.value)}
+                        placeholder="Kitchen instructions (optional)..."
+                        className="w-full p-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none transition-all font-medium min-h-[80px]"
+                      />
+                    </div>
+                  )}
                 </>
               )}
 
@@ -384,6 +485,50 @@ export default function OrderSummaryModal({
           )}
         </div>
 
+        {existingOrderId && localCart.length > 0 && (
+          <div className="p-6 border-t border-gray-100 bg-gray-50/50">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="text-gray-500 font-bold text-xs uppercase tracking-widest mb-1">Additional Amount</div>
+                <div className="text-4xl font-black text-gray-900 tracking-tight">₹{total.toFixed(2)}</div>
+              </div>
+              <div className="text-right">
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">
+                  Appending Items
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+               {error && (
+                 <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold animate-in slide-in-from-top-2 flex items-center gap-3">
+                   <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse shrink-0"></div>
+                   {error}
+                 </div>
+               )}
+               
+               <Button 
+                 onClick={submitAppendOrder}
+                 disabled={submitting}
+                 size="lg"
+                 className="w-full h-16 text-xl shadow-xl shadow-blue-600/30 rounded-2xl font-black italic tracking-tight"
+               >
+                 {submitting ? (
+                   <span className="flex items-center gap-3">
+                     <Loader2 className="w-6 h-6 animate-spin" />
+                     ADDING TO ORDER...
+                   </span>
+                 ) : (
+                   <span className="flex items-center gap-2">
+                     <Send className="w-6 h-6 mr-1" />
+                     ADD TO ACTIVE ORDER
+                   </span>
+                 )}
+               </Button>
+            </div>
+          </div>
+        )}
+
         {!existingOrderId && (
           <div className="p-6 border-t border-gray-100 bg-gray-50/50">
             <div className="flex items-center justify-between mb-6">
@@ -417,7 +562,7 @@ export default function OrderSummaryModal({
                   )}
                   <Button 
                     onClick={step < 2 ? () => setStep(2) : submitNewOrder}
-                    disabled={submitting || (step === 1 && (!selectedTable || !customerName))}
+                    disabled={submitting || (step === 1 && ((orderType === 'DINE_IN' && !selectedTable) || !customerName))}
                     size="lg"
                     className="flex-1 h-16 text-xl shadow-xl shadow-blue-600/30 rounded-2xl font-black italic tracking-tight"
                   >

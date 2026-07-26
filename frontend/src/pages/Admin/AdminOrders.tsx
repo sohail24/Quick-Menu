@@ -393,12 +393,16 @@ export default function AdminOrders() {
                        }`}>
                          {o.paymentStatus === 'PAID' ? 'PAID' : 'UNPAID'}
                        </span>
-                       {o.tableId && (
-                         <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100/50">
-                           {tableMap[o.tableId] ? `${tableMap[o.tableId]} ` : ''}(Table ID: {o.tableId})
-                         </span>
-                       )}
-                    </div>
+                        {o.orderType === 'TAKEAWAY' ? (
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 uppercase tracking-widest border border-purple-100/50">
+                            Takeaway {o.vehicleNumber ? `(${o.vehicleNumber})` : '(Counter)'}
+                          </span>
+                        ) : o.tableId ? (
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100/50">
+                            {tableMap[o.tableId] ? `${tableMap[o.tableId]} ` : ''}(Table ID: {o.tableId})
+                          </span>
+                        ) : null}
+                     </div>
                     
                     <div className="flex flex-col gap-0.5 mb-2">
                       <div className="text-sm font-black text-gray-900 truncate flex items-center gap-2">

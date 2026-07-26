@@ -40,8 +40,20 @@ public class Order {
     @Column(nullable = false)
     private String restaurantId;
 
-    @Column(nullable = false)
+    public enum OrderType {
+        DINE_IN, TAKEAWAY
+    }
+
+    @Column(length = 36)
     private String tableId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_type")
+    @Builder.Default
+    private OrderType orderType = OrderType.DINE_IN;
+
+    @Column(name = "vehicle_number")
+    private String vehicleNumber;
 
     @Column(nullable = false)
     private String customerName;

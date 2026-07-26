@@ -362,7 +362,10 @@ export default function StaffDashboard() {
                     <div>
                       <div className="font-medium">#{o.id}</div>
                       <div className="text-xs text-gray-500">
-                        Table: {o.tableId ?? '—'} • Placed: {formatDate(o.placedAt)}
+                        {o.orderType === 'TAKEAWAY' 
+                          ? `Takeaway (Vehicle: ${o.vehicleNumber || 'Counter Pickup'})` 
+                          : `Table: ${o.tableId ?? '—'}`
+                        } • Placed: {formatDate(o.placedAt)}
                       </div>
                       <div className="mt-2 text-sm">
                         {o.customerName ?? ''} • {o.customerPhone ?? ''}
