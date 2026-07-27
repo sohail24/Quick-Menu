@@ -25,6 +25,8 @@ export default function OrderSuccess() {
     return false;
   });
 
+  const verifyingRef = React.useRef(false);
+
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -56,6 +58,8 @@ export default function OrderSuccess() {
         
         // If it's an online payment and pending, but we have a session_id, verify it
         if (orderData.paymentMethod === 'ONLINE' && orderData.paymentStatus === 'PENDING' && sessionId) {
+           if (verifyingRef.current) return;
+           verifyingRef.current = true;
            try {
              const verifyRes = await api.post(`/api/${orderData.restaurantId}/orders/${id}/verify`, { sessionId });
              const verifiedOrder = verifyRes.data;
@@ -141,6 +145,10 @@ export default function OrderSuccess() {
 
   const handleCompletePayment = async () => {
     if (!id || !order?.restaurantId) return;
+    if (order.paymentStatus === 'PAID') {
+      setPaymentError('Order is already paid.');
+      return;
+    }
     setCompletingPayment(true);
     setPaymentError(null);
     try {
@@ -168,8 +176,8 @@ export default function OrderSuccess() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF9F6] flex flex-col items-center justify-center p-6 text-center">
-        <div className="relative mb-8 text-amber-600">
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 text-center">
+        <div className="relative mb-8 text-blue-600">
            <Receipt className="w-16 h-16 animate-pulse" />
         </div>
         <h4 className="text-xl font-black text-slate-900 mb-2 uppercase italic tracking-tight">Printing Receipt...</h4>
@@ -191,7 +199,7 @@ export default function OrderSuccess() {
   if (error) {
      const isConflict = error.toLowerCase().includes('table') || error.toLowerCase().includes('taken');
      return (
-       <div className="min-h-screen bg-[#FAF9F6] p-6 flex items-center justify-center">
+       <div className="min-h-screen bg-[#F8FAFC] p-6 flex items-center justify-center">
           <div className="bg-white rounded-[32px] p-10 shadow-2xl max-w-sm w-full text-center animate-in zoom-in-95 duration-500 border border-slate-100">
              <div className="w-20 h-20 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
                 {isConflict ? <UtensilsCrossed className="w-10 h-10" /> : <X className="w-10 h-10" />}
@@ -202,14 +210,14 @@ export default function OrderSuccess() {
              <p className="text-slate-500 mb-10 text-sm font-medium leading-relaxed">{error}</p>
              {isConflict ? (
                 <Button 
-                  className="w-full h-16 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-amber-600/20 border-0" 
+                  className="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-blue-600/20 border-0" 
                   onClick={() => navigate('/')}
                 >
                   <ArrowRight className="w-5 h-5 mr-1" /> Pick Another Table
                 </Button>
              ) : (
                 <Button 
-                  className="w-full h-16 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-amber-600/20 border-0" 
+                  className="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-blue-600/20 border-0" 
                   onClick={() => window.location.reload()}
                 >
                   Try Again
@@ -223,34 +231,29 @@ export default function OrderSuccess() {
   if (!order) return null;
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] pb-24 text-slate-800 font-sans">
-      {/* Premium Header Banner (Slate Dark & Warm Accent) */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-850 to-slate-950 py-16 px-6 text-center text-white border-b border-slate-800">
-         {/* Background decoration */}
-         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-500/20 via-slate-900 to-slate-955 pointer-events-none"></div>
+    <div className="min-h-screen bg-[#F8FAFC] pb-24 text-slate-800 font-sans">
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 py-16 px-6 text-center text-white border-b border-indigo-800">
+         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-yellow-300 via-red-500 to-indigo-900 pointer-events-none"></div>
          <div className="relative max-w-6xl mx-auto flex flex-col items-center">
-            <div className="inline-flex p-4 bg-white/5 backdrop-blur-md rounded-3xl mb-5 scale-animation shadow-2xl border border-white/10">
-               <CheckCircle2 className="w-12 h-12 text-amber-400" />
+            <div className="inline-flex p-4 bg-white/10 backdrop-blur-md rounded-3xl mb-5 scale-animation shadow-lg border border-white/10">
+               <CheckCircle2 className="w-12 h-12 text-green-300" />
             </div>
             <h1 className="text-3xl font-black mb-2 tracking-tight uppercase italic">{order.paymentStatus === 'PAID' ? 'Order Paid! 🎉' : 'Order Confirmed!'}</h1>
-            <p className="text-amber-200/80 font-bold text-xs uppercase tracking-[0.2em]">Order ID: #{order.id.slice(-6).toUpperCase()}</p>
+            <p className="text-blue-100 font-bold text-xs uppercase tracking-[0.2em] opacity-80">Order ID: #{order.id.slice(-6).toUpperCase()}</p>
          </div>
       </div>
 
-      {/* Main Grid Container */}
       <div className="max-w-6xl mx-auto px-6 py-8 overflow-visible">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
            
-           {/* Left Section (Lg: col-span-7) - Progress Tracker & Receipt */}
            <div className="lg:col-span-7 space-y-8">
               
-              {/* Modern Progress Card */}
-              <div className="bg-white rounded-[32px] p-8 shadow-xl shadow-slate-100/50 border border-slate-100">
+              <div className="bg-white rounded-[32px] p-8 shadow-xl border border-slate-100">
                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Order Status</h3>
                  <div className="flex justify-between relative mb-8 px-2">
                     <div className="absolute top-5 left-6 right-6 h-1 bg-slate-100 -translate-y-1/2"></div>
                     <div 
-                      className="absolute top-5 left-6 h-1 bg-gradient-to-r from-amber-400 to-amber-600 -translate-y-1/2 transition-all duration-1000"
+                      className="absolute top-5 left-6 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 -translate-y-1/2 transition-all duration-1000"
                       style={{ width: `${Math.max(0, Math.min(100, ((currentStep - 1) / 3) * 100))}%` }}
                     ></div>
 
@@ -267,14 +270,14 @@ export default function OrderSuccess() {
                         <div key={idx} className="relative z-10 flex flex-col items-center">
                            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${
                              isCurrent
-                             ? 'bg-slate-900 border-white text-white shadow-lg ring-4 ring-slate-100 scale-110'
+                             ? 'bg-indigo-600 border-white text-white shadow-lg ring-4 ring-indigo-100 scale-110'
                              : isActive 
-                             ? 'bg-amber-500 border-white text-white shadow-md' 
+                             ? 'bg-blue-600 border-white text-white shadow-md' 
                              : 'bg-white border-slate-100 text-slate-300'
                            }`}>
                              <s.icon className="w-4 h-4" />
                            </div>
-                           <div className={`absolute top-12 text-[10px] font-black uppercase tracking-wider ${isActive ? 'text-amber-600 font-bold' : 'text-slate-400'}`}>
+                           <div className={`absolute top-12 text-[10px] font-black uppercase tracking-wider ${isActive ? 'text-indigo-600' : 'text-slate-400'}`}>
                              {s.label}
                            </div>
                         </div>
@@ -283,7 +286,7 @@ export default function OrderSuccess() {
                  </div>
                  
                  <div className="text-center pt-6 border-t border-slate-50 flex items-center justify-center gap-3">
-                    <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse"></span>
+                    <span className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></span>
                     <span className="text-sm font-black text-slate-900 uppercase italic tracking-wide">
                        {order.status === 'PLACED' ? 'Waiting for confirmation' : order.status === 'PREPARING' ? 'Cooking in progress' : order.status === 'READY' ? 'Ready for pickup' : order.status}
                     </span>
@@ -291,9 +294,9 @@ export default function OrderSuccess() {
               </div>
 
               {/* Premium Digital Receipt Card */}
-              <div className="bg-white rounded-[32px] shadow-xl shadow-slate-100/50 border border-slate-100 overflow-hidden">
+              <div className="bg-white rounded-[32px] shadow-xl border border-slate-100 overflow-hidden">
                  {/* Receipt Decorative Top Bar */}
-                 <div className="h-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600"></div>
+                 <div className="h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600"></div>
                  
                  <div className="p-8">
                     <div className="flex justify-between items-start pb-6 border-b border-slate-100 mb-6">
@@ -326,7 +329,7 @@ export default function OrderSuccess() {
                                </span>
                                <div>
                                   <div className="font-bold text-slate-800 text-sm tracking-tight">{it.dishName ?? it.dishId}</div>
-                                  {it.note && <div className="text-[10px] text-amber-600 font-medium italic mt-0.5">"{it.note}"</div>}
+                                  {it.note && <div className="text-[10px] text-blue-600 font-medium italic mt-0.5">"{it.note}"</div>}
                                </div>
                             </div>
                             <div className="font-black text-slate-900 text-sm">₹{((it.priceAtOrder || it.price) * it.quantity).toFixed(2)}</div>
@@ -341,8 +344,8 @@ export default function OrderSuccess() {
                           <span>₹{(order.totalAmount || 0).toFixed(2)}</span>
                        </div>
                        <div className="flex justify-between text-2xl font-black pt-2 border-t border-slate-50">
-                          <span className="text-slate-955 uppercase italic tracking-tight">Total</span>
-                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-amber-700 italic">₹{(order.totalAmount || 0).toFixed(2)}</span>
+                          <span className="text-slate-900 uppercase italic tracking-tight">Total</span>
+                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 italic">₹{(order.totalAmount || 0).toFixed(2)}</span>
                        </div>
                     </div>
                  </div>
@@ -350,7 +353,7 @@ export default function OrderSuccess() {
                  {/* Premium Footer Info */}
                  <div className="bg-slate-50/50 p-6 border-t border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-sm border border-slate-100">
+                       <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-slate-100">
                           {order.paymentMethod === 'ONLINE' ? <CreditCard className="w-5 h-5" /> : <Wallet className="w-5 h-5" />}
                        </div>
                        <div>
@@ -361,7 +364,7 @@ export default function OrderSuccess() {
                     <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                       order.paymentStatus === 'PAID' 
                       ? 'bg-green-50 text-green-600 border-green-200' 
-                      : 'bg-amber-50 text-amber-600 border-amber-200 animate-pulse'
+                      : 'bg-yellow-50 text-yellow-600 border-yellow-200 animate-pulse'
                     }`}>
                        {order.paymentStatus}
                     </div>
@@ -374,17 +377,17 @@ export default function OrderSuccess() {
               
               {/* Interactive Dine-In Actions Panel */}
               {order.orderType === 'DINE_IN' && order.paymentStatus === 'PENDING' ? (
-                 <div className="bg-white rounded-[32px] p-8 shadow-xl shadow-slate-100/50 border border-slate-100 space-y-6">
+                 <div className="bg-white rounded-[32px] p-8 shadow-xl border border-slate-100 space-y-6">
                     {counterPaymentConfirmed ? (
                        /* Counter Payment Requested Mode */
                        <div className="text-center space-y-6 animate-in zoom-in-95 duration-500">
-                          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner animate-pulse">
+                          <div className="w-16 h-16 bg-yellow-50 text-yellow-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner animate-pulse">
                              <Wallet className="w-8 h-8" />
                           </div>
                           <div>
                              <h4 className="text-xl font-black text-slate-900 mb-2 italic uppercase tracking-tight">Counter Payment Requested</h4>
                              <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                                Please visit the counter to make your payment of <span className="text-amber-600 font-bold">₹{(order.totalAmount || 0).toFixed(2)}</span>.
+                                Please visit the counter to make your payment of <span className="text-blue-600 font-bold">₹{(order.totalAmount || 0).toFixed(2)}</span>.
                              </p>
                           </div>
                           
@@ -393,11 +396,11 @@ export default function OrderSuccess() {
                                onClick={() => navigate(`/menu/${order.restaurantId}?tableId=${order.tableId}`)}
                                className="w-full h-16 bg-white border-2 border-slate-200 text-slate-700 rounded-2xl font-black uppercase italic tracking-widest hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-3 active:scale-95 shadow-sm"
                              >
-                                <ArrowRight className="w-5 h-5 text-amber-500" /> Order More Items
+                                <ArrowRight className="w-5 h-5 text-blue-500" /> Order More Items
                              </button>
                              <button 
                                 onClick={() => navigate('/')}
-                                className="w-full h-16 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-amber-600/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+                                className="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 active:scale-95"
                              >
                                 <Home className="w-4 h-4" /> Go to Home
                              </button>
@@ -407,7 +410,7 @@ export default function OrderSuccess() {
                        /* Prompt to Pay / Order More */
                        <>
                           <div className="text-center">
-                             <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                             <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                                 <Sparkles className="w-8 h-8" />
                              </div>
                              <h4 className="text-xl font-black text-slate-900 mb-2 italic uppercase tracking-tight">Active Session</h4>
@@ -419,13 +422,13 @@ export default function OrderSuccess() {
                           <div className="grid grid-cols-1 gap-3 pt-2">
                              <button 
                                onClick={() => navigate(`/menu/${order.restaurantId}?tableId=${order.tableId}`)}
-                               className="w-full h-16 bg-white border-2 border-amber-500 text-amber-600 rounded-2xl font-black uppercase italic tracking-widest hover:bg-amber-50/30 transition-all flex items-center justify-center gap-3 active:scale-95 shadow-md shadow-amber-600/5"
+                               className="w-full h-16 bg-white border-2 border-indigo-600 text-indigo-600 rounded-2xl font-black uppercase italic tracking-widest hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-3 active:scale-95 shadow-md shadow-indigo-600/5"
                              >
                                 <ArrowRight className="w-5 h-5" /> Order More Items
                              </button>
                              <button 
                                onClick={() => setShowPaymentSelection(true)}
-                               className="w-full h-16 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-amber-600/30 transition-all flex items-center justify-center gap-3 active:scale-95"
+                               className="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-3 active:scale-95"
                              >
                                 <CreditCard className="w-5 h-5" /> Complete Order & Pay
                              </button>
@@ -462,16 +465,16 @@ export default function OrderSuccess() {
                                onClick={() => setSelectedPaymentMethod('CASH')}
                                className={`p-5 rounded-2xl border-2 transition-all flex items-center gap-4 text-left ${
                                  selectedPaymentMethod === 'CASH'
-                                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 border-amber-600 text-white shadow-xl shadow-amber-600/20'
+                                 ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-600/20'
                                  : 'bg-white border-slate-100 text-slate-600 hover:border-slate-200 hover:shadow-sm'
                                }`}
                              >
-                               <div className={`p-3 rounded-xl ${selectedPaymentMethod === 'CASH' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-600'}`}>
+                               <div className={`p-3 rounded-xl ${selectedPaymentMethod === 'CASH' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600'}`}>
                                  <Wallet className="w-6 h-6" />
                                </div>
                                <div className="flex-1">
                                  <div className="text-sm font-black uppercase tracking-tight">Pay at Counter</div>
-                                 <div className={`text-[10px] ${selectedPaymentMethod === 'CASH' ? 'text-amber-100' : 'text-slate-400'} font-bold`}>Cash, UPI or Card at cashier</div>
+                                 <div className={`text-[10px] ${selectedPaymentMethod === 'CASH' ? 'text-blue-100' : 'text-gray-400'} font-bold`}>Cash, UPI or Card at cashier</div>
                                </div>
                                {selectedPaymentMethod === 'CASH' && <CheckCircle2 className="w-5 h-5 text-white" />}
                              </button>
@@ -480,16 +483,16 @@ export default function OrderSuccess() {
                                onClick={() => setSelectedPaymentMethod('ONLINE')}
                                className={`p-5 rounded-2xl border-2 transition-all flex items-center gap-4 text-left ${
                                  selectedPaymentMethod === 'ONLINE'
-                                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 border-amber-600 text-white shadow-xl shadow-amber-600/20'
+                                 ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-600/20'
                                  : 'bg-white border-slate-100 text-slate-600 hover:border-slate-200 hover:shadow-sm'
                                }`}
                              >
-                               <div className={`p-3 rounded-xl ${selectedPaymentMethod === 'ONLINE' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-600'}`}>
+                               <div className={`p-3 rounded-xl ${selectedPaymentMethod === 'ONLINE' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600'}`}>
                                  <CreditCard className="w-6 h-6" />
                                </div>
                                <div className="flex-1">
                                  <div className="text-sm font-black uppercase tracking-tight">Pay Online Now</div>
-                                 <div className={`text-[10px] ${selectedPaymentMethod === 'ONLINE' ? 'text-amber-100' : 'text-slate-400'} font-bold`}>Instant online checkout (Stripe)</div>
+                                 <div className={`text-[10px] ${selectedPaymentMethod === 'ONLINE' ? 'text-blue-100' : 'text-gray-400'} font-bold`}>Instant online checkout (Stripe)</div>
                                </div>
                                {selectedPaymentMethod === 'ONLINE' && <CheckCircle2 className="w-5 h-5 text-white" />}
                              </button>
@@ -498,7 +501,7 @@ export default function OrderSuccess() {
                           <button 
                             onClick={handleCompletePayment}
                             disabled={completingPayment}
-                            className="w-full h-16 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white disabled:from-blue-300 disabled:to-indigo-300 rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-amber-600/20 transition-all flex items-center justify-center gap-3 active:scale-95"
+                            className="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white disabled:from-blue-300 disabled:to-indigo-300 rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-indigo-600/20 transition-all flex items-center justify-center gap-3 active:scale-95"
                           >
                              {completingPayment ? (
                                 <span className="flex items-center gap-2">
@@ -515,23 +518,30 @@ export default function OrderSuccess() {
                  </div>
               ) : (
                  /* Standard Action Buttons (Paid / Takeaway orders) */
-                 <div className="bg-white rounded-[32px] p-8 shadow-xl shadow-slate-100/50 border border-slate-100 space-y-3">
-                    <div className="text-center pb-4 border-b border-slate-50">
-                       <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Order Completed</h4>
-                       <p className="text-xs text-slate-400 font-medium mt-1">Thank you for dining with us!</p>
+                 <div className="bg-white rounded-[32px] p-8 shadow-xl border border-slate-100 space-y-6 text-center animate-in fade-in duration-500">
+                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto shadow-sm">
+                       <CheckCircle2 className="w-8 h-8 text-blue-600" />
                     </div>
-                    <button 
-                      onClick={() => navigate(`/menu/${order.restaurantId}${order.orderType === 'TAKEAWAY' ? '' : `?tableId=${order.tableId}`}`)}
-                      className="w-full h-16 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-amber-600/20 transition-all flex items-center justify-center gap-3 active:scale-95"
-                    >
-                       <ArrowRight className="w-5 h-5" /> Place New Order
-                    </button>
-                    <button 
-                       onClick={() => navigate('/')}
-                       className="w-full h-16 bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
-                    >
-                       <Home className="w-4 h-4 text-amber-500" /> Go to Home
-                    </button>
+                    <div>
+                       <h4 className="text-xl font-black text-slate-800 mb-2 italic uppercase tracking-tight">Payment Completed</h4>
+                       <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                          Your payment of <span className="text-slate-950 font-black">₹{(order.totalAmount || 0).toFixed(2)}</span> was processed successfully. Thank you for dining with us!
+                       </p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 pt-2">
+                       <button 
+                         onClick={() => navigate(`/menu/${order.restaurantId}${order.orderType === 'TAKEAWAY' ? '' : `?tableId=${order.tableId}`}`)}
+                         className="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-3 active:scale-95"
+                       >
+                          <ArrowRight className="w-5 h-5" /> Place New Order
+                       </button>
+                       <button 
+                          onClick={() => navigate('/')}
+                          className="w-full h-16 bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+                       >
+                          <Home className="w-4 h-4 text-blue-600" /> Go to Home
+                       </button>
+                    </div>
                  </div>
               )}
            </div>

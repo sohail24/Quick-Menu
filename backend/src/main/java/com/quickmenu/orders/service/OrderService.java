@@ -296,6 +296,10 @@ public class OrderService {
             throw new IllegalArgumentException("Order does not belong to this restaurant");
         }
 
+        if (order.getPaymentStatus() == Order.PaymentStatus.PAID) {
+            return enrichOrderForResponse(order);
+        }
+
         try {
             com.stripe.model.checkout.Session session = com.stripe.model.checkout.Session.retrieve(order.getStripeSessionId());
 
