@@ -108,7 +108,8 @@ export default function OrderSummaryModal({
 
   async function submitNewOrder() {
     if (orderType === 'DINE_IN' && !selectedTable) return setError('Please select a table');
-    if (!customerName) return setError('Please provide your name');
+    if (!customerName.trim()) return setError('Please provide your name');
+    if (!customerPhone.trim()) return setError('Please provide your phone number');
     if (!restaurantId) return setError('Missing restaurant');
     
     setSubmitting(true);
