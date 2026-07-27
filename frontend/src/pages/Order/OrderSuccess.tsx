@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import useStomp from '../../hooks/useStomp';
-import { CheckCircle2, ChevronLeft, MapPin, ClipboardList, Clock, ArrowRight, Home, Receipt, HelpCircle, Wallet, CreditCard, Sparkles, ChefHat, UtensilsCrossed, PackageCheck, X } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, MapPin, ClipboardList, Clock, ArrowRight, Home, Receipt, HelpCircle, Wallet, CreditCard, Sparkles, ChefHat, UtensilsCrossed, PackageCheck, X, Loader2 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { setActiveOrder, removeActiveOrder } from '../../lib/orderStorage';
 
@@ -14,6 +14,10 @@ export default function OrderSuccess() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPaymentSelection, setShowPaymentSelection] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'CASH' | 'ONLINE'>('CASH');
+  const [completingPayment, setCompletingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -119,6 +123,29 @@ export default function OrderSuccess() {
       try { sub?.unsubscribe(); } catch (e) {}
     };
   }, [id, stomp, order?.restaurantId, order?.tableId, order?.orderType]);
+
+  const handleCompletePayment = async () => {
+    if (!id || !order?.restaurantId) return;
+    setCompletingPayment(true);
+    setPaymentError(null);
+    try {
+      const res = await api.post(`/api/${order.restaurantId}/orders/${id}/complete`, {
+        paymentMethod: selectedPaymentMethod,
+      });
+      const updatedOrder = res.data;
+      if (selectedPaymentMethod === 'ONLINE' && updatedOrder.stripeCheckoutUrl) {
+        window.location.href = updatedOrder.stripeCheckoutUrl;
+        return;
+      }
+      setOrder(updatedOrder);
+      setShowPaymentSelection(false);
+    } catch (err: any) {
+      console.error('Failed to complete payment selection', err);
+      setPaymentError(err.response?.data?.message || 'Failed to complete payment selection');
+    } finally {
+      setCompletingPayment(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -304,21 +331,131 @@ export default function OrderSuccess() {
              </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-1 gap-3 pt-4">
-             <button 
-               onClick={() => navigate(`/menu/${order.restaurantId}${order.orderType === 'TAKEAWAY' ? '' : `?tableId=${order.tableId}`}`)}
-               className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-3 active:scale-95"
-             >
-                <ArrowRight className="w-5 h-5" /> {order.status === 'SERVED' || order.status === 'CANCELLED' ? 'Place New Order' : 'Order More Items'}
-             </button>
-             <button 
-                onClick={() => navigate('/')}
-                className="w-full h-16 bg-white border-2 border-gray-200 rounded-2xl font-black text-xs text-gray-500 uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
-             >
-                <Home className="w-4 h-4" /> Go to Home
-             </button>
-          </div>
+          {/* Action / Checkout Buttons */}
+          {order.orderType === 'DINE_IN' && order.paymentStatus === 'PENDING' ? (
+             <div className="bg-white rounded-[32px] p-8 shadow-xl border border-gray-100 space-y-6">
+                {!showPaymentSelection ? (
+                   <>
+                      <div className="text-center">
+                         <h4 className="text-xl font-black text-gray-900 mb-2 italic uppercase tracking-tight">Active Dine-In Session</h4>
+                         <p className="text-gray-500 text-sm font-medium">
+                            You can add more items to your order or complete your meal and check out.
+                         </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-3">
+                         <button 
+                           onClick={() => navigate(`/menu/${order.restaurantId}?tableId=${order.tableId}`)}
+                           className="w-full h-16 bg-white border-2 border-blue-600 text-blue-600 rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-blue-600/5 transition-all flex items-center justify-center gap-3 active:scale-95 animate-in slide-in-from-bottom-2 duration-300"
+                         >
+                            <ArrowRight className="w-5 h-5" /> Order More Items
+                         </button>
+                         <button 
+                           onClick={() => setShowPaymentSelection(true)}
+                           className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-3 active:scale-95 animate-in slide-in-from-bottom-3 duration-300"
+                         >
+                            <CreditCard className="w-5 h-5" /> Complete Order & Pay
+                         </button>
+                         <button 
+                            onClick={() => navigate('/')}
+                            className="w-full h-14 bg-gray-50 text-gray-500 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors"
+                         >
+                            <Home className="w-4 h-4" /> Go to Home
+                         </button>
+                      </div>
+                   </>
+                ) : (
+                   <div className="space-y-6 animate-in fade-in duration-300">
+                      <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+                         <button 
+                           onClick={() => setShowPaymentSelection(false)}
+                           className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1 hover:text-gray-600"
+                         >
+                            <ChevronLeft className="w-4 h-4" /> Back
+                         </button>
+                         <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Select Payment</h4>
+                      </div>
+
+                      {paymentError && (
+                         <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2">
+                            <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+                            {paymentError}
+                         </div>
+                      )}
+
+                      <div className="grid grid-cols-1 gap-4">
+                         <button
+                           onClick={() => setSelectedPaymentMethod('CASH')}
+                           className={`p-5 rounded-2xl border-2 transition-all flex items-center gap-4 ${
+                             selectedPaymentMethod === 'CASH'
+                             ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-600/20'
+                             : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200'
+                           }`}
+                         >
+                           <div className={`p-3 rounded-xl ${selectedPaymentMethod === 'CASH' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600'}`}>
+                             <Wallet className="w-6 h-6" />
+                           </div>
+                           <div className="text-left flex-1">
+                             <div className="text-sm font-black uppercase tracking-tight">Pay at Counter</div>
+                             <div className={`text-[10px] ${selectedPaymentMethod === 'CASH' ? 'text-blue-100' : 'text-gray-400'} font-bold`}>Cash, UPI or Card at restaurant</div>
+                           </div>
+                           {selectedPaymentMethod === 'CASH' && <CheckCircle2 className="w-5 h-5 text-white" />}
+                         </button>
+
+                         <button
+                           onClick={() => setSelectedPaymentMethod('ONLINE')}
+                           className={`p-5 rounded-2xl border-2 transition-all flex items-center gap-4 ${
+                             selectedPaymentMethod === 'ONLINE'
+                             ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-600/20'
+                             : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200'
+                           }`}
+                         >
+                           <div className={`p-3 rounded-xl ${selectedPaymentMethod === 'ONLINE' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600'}`}>
+                             <CreditCard className="w-6 h-6" />
+                           </div>
+                           <div className="text-left flex-1">
+                             <div className="text-sm font-black uppercase tracking-tight">Pay Online Now</div>
+                             <div className={`text-[10px] ${selectedPaymentMethod === 'ONLINE' ? 'text-blue-100' : 'text-gray-400'} font-bold`}>Fast, secure (via Stripe)</div>
+                           </div>
+                           {selectedPaymentMethod === 'ONLINE' && <CheckCircle2 className="w-5 h-5 text-white" />}
+                         </button>
+                      </div>
+
+                      <button 
+                        onClick={handleCompletePayment}
+                        disabled={completingPayment}
+                        className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-300 rounded-2xl font-black uppercase italic tracking-widest shadow-xl shadow-blue-600/20 transition-all flex items-center justify-center gap-3 active:scale-95"
+                      >
+                         {completingPayment ? (
+                            <span className="flex items-center gap-2">
+                               <Loader2 className="w-5 h-5 animate-spin" /> Processing...
+                            </span>
+                         ) : (
+                            <span>
+                               {selectedPaymentMethod === 'ONLINE' ? 'PROCEED TO PAY' : 'CONFIRM COUNTER PAYMENT'}
+                            </span>
+                         )}
+                      </button>
+                   </div>
+                )}
+             </div>
+          ) : (
+             /* Standard Action Buttons */
+             <div className="grid grid-cols-1 gap-3 pt-4">
+                <button 
+                  onClick={() => navigate(`/menu/${order.restaurantId}${order.orderType === 'TAKEAWAY' ? '' : `?tableId=${order.tableId}`}`)}
+                  className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-3 active:scale-95"
+                >
+                   <ArrowRight className="w-5 h-5" /> {order.status === 'SERVED' || order.status === 'CANCELLED' || order.orderType === 'TAKEAWAY' || order.paymentStatus === 'PAID' ? 'Place New Order' : 'Order More Items'}
+                </button>
+                <button 
+                   onClick={() => navigate('/')}
+                   className="w-full h-16 bg-white border-2 border-gray-200 rounded-2xl font-black text-xs text-gray-500 uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+                >
+                   <Home className="w-4 h-4" /> Go to Home
+                </button>
+             </div>
+          )}
         </div>
       </div>
       

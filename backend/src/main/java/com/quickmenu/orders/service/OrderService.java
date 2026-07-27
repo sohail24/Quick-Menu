@@ -409,4 +409,36 @@ public class OrderService {
 
         return orderPayload;
     }
+
+    @Transactional
+    public Map<String, Object> completeOrderPayment(String restaurantId, String orderId, String paymentMethodStr) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        if (!order.getRestaurantId().equals(restaurantId)) {
+            throw new IllegalArgumentException("Order does not belong to this restaurant");
+        }
+
+        if (order.getPaymentStatus() == Order.PaymentStatus.PAID) {
+            throw new IllegalStateException("Order is already paid");
+        }
+
+        Order.PaymentMethod pm = Order.PaymentMethod.valueOf(paymentMethodStr.toUpperCase());
+        order.setPaymentMethod(pm);
+
+        if (pm == Order.PaymentMethod.ONLINE) {
+            paymentService.process(order, "ONLINE");
+        } else {
+            order.setPaymentStatus(Order.PaymentStatus.PENDING);
+        }
+
+        Order updated = orderRepository.save(order);
+        Map<String, Object> orderPayload = enrichOrderForResponse(updated);
+        
+        if (updated.getPaymentMethod() != Order.PaymentMethod.ONLINE) {
+            messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+        }
+
+        return orderPayload;
+    }
 }

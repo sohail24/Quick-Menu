@@ -63,7 +63,7 @@ export default function OrderSummaryModal({
       setExistingOrderTableId(null);
       return;
     }
-    const targetTableId = orderType === 'TAKEAWAY' ? 'takeaway' : selectedTable;
+    const targetTableId = orderType === 'TAKEAWAY' ? null : selectedTable;
     if (!targetTableId) {
       setExistingOrderId(null);
       setExistingOrderTableId(null);
@@ -230,16 +230,18 @@ export default function OrderSummaryModal({
                 <h3 className="text-xl font-black text-gray-900 tracking-tight">
                    {existingOrderId ? 'Order Progress' : step === 1 ? 'Order Details' : 'Payment Method'}
                 </h3>
-                <div className="flex items-center gap-1.5 mt-1">
-                   {[1, 2].map((s) => (
-                     <div 
-                       key={s} 
-                       className={`h-1.5 rounded-full transition-all duration-300 ${
-                         s === step ? 'w-6 bg-blue-600' : 'w-1.5 bg-gray-200'
-                       }`}
-                     />
-                   ))}
-                </div>
+                {orderType === 'TAKEAWAY' && (
+                  <div className="flex items-center gap-1.5 mt-1">
+                     {[1, 2].map((s) => (
+                       <div 
+                         key={s} 
+                         className={`h-1.5 rounded-full transition-all duration-300 ${
+                           s === step ? 'w-6 bg-blue-600' : 'w-1.5 bg-gray-200'
+                         }`}
+                       />
+                     ))}
+                  </div>
+                )}
              </div>
           </div>
           <button 
@@ -558,8 +560,17 @@ export default function OrderSummaryModal({
                 <div className="text-4xl font-black text-gray-900 tracking-tight">₹{total.toFixed(2)}</div>
               </div>
               <div className="text-right">
-                <div className="text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] mb-1">Step {step} of 2</div>
-                <div className="text-blue-600 font-black text-sm">{step === 1 ? 'Details' : 'Payment'}</div>
+                {orderType === 'TAKEAWAY' ? (
+                  <>
+                    <div className="text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] mb-1">Step {step} of 2</div>
+                    <div className="text-blue-600 font-black text-sm">{step === 1 ? 'Details' : 'Payment'}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] mb-1">Dine-In</div>
+                    <div className="text-blue-600 font-black text-sm">Place Order</div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -582,7 +593,7 @@ export default function OrderSummaryModal({
                     </Button>
                   )}
                   <Button 
-                    onClick={step < 2 ? () => setStep(2) : submitNewOrder}
+                    onClick={orderType === 'DINE_IN' ? submitNewOrder : (step < 2 ? () => setStep(2) : submitNewOrder)}
                     disabled={submitting || (step === 1 && ((orderType === 'DINE_IN' && !selectedTable) || !customerName))}
                     size="lg"
                     className="flex-1 h-16 text-xl shadow-xl shadow-blue-600/30 rounded-2xl font-black italic tracking-tight"
@@ -590,12 +601,12 @@ export default function OrderSummaryModal({
                     {submitting ? (
                       <span className="flex items-center gap-3">
                         <Loader2 className="w-6 h-6 animate-spin" />
-                        {paymentMethod === 'ONLINE' ? 'REDIRECTING TO STRIPE...' : 'PLACING ORDER...'}
+                        PLACING ORDER...
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
-                        {step === 2 ? <Send className="w-6 h-6 mr-1" /> : <ChevronRight className="w-6 h-6 mr-1" />}
-                        {step === 2 ? (paymentMethod === 'ONLINE' ? 'PROCEED TO PAY' : 'CONFIRM ORDER') : 'PROCEED TO PAYMENT'}
+                        {orderType === 'DINE_IN' ? <Send className="w-6 h-6 mr-1" /> : (step === 2 ? <Send className="w-6 h-6 mr-1" /> : <ChevronRight className="w-6 h-6 mr-1" />)}
+                        {orderType === 'DINE_IN' ? 'CONFIRM ORDER' : (step === 2 ? (paymentMethod === 'ONLINE' ? 'PROCEED TO PAY' : 'CONFIRM ORDER') : 'PROCEED TO PAYMENT')}
                       </span>
                     )}
                   </Button>

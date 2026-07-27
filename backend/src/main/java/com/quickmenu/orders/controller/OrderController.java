@@ -245,6 +245,43 @@ public class OrderController {
         }
     }
 
+    @PostMapping("/{orderId}/complete")
+    @Operation(summary = "Complete order payment selection", description = "Select payment method (counter or online) and generate payment session for a dine-in order.")
+    public ResponseEntity<?> completeOrderPayment(@PathVariable String restaurantId,
+                                                  @PathVariable String orderId,
+                                                  @RequestHeader(value = "X-Order-Token", required = false) String orderToken,
+                                                  @RequestBody java.util.Map<String, String> req) {
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        boolean isStaffOrAdmin = false;
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            isStaffOrAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
+        }
+
+        if (!isStaffOrAdmin && (order.getOrderToken() != null && !order.getOrderToken().equals(orderToken))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(java.util.Map.of("message", "Access denied: Invalid order token"));
+        }
+
+        String paymentMethodStr = req.get("paymentMethod");
+        if (paymentMethodStr == null || paymentMethodStr.isBlank()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Payment method is required"));
+        }
+
+        try {
+            java.util.Map<String, Object> updated = orderService.completeOrderPayment(restaurantId, orderId, paymentMethodStr);
+            return ResponseEntity.ok(updated);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("message", ex.getMessage()));
+        }
+    }
+
     private Sort.Order[] parseSort(String[] sort) {
         return java.util.Arrays.stream(sort)
                 .map(s -> {
