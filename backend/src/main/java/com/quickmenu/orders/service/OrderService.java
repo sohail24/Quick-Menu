@@ -77,7 +77,14 @@ public class OrderService {
                     .orElseThrow(() -> new IllegalArgumentException("Invalid table"));
 
             if (Boolean.TRUE.equals(table.getOccupied())) {
-                throw new TableOccupiedException();
+                long unpaidActive = orderRepository.countUnpaidActiveOrdersOnTable(
+                    req.getTableId(),
+                    java.util.List.of(Order.Status.CANCELLED, Order.Status.SERVED),
+                    Order.PaymentStatus.PAID
+                );
+                if (unpaidActive > 0) {
+                    throw new TableOccupiedException();
+                }
             }
 
             // mark table occupied ONLY if it's CASH (immediate placement)
@@ -300,17 +307,25 @@ public class OrderService {
                             .orElseThrow(() -> new IllegalArgumentException("Table not found"));
                     
                     if (Boolean.TRUE.equals(table.getOccupied())) {
-                        // CONFLICT: Table was taken while user was on Stripe!
-                        // RELEASE (VOID) the payment hold so customer isn't charged
-                        PaymentIntent intent = PaymentIntent.retrieve(session.getPaymentIntent());
-                        intent.cancel();
-                        
-                        // Mark order as CANCELLED in our system
-                        order.setStatus(Order.Status.CANCELLED);
-                        order.setPaymentStatus(Order.PaymentStatus.CANCELLED);
-                        orderRepository.save(order);
-                        
-                        throw new TableOccupiedException();
+                        long otherActive = orderRepository.countOtherActiveOrdersOnTable(
+                            order.getTableId(), 
+                            order.getId(), 
+                            java.util.List.of(Order.Status.CANCELLED, Order.Status.SERVED),
+                            order.getPlacedAt()
+                        );
+                        if (otherActive > 0) {
+                            // CONFLICT: Table was taken while user was on Stripe!
+                            // RELEASE (VOID) the payment hold so customer isn't charged
+                            PaymentIntent intent = PaymentIntent.retrieve(session.getPaymentIntent());
+                            intent.cancel();
+                            
+                            // Mark order as CANCELLED in our system
+                            order.setStatus(Order.Status.CANCELLED);
+                            order.setPaymentStatus(Order.PaymentStatus.CANCELLED);
+                            orderRepository.save(order);
+                            
+                            throw new TableOccupiedException();
+                        }
                     }
                     
                     // SUCCESS: Capture the payment hold

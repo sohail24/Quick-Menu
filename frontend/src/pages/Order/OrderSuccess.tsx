@@ -18,6 +18,12 @@ export default function OrderSuccess() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'CASH' | 'ONLINE'>('CASH');
   const [completingPayment, setCompletingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [counterPaymentConfirmed, setCounterPaymentConfirmed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && id) {
+      return localStorage.getItem(`qm_counter_payment_requested_${id}`) === 'true';
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (!id) return;
@@ -58,11 +64,12 @@ export default function OrderSuccess() {
                } catch {}
              }
 
-             // Persist globally for OrderStatusFloating (Verified Online)
+             // Clean up tracking since the order is paid
              if (id && verifiedOrder.paymentStatus === 'PAID') {
                const trackingTableId = verifiedOrder.orderType === 'TAKEAWAY' ? 'takeaway' : verifiedOrder.tableId;
-               setActiveOrder(verifiedOrder.restaurantId, trackingTableId || 'takeaway', id, verifiedOrder.placedAt || new Date().toISOString());
-               localStorage.setItem('qm_last_order_id', id);
+               removeActiveOrder(verifiedOrder.restaurantId, trackingTableId || 'takeaway');
+               localStorage.removeItem('qm_last_order_id');
+               localStorage.removeItem(`qm_counter_payment_requested_${id}`);
              }
            } catch (err: any) {
              console.error('Auto-verification failed', err);
@@ -75,14 +82,14 @@ export default function OrderSuccess() {
            }
         } else {
           setOrder(orderData);
-          // Persist globally for OrderStatusFloating (CASH or Already Paid Online)
-          if (id && (orderData.paymentStatus === 'PAID' || orderData.paymentMethod === 'CASH')) {
+          // Persist globally for OrderStatusFloating (CASH/PENDING) or clean up if PAID/SERVED/CANCELLED
+          if (id) {
             const trackingTableId = orderData.orderType === 'TAKEAWAY' ? 'takeaway' : orderData.tableId;
-            // Clean up tracking if completed/cancelled
-            if (orderData.status === 'SERVED' || orderData.status === 'CANCELLED') {
+            if (orderData.paymentStatus === 'PAID' || orderData.status === 'SERVED' || orderData.status === 'CANCELLED') {
               removeActiveOrder(orderData.restaurantId, trackingTableId || 'takeaway');
               localStorage.removeItem('qm_last_order_id');
-            } else {
+              localStorage.removeItem(`qm_counter_payment_requested_${id}`);
+            } else if (orderData.paymentMethod === 'CASH') {
               setActiveOrder(orderData.restaurantId, trackingTableId || 'takeaway', id, orderData.placedAt || new Date().toISOString());
               localStorage.setItem('qm_last_order_id', id);
             }
@@ -109,11 +116,12 @@ export default function OrderSuccess() {
         if (payload?.id === id) {
           console.debug('[STOMP] Order status updated:', payload.status);
           setOrder(payload);
-          // Clean up if status is completed (SERVED) or cancelled (CANCELLED)
-          if (payload.status === 'SERVED' || payload.status === 'CANCELLED') {
+          // Clean up if completed (SERVED), cancelled (CANCELLED), or paid (PAID)
+          if (payload.paymentStatus === 'PAID' || payload.status === 'SERVED' || payload.status === 'CANCELLED') {
             const trackingTableId = payload.orderType === 'TAKEAWAY' ? 'takeaway' : payload.tableId;
             removeActiveOrder(payload.restaurantId, trackingTableId || 'takeaway');
             localStorage.removeItem('qm_last_order_id');
+            localStorage.removeItem(`qm_counter_payment_requested_${id}`);
           }
         }
       } catch (e) {}
@@ -136,6 +144,10 @@ export default function OrderSuccess() {
       if (selectedPaymentMethod === 'ONLINE' && updatedOrder.stripeCheckoutUrl) {
         window.location.href = updatedOrder.stripeCheckoutUrl;
         return;
+      }
+      if (selectedPaymentMethod === 'CASH') {
+        localStorage.setItem(`qm_counter_payment_requested_${id}`, 'true');
+        setCounterPaymentConfirmed(true);
       }
       setOrder(updatedOrder);
       setShowPaymentSelection(false);
@@ -211,7 +223,7 @@ export default function OrderSuccess() {
             <div className="inline-flex p-4 bg-white/10 backdrop-blur-md rounded-3xl mb-6 scale-animation">
                <CheckCircle2 className="w-12 h-12" />
             </div>
-            <h1 className="text-4xl font-black mb-2 tracking-tight italic uppercase">Order Confirmed!</h1>
+             <h1 className="text-4xl font-black mb-2 tracking-tight italic uppercase">{order.paymentStatus === 'PAID' ? 'Order Paid! 🎉' : 'Order Confirmed!'}</h1>
             <p className="text-blue-100 font-bold text-xs uppercase tracking-[0.2em] opacity-80">Order ID: #{order.id.slice(-6).toUpperCase()}</p>
          </div>
       </div>
@@ -334,7 +346,35 @@ export default function OrderSuccess() {
           {/* Action / Checkout Buttons */}
           {order.orderType === 'DINE_IN' && order.paymentStatus === 'PENDING' ? (
              <div className="bg-white rounded-[32px] p-8 shadow-xl border border-gray-100 space-y-6">
-                {!showPaymentSelection ? (
+                {counterPaymentConfirmed ? (
+                   /* Counter Payment Requested guidance */
+                   <div className="text-center space-y-6 animate-in zoom-in-95 duration-500">
+                      <div className="w-16 h-16 bg-yellow-50 text-yellow-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner animate-pulse">
+                         <Wallet className="w-8 h-8" />
+                      </div>
+                      <div>
+                         <h4 className="text-xl font-black text-gray-900 mb-2 italic uppercase tracking-tight">Counter Payment Requested</h4>
+                         <p className="text-gray-500 text-sm font-medium leading-relaxed">
+                            Please visit the counter to make your payment of <span className="text-blue-600 font-bold">₹{(order.totalAmount || 0).toFixed(2)}</span>.
+                         </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-3">
+                         <button 
+                           onClick={() => navigate(`/menu/${order.restaurantId}?tableId=${order.tableId}`)}
+                           className="w-full h-16 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-black uppercase italic tracking-widest hover:bg-gray-50 transition-all flex items-center justify-center gap-3 active:scale-95"
+                         >
+                            <ArrowRight className="w-5 h-5" /> Order More Items
+                         </button>
+                         <button 
+                            onClick={() => navigate('/')}
+                            className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+                         >
+                            <Home className="w-4 h-4" /> Go to Home
+                         </button>
+                      </div>
+                   </div>
+                ) : !showPaymentSelection ? (
                    <>
                       <div className="text-center">
                          <h4 className="text-xl font-black text-gray-900 mb-2 italic uppercase tracking-tight">Active Dine-In Session</h4>
