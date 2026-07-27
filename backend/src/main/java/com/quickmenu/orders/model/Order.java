@@ -90,6 +90,9 @@ public class Order {
     @Column(length = 1000)
     private String stripeCheckoutUrl;
 
+    @Formula("(SELECT t.name FROM restaurant_tables t WHERE t.id = table_id)")
+    private String tableName;
+
     @Column(name = "order_token", length = 36)
     private String orderToken;
 

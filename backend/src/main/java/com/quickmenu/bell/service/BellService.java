@@ -87,6 +87,7 @@ public class BellService {
             var payload = Map.of(
                     "id", saved.getId(),
                     "tableId", saved.getTableId(),
+                    "tableName", saved.getTableName() != null ? saved.getTableName() : "",
                     "message", saved.getMessage(),
                     "createdAt", saved.getCreatedAt().toString(),
                     "type", "BELL_CREATED"
@@ -133,6 +134,7 @@ public class BellService {
         var payload = Map.of(
                 "id", updated.getId(),
                 "tableId", updated.getTableId(),
+                "tableName", updated.getTableName() != null ? updated.getTableName() : "",
                 "type", "BELL_ACKED",
                 "ackBy", updated.getAckBy(),
                 "ackAt", updated.getAckAt().toString()

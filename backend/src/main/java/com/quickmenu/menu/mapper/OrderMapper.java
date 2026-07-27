@@ -11,6 +11,7 @@ public class OrderMapper {
         dto.setId(order.getId());
         dto.setRestaurantId(order.getRestaurantId());
         dto.setTableId(order.getTableId());
+        dto.setTableName(order.getTableName());
         dto.setOrderType(order.getOrderType() != null ? order.getOrderType().name() : "DINE_IN");
         dto.setVehicleNumber(order.getVehicleNumber());
         dto.setCustomerName(order.getCustomerName());

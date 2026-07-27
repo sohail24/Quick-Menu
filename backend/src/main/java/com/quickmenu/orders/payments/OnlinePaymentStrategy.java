@@ -21,7 +21,7 @@ public class OnlinePaymentStrategy implements PaymentStrategy {
             SessionCreateParams params = SessionCreateParams.builder()
                     .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
                     .setMode(SessionCreateParams.Mode.PAYMENT)
-                    .setSuccessUrl(frontendUrl + "/order/success/" + order.getId() + "?session_id={CHECKOUT_SESSION_ID}")
+                    .setSuccessUrl(frontendUrl + "/order/success/" + order.getId() + "?session_id={CHECKOUT_SESSION_ID}" + (order.getTableId() != null ? "&tableId=" + order.getTableId() : ""))
                     .setCancelUrl(frontendUrl + "/order/cancel/" + order.getId() + "?restaurantId=" + order.getRestaurantId() + "&tableId=" + order.getTableId())
                     .addLineItem(SessionCreateParams.LineItem.builder()
                             .setQuantity(1L)

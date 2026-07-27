@@ -66,6 +66,7 @@ export default function RestaurantMenu() {
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [existingOrderForTable, setExistingOrderForTable] = useState<string | null>(null);
   const [existingOrderTableId, setExistingOrderTableId] = useState<string | null>(null);
+  const [existingOrderTableName, setExistingOrderTableName] = useState<string | null>(null);
   const [orderComplete, setOrderComplete] = useState(false);
 
   const [restaurant, setRestaurant] = useState<any>(null);
@@ -150,11 +151,13 @@ export default function RestaurantMenu() {
     if (!effectiveRestaurantId || !effectiveTableId) {
       setExistingOrderForTable(null);
       setExistingOrderTableId(null);
+      setExistingOrderTableName(null);
       return;
     }
     const ao = getActiveOrderFor(effectiveRestaurantId, effectiveTableId);
     setExistingOrderForTable(ao?.orderId ?? null);
     setExistingOrderTableId(ao?.tableId ?? null);
+    setExistingOrderTableName(ao?.tableName ?? null);
   }, [effectiveRestaurantId, effectiveTableId]);
 
   // scroll to category
@@ -213,7 +216,7 @@ export default function RestaurantMenu() {
     try {
       localStorage.removeItem('qm_cart');
     } catch {}
-    if (id) navigate(`/order/success/${id}`);
+    if (id) navigate(`/order/success/${id}${effectiveTableId ? `?tableId=${effectiveTableId}` : ''}`);
   }
 
   function handleStopTracking() {
@@ -368,7 +371,7 @@ export default function RestaurantMenu() {
               </div>
               <div>
                  <div className="font-bold">Active order tracking...</div>
-                 <div className="text-xs opacity-80">Table #{existingOrderTableId}</div>
+                  <div className="text-xs opacity-80">Table #{existingOrderTableId}{existingOrderTableName ? ` (${existingOrderTableName})` : ''}</div>
               </div>
             </div>
             <Button 

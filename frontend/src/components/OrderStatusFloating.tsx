@@ -187,7 +187,7 @@ export default function OrderStatusFloating({ restaurantId }: { restaurantId?: s
             {/* Actions */}
             <div className="flex gap-2">
                <a 
-                 href={`/order/success/${orderId}`}
+                 href={`/order/success/${orderId}${order?.tableId ? `?tableId=${order.tableId}` : ''}`}
                  className="flex-1 bg-gray-900 text-white text-xs font-black py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors"
                >
                   <ExternalLink className="w-4 h-4" /> Full Receipt

@@ -132,7 +132,7 @@ export default function AdminOrderDetail() {
           <div class="table-number">
             ${order?.orderType === 'TAKEAWAY' 
               ? `Takeaway (Vehicle: ${order?.vehicleNumber || 'Counter'})` 
-              : `Table ID: #${order?.tableId ?? 'N/A'}`
+              : `Table ID: #${order?.tableId ?? 'N/A'}${order?.tableName ? ` (${order?.tableName})` : ''}`
             }
           </div>
           <div class="customer-info">
@@ -354,7 +354,7 @@ export default function AdminOrderDetail() {
                      <p className="text-sm font-black text-gray-900">
                       {order?.orderType === 'TAKEAWAY' 
                         ? `Takeaway (Vehicle: ${order?.vehicleNumber || 'Counter Pickup'})` 
-                        : `Table #${order?.tableId ?? 'Counter'}`
+                        : `Table #${order?.tableId ?? 'Counter'}${order?.tableName ? ` (${order?.tableName})` : ''}`
                       }
                      </p>
                  </div>

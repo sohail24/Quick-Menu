@@ -42,6 +42,7 @@ public class OrderDto {
         private String orderType;
         private String vehicleNumber;
         private String tableId;
+        private String tableName;
         private String customerName;
         private String customerPhone;
         private String customerNote;

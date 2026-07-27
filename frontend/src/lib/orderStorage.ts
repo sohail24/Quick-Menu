@@ -6,6 +6,7 @@ export type ActiveOrderItem = {
   tableId: string;
   placedAt?: string;
   lastSeenAt?: number;
+  tableName?: string;
 };
 
 export function getActiveOrders(): Record<string, ActiveOrderItem> {
@@ -32,10 +33,11 @@ export function setActiveOrder(
   tableId: string,
   orderId: string,
   placedAt?: string,
+  tableName?: string,
 ) {
   const key = `${restaurantId}_${tableId}`;
   const map = getActiveOrders();
-  map[key] = { orderId, tableId, placedAt, lastSeenAt: Date.now() };
+  map[key] = { orderId, tableId, placedAt, tableName, lastSeenAt: Date.now() };
   saveActiveOrders(map);
 }
 

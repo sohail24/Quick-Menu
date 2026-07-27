@@ -264,9 +264,10 @@ public class OrderService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("id", order.getId());
-        response.put("orderType", order.getOrderType() != null ? order.getOrderType().toString() : "DINE_IN");
-        response.put("vehicleNumber", order.getVehicleNumber() != null ? order.getVehicleNumber() : "");
         response.put("tableId", order.getTableId());
+        response.put("tableName", order.getTableName() != null ? order.getTableName() : "");
+        response.put("orderType", order.getOrderType() != null ? order.getOrderType().name() : "DINE_IN");
+        response.put("vehicleNumber", order.getVehicleNumber() != null ? order.getVehicleNumber() : "");
         response.put("restaurantId", order.getRestaurantId());
         response.put("status", order.getStatus() != null ? order.getStatus().toString() : "PENDING");
         response.put("placedAt", order.getPlacedAt() != null ? order.getPlacedAt().toString() : "");

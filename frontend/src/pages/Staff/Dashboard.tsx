@@ -364,7 +364,7 @@ export default function StaffDashboard() {
                       <div className="text-xs text-gray-500">
                         {o.orderType === 'TAKEAWAY' 
                           ? `Takeaway (Vehicle: ${o.vehicleNumber || 'Counter Pickup'})` 
-                          : `Table: ${o.tableId ?? '—'}`
+                          : `Table: ${o.tableId ?? '—'}${o.tableName ? ` (${o.tableName})` : ''}`
                         } • Placed: {formatDate(o.placedAt)}
                       </div>
                       <div className="mt-2 text-sm">
@@ -511,7 +511,7 @@ export default function StaffDashboard() {
                   <div>
                     <div className="font-medium">{b.message ?? 'Bell'}</div>
                     <div className="text-xs text-gray-500">
-                      Table: {b.tableId ?? '—'} • {formatDate(b.createdAt ?? b.createdAt)}
+                      Table: {b.tableId ?? '—'}{b.tableName ? ` (${b.tableName})` : ''} • {formatDate(b.createdAt ?? b.createdAt)}
                     </div>
                     <div className="text-xs text-gray-500">
                       Status: {acked ? 'Acked' : 'Pending'}

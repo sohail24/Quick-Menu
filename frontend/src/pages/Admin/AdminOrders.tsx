@@ -398,9 +398,9 @@ export default function AdminOrders() {
                             Takeaway {o.vehicleNumber ? `(${o.vehicleNumber})` : '(Counter)'}
                           </span>
                         ) : o.tableId ? (
-                          <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100/50">
-                            {tableMap[o.tableId] ? `${tableMap[o.tableId]} ` : ''}(Table ID: {o.tableId})
-                          </span>
+                           <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100/50">
+                             Table #{o.tableId}{o.tableName ? ` (${o.tableName})` : ''}
+                           </span>
                         ) : null}
                      </div>
                     

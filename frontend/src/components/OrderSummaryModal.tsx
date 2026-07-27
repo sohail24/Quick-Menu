@@ -142,7 +142,7 @@ export default function OrderSummaryModal({
 
       if (id && paymentMethod === 'CASH') {
         const targetTable = orderType === 'TAKEAWAY' ? 'takeaway' : selectedTable;
-        setActiveOrder(restaurantId, targetTable || 'takeaway', id, resp?.placedAt ?? new Date().toISOString());
+        setActiveOrder(restaurantId, targetTable || 'takeaway', id, resp?.placedAt ?? new Date().toISOString(), resp?.tableName);
         localStorage.setItem('qm_last_order_id', id);
       }
       
