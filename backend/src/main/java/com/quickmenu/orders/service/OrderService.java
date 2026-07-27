@@ -129,6 +129,7 @@ public class OrderService {
                 .appliedDiscountStrategy(strategy.getStrategyName())
                 .status(Order.Status.PLACED)
                 .items(items)
+                .orderToken(java.util.UUID.randomUUID().toString())
                 .build();
 
         // set the parent reference on each item
@@ -269,6 +270,7 @@ public class OrderService {
         response.put("totalAmount", order.getTotalAmount());
         response.put("stripeSessionId", order.getStripeSessionId());
         response.put("stripeCheckoutUrl", order.getStripeCheckoutUrl());
+        response.put("orderToken", order.getOrderToken());
         if (order.getPaymentMethod() == Order.PaymentMethod.ONLINE) {
             response.put("stripePublishableKey", stripePublishableKey);
         }

@@ -66,10 +66,28 @@ public class OrderController {
     @Operation(summary = "Append items to order", description = "Add new items to an existing active order (customer).")
     public ResponseEntity<?> appendOrderItems(@PathVariable String restaurantId,
                                              @PathVariable String orderId,
+                                             @RequestHeader(value = "X-Order-Token", required = false) String orderToken,
                                              @RequestBody java.util.List<OrderDto.CreateOrderItem> items) {
         if (items == null || items.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Must provide at least one item to add"));
         }
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        boolean isStaffOrAdmin = false;
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            isStaffOrAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
+        }
+
+        if (!isStaffOrAdmin && (order.getOrderToken() != null && !order.getOrderToken().equals(orderToken))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Access denied: Invalid order token"));
+        }
+
         try {
             Map<String, Object> updated = orderService.appendOrderItems(restaurantId, orderId, items);
             return ResponseEntity.ok(updated);
@@ -168,7 +186,25 @@ public class OrderController {
     @Operation(summary = "Verify payment", description = "Verify Stripe PaymentIntent.")
     public ResponseEntity<?> verifyPayment(@PathVariable String restaurantId,
                                            @PathVariable String orderId,
+                                           @RequestHeader(value = "X-Order-Token", required = false) String orderToken,
                                            @RequestBody OrderDto.StripeVerifyRequest req) {
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        boolean isStaffOrAdmin = false;
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            isStaffOrAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
+        }
+
+        if (!isStaffOrAdmin && (order.getOrderToken() != null && !order.getOrderToken().equals(orderToken))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Access denied: Invalid order token"));
+        }
+
         try {
             Map<String, Object> verified = orderService.verifyPayment(restaurantId, orderId, req);
             return ResponseEntity.ok(verified);
@@ -182,7 +218,25 @@ public class OrderController {
     @DeleteMapping("/{orderId}/cancel")
     @Operation(summary = "Cancel order", description = "Clean up unpaid online order.")
     public ResponseEntity<?> cancelOrder(@PathVariable String restaurantId,
-                                         @PathVariable String orderId) {
+                                         @PathVariable String orderId,
+                                         @RequestHeader(value = "X-Order-Token", required = false) String orderToken) {
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        boolean isStaffOrAdmin = false;
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            isStaffOrAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
+        }
+
+        if (!isStaffOrAdmin && (order.getOrderToken() != null && !order.getOrderToken().equals(orderToken))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Access denied: Invalid order token"));
+        }
+
         try {
             orderService.cancelOrder(restaurantId, orderId);
             return ResponseEntity.ok().build();

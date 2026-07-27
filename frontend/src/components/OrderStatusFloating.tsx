@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import api from '../lib/api';
 import useStomp from '../hooks/useStomp';
+import { removeActiveOrder } from '../lib/orderStorage';
 import { Clock, CheckCircle2, Navigation, ChefHat, PackageCheck, Utensils, X, ChevronRight, ExternalLink, ClipboardList } from 'lucide-react';
 
 type OrderStatus = {
@@ -73,6 +74,16 @@ export default function OrderStatusFloating({ restaurantId }: { restaurantId?: s
         if (payload?.id === orderId && active) {
           console.debug('[STOMP] Order status updated:', payload.status);
           setOrder(payload);
+          // If status is completed (SERVED) or cancelled (CANCELLED), clear tracking
+          if (payload.status === 'SERVED' || payload.status === 'CANCELLED') {
+             const trackingTableId = payload.orderType === 'TAKEAWAY' ? 'takeaway' : payload.tableId;
+             if (payload.restaurantId && trackingTableId) {
+                removeActiveOrder(payload.restaurantId, trackingTableId);
+             }
+             localStorage.removeItem('qm_last_order_id');
+             setOrderId(null);
+             setOrder(null);
+          }
         }
       } catch (e) {}
     });

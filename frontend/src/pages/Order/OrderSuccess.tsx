@@ -5,7 +5,7 @@ import api from '../../lib/api';
 import useStomp from '../../hooks/useStomp';
 import { CheckCircle2, ChevronLeft, MapPin, ClipboardList, Clock, ArrowRight, Home, Receipt, HelpCircle, Wallet, CreditCard, Sparkles, ChefHat, UtensilsCrossed, PackageCheck, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
-import { setActiveOrder } from '../../lib/orderStorage';
+import { setActiveOrder, removeActiveOrder } from '../../lib/orderStorage';
 
 export default function OrderSuccess() {
   const { id } = useParams<{ id?: string }>();
@@ -27,6 +27,16 @@ export default function OrderSuccess() {
         const res = await api.get(`/api/orders/${id}`);
         const orderData = res.data;
         
+        // Also save order token if it is returned
+        if (id && orderData.orderToken) {
+          try {
+            const raw = localStorage.getItem('qm_order_tokens');
+            const map = raw ? JSON.parse(raw) : {};
+            map[id] = orderData.orderToken;
+            localStorage.setItem('qm_order_tokens', JSON.stringify(map));
+          } catch {}
+        }
+        
         // If it's an online payment and pending, but we have a session_id, verify it
         if (orderData.paymentMethod === 'ONLINE' && orderData.paymentStatus === 'PENDING' && sessionId) {
            try {
@@ -34,6 +44,16 @@ export default function OrderSuccess() {
              const verifiedOrder = verifyRes.data;
              setOrder(verifiedOrder);
              
+             // Also save order token if returned from verify
+             if (id && verifiedOrder.orderToken) {
+               try {
+                 const raw = localStorage.getItem('qm_order_tokens');
+                 const map = raw ? JSON.parse(raw) : {};
+                 map[id] = verifiedOrder.orderToken;
+                 localStorage.setItem('qm_order_tokens', JSON.stringify(map));
+               } catch {}
+             }
+
              // Persist globally for OrderStatusFloating (Verified Online)
              if (id && verifiedOrder.paymentStatus === 'PAID') {
                const trackingTableId = verifiedOrder.orderType === 'TAKEAWAY' ? 'takeaway' : verifiedOrder.tableId;
@@ -54,8 +74,14 @@ export default function OrderSuccess() {
           // Persist globally for OrderStatusFloating (CASH or Already Paid Online)
           if (id && (orderData.paymentStatus === 'PAID' || orderData.paymentMethod === 'CASH')) {
             const trackingTableId = orderData.orderType === 'TAKEAWAY' ? 'takeaway' : orderData.tableId;
-            setActiveOrder(orderData.restaurantId, trackingTableId || 'takeaway', id, orderData.placedAt || new Date().toISOString());
-            localStorage.setItem('qm_last_order_id', id);
+            // Clean up tracking if completed/cancelled
+            if (orderData.status === 'SERVED' || orderData.status === 'CANCELLED') {
+              removeActiveOrder(orderData.restaurantId, trackingTableId || 'takeaway');
+              localStorage.removeItem('qm_last_order_id');
+            } else {
+              setActiveOrder(orderData.restaurantId, trackingTableId || 'takeaway', id, orderData.placedAt || new Date().toISOString());
+              localStorage.setItem('qm_last_order_id', id);
+            }
           }
         }
       } catch (err) {
@@ -79,6 +105,12 @@ export default function OrderSuccess() {
         if (payload?.id === id) {
           console.debug('[STOMP] Order status updated:', payload.status);
           setOrder(payload);
+          // Clean up if status is completed (SERVED) or cancelled (CANCELLED)
+          if (payload.status === 'SERVED' || payload.status === 'CANCELLED') {
+            const trackingTableId = payload.orderType === 'TAKEAWAY' ? 'takeaway' : payload.tableId;
+            removeActiveOrder(payload.restaurantId, trackingTableId || 'takeaway');
+            localStorage.removeItem('qm_last_order_id');
+          }
         }
       } catch (e) {}
     });
@@ -86,7 +118,7 @@ export default function OrderSuccess() {
     return () => {
       try { sub?.unsubscribe(); } catch (e) {}
     };
-  }, [id, stomp, order?.restaurantId]);
+  }, [id, stomp, order?.restaurantId, order?.tableId, order?.orderType]);
 
   if (loading) {
     return (
@@ -278,7 +310,7 @@ export default function OrderSuccess() {
                onClick={() => navigate(`/menu/${order.restaurantId}${order.orderType === 'TAKEAWAY' ? '' : `?tableId=${order.tableId}`}`)}
                className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-3 active:scale-95"
              >
-                <ArrowRight className="w-5 h-5" /> Order More Items
+                <ArrowRight className="w-5 h-5" /> {order.status === 'SERVED' || order.status === 'CANCELLED' ? 'Place New Order' : 'Order More Items'}
              </button>
              <button 
                 onClick={() => navigate('/')}

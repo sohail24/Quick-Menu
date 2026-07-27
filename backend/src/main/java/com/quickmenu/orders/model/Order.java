@@ -90,6 +90,9 @@ public class Order {
     @Column(length = 1000)
     private String stripeCheckoutUrl;
 
+    @Column(name = "order_token", length = 36)
+    private String orderToken;
+
     @Column(name = "placed_at", nullable = false)
     private Instant placedAt;
 

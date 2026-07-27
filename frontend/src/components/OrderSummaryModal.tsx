@@ -130,6 +130,16 @@ export default function OrderSummaryModal({
       const resp = res.data;
       
       const id = resp?.id ?? resp?.orderId ?? null;
+      const orderToken = resp?.orderToken ?? null;
+      if (id && orderToken) {
+        try {
+          const raw = localStorage.getItem('qm_order_tokens');
+          const map = raw ? JSON.parse(raw) : {};
+          map[id] = orderToken;
+          localStorage.setItem('qm_order_tokens', JSON.stringify(map));
+        } catch {}
+      }
+
       if (id && paymentMethod === 'CASH') {
         const targetTable = orderType === 'TAKEAWAY' ? 'takeaway' : selectedTable;
         setActiveOrder(restaurantId, targetTable || 'takeaway', id, resp?.placedAt ?? new Date().toISOString());
@@ -163,6 +173,17 @@ export default function OrderSummaryModal({
     try {
       const res = await api.post(`/api/${restaurantId}/orders/${existingOrderId}/items`, items);
       const resp = res.data;
+      
+      const id = resp?.id ?? resp?.orderId ?? null;
+      const orderToken = resp?.orderToken ?? null;
+      if (id && orderToken) {
+        try {
+          const raw = localStorage.getItem('qm_order_tokens');
+          const map = raw ? JSON.parse(raw) : {};
+          map[id] = orderToken;
+          localStorage.setItem('qm_order_tokens', JSON.stringify(map));
+        } catch {}
+      }
       
       onClose();
       onOrderPlaced(resp);
