@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import api from '../lib/api';
 import useStomp from '../hooks/useStomp';
-import { removeActiveOrder } from '../lib/orderStorage';
+import { removeActiveOrder, getActiveOrders } from '../lib/orderStorage';
 import { Clock, CheckCircle2, Navigation, ChefHat, PackageCheck, Utensils, X, ChevronRight, ExternalLink, ClipboardList } from 'lucide-react';
 
 type OrderStatus = {
@@ -57,9 +57,43 @@ export default function OrderStatusFloating({ restaurantId }: { restaurantId?: s
       if (!orderId) return;
       try {
         const res = await api.get(`/api/orders/${orderId}`);
-        if (active) setOrder(res.data);
-      } catch (err) {
+        const data = res.data;
+        if (active) {
+          setOrder(data);
+          if (data.status === 'SERVED' || data.status === 'CANCELLED') {
+            const trackingTableId = data.orderType === 'TAKEAWAY' ? 'takeaway' : data.tableId;
+            if (data.restaurantId && trackingTableId) {
+              removeActiveOrder(data.restaurantId, trackingTableId);
+            }
+            localStorage.removeItem('qm_last_order_id');
+            setOrderId(null);
+            setOrder(null);
+          }
+        }
+      } catch (err: any) {
         console.error('Order status fetch failed', err);
+        if (err.response?.status === 404) {
+          // Clear ghost order
+          localStorage.removeItem('qm_last_order_id');
+          const map = getActiveOrders();
+          let foundTableId: string | null = null;
+          let foundRestaurantId: string | null = null;
+          for (const key in map) {
+            if (map[key].orderId === orderId) {
+              foundTableId = map[key].tableId;
+              const parts = key.split('_');
+              if (parts.length > 0) {
+                 foundRestaurantId = parts[0];
+              }
+              break;
+            }
+          }
+          if (foundRestaurantId && foundTableId) {
+            removeActiveOrder(foundRestaurantId, foundTableId);
+          }
+          setOrderId(null);
+          setOrder(null);
+        }
       }
     }
 

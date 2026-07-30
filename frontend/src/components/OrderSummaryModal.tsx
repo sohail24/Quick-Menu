@@ -63,15 +63,46 @@ export default function OrderSummaryModal({
       setExistingOrderTableId(null);
       return;
     }
-    const targetTableId = orderType === 'TAKEAWAY' ? null : selectedTable;
+    const targetTableId = orderType === 'TAKEAWAY' ? 'takeaway' : selectedTable;
     if (!targetTableId) {
       setExistingOrderId(null);
       setExistingOrderTableId(null);
       return;
     }
     const ao = getActiveOrderFor(restaurantId, targetTableId);
-    setExistingOrderId(ao?.orderId ?? null);
-    setExistingOrderTableId(ao?.tableId ?? null);
+    if (ao?.orderId) {
+      api.get(`/api/orders/${ao.orderId}`)
+        .then((res) => {
+          const ord = res.data;
+          if (ord.status === 'SERVED' || ord.status === 'CANCELLED') {
+            removeActiveOrder(restaurantId, targetTableId);
+            if (localStorage.getItem('qm_last_order_id') === ao.orderId) {
+              localStorage.removeItem('qm_last_order_id');
+            }
+            setExistingOrderId(null);
+            setExistingOrderTableId(null);
+          } else {
+            setExistingOrderId(ao.orderId);
+            setExistingOrderTableId(ao.tableId);
+          }
+        })
+        .catch((err) => {
+          if (err.response?.status === 404) {
+            removeActiveOrder(restaurantId, targetTableId);
+            if (localStorage.getItem('qm_last_order_id') === ao.orderId) {
+              localStorage.removeItem('qm_last_order_id');
+            }
+            setExistingOrderId(null);
+            setExistingOrderTableId(null);
+          } else {
+            setExistingOrderId(ao.orderId);
+            setExistingOrderTableId(ao.tableId);
+          }
+        });
+    } else {
+      setExistingOrderId(null);
+      setExistingOrderTableId(null);
+    }
   }, [restaurantId, selectedTable, orderType]);
 
   useEffect(() => {
@@ -108,6 +139,10 @@ export default function OrderSummaryModal({
 
   async function submitNewOrder() {
     if (orderType === 'DINE_IN' && !selectedTable) return setError('Please select a table');
+    const tbl = tables.find(t => t.id === selectedTable);
+    if (orderType === 'DINE_IN' && tbl?.occupied && !existingOrderId) {
+      return setError('Selected table is currently occupied by another customer');
+    }
     if (!customerName.trim()) return setError('Please provide your name');
     if (!customerPhone.trim()) return setError('Please provide your phone number');
     if (!restaurantId) return setError('Missing restaurant');
@@ -267,7 +302,7 @@ export default function OrderSummaryModal({
               <div className="flex flex-col gap-3">
                 <Button 
                   size="lg" 
-                  onClick={() => window.location.href = `/order/success/${existingOrderId}`}
+                  onClick={() => window.location.href = `/order/success/${existingOrderId}${existingOrderTableId && existingOrderTableId !== 'takeaway' ? `?tableId=${existingOrderTableId}` : ''}`}
                   className="w-full"
                 >
                   <ExternalLink className="w-5 h-5 mr-2" /> View Order Status
@@ -384,15 +419,16 @@ export default function OrderSummaryModal({
                           {tables.map((t: any) => (
                             <button
                               key={t.id}
+                              disabled={t.occupied && t.id === selectedTable && !existingOrderId}
                               onClick={() => setSelectedTable(t.id)}
                               className={`px-4 py-3 rounded-2xl font-bold transition-all border-2 flex items-center gap-2 ${
                                 selectedTable === t.id
-                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20 scale-105'
+                                ? (t.occupied && !existingOrderId ? 'bg-red-50 border-red-200 text-red-600 cursor-not-allowed' : 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20 scale-105')
                                 : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200'
                               }`}
                             >
-                              <MapPin className={`w-4 h-4 ${selectedTable === t.id ? 'text-white' : 'text-blue-500'}`} />
-                              <span>{t.name}</span>
+                              <MapPin className={`w-4 h-4 ${selectedTable === t.id ? (t.occupied && !existingOrderId ? 'text-red-500' : 'text-white') : 'text-blue-500'}`} />
+                              <span>{t.name}{t.occupied && !existingOrderId && ' (Occupied)'}</span>
                             </button>
                           ))}
                         </div>

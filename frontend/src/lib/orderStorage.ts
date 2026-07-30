@@ -62,3 +62,17 @@ export function updateLastSeen(restaurantId: string, tableId: string) {
     saveActiveOrders(map);
   }
 }
+
+export function removeActiveOrderById(orderId: string) {
+  const map = getActiveOrders();
+  let changed = false;
+  for (const key in map) {
+    if (map[key].orderId === orderId) {
+      delete map[key];
+      changed = true;
+    }
+  }
+  if (changed) {
+    saveActiveOrders(map);
+  }
+}

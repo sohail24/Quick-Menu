@@ -18,12 +18,17 @@ public interface OrderRepository extends JpaRepository<Order, String>, org.sprin
     List<Order> findByRestaurantIdAndStatus(String restaurantId, Order.Status status);
     java.util.Optional<Order> findByRequestId(String requestId);
 
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.tableId = :tableId AND o.id <> :orderId AND o.status NOT IN :excludedStatuses AND o.placedAt > :placedAt")
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.tableId = :tableId AND o.id <> :orderId AND o.status NOT IN :excludedStatuses")
     long countOtherActiveOrdersOnTable(
         @Param("tableId") String tableId, 
         @Param("orderId") String orderId, 
-        @Param("excludedStatuses") java.util.List<com.quickmenu.orders.model.Order.Status> excludedStatuses,
-        @Param("placedAt") java.time.Instant placedAt
+        @Param("excludedStatuses") java.util.List<com.quickmenu.orders.model.Order.Status> excludedStatuses
+    );
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.tableId = :tableId AND o.status NOT IN :excludedStatuses")
+    long countActiveOrdersOnTable(
+        @Param("tableId") String tableId,
+        @Param("excludedStatuses") java.util.List<com.quickmenu.orders.model.Order.Status> excludedStatuses
     );
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.tableId = :tableId AND o.status NOT IN :excludedStatuses AND o.paymentStatus <> :paidStatus")

@@ -77,13 +77,16 @@ public class OrderService {
                     .orElseThrow(() -> new IllegalArgumentException("Invalid table"));
 
             if (Boolean.TRUE.equals(table.getOccupied())) {
-                long unpaidActive = orderRepository.countUnpaidActiveOrdersOnTable(
+                long activeCount = orderRepository.countActiveOrdersOnTable(
                     req.getTableId(),
-                    java.util.List.of(Order.Status.CANCELLED, Order.Status.SERVED),
-                    Order.PaymentStatus.PAID
+                    java.util.List.of(Order.Status.CANCELLED, Order.Status.SERVED)
                 );
-                if (unpaidActive > 0) {
+                if (activeCount > 0) {
                     throw new TableOccupiedException();
+                } else {
+                    // Self-healing: Table is occupied in DB but has no active orders
+                    table.setOccupied(false);
+                    tableRepository.save(table);
                 }
             }
 
@@ -315,8 +318,7 @@ public class OrderService {
                         long otherActive = orderRepository.countOtherActiveOrdersOnTable(
                             order.getTableId(), 
                             order.getId(), 
-                            java.util.List.of(Order.Status.CANCELLED, Order.Status.SERVED),
-                            order.getPlacedAt()
+                            java.util.List.of(Order.Status.CANCELLED, Order.Status.SERVED)
                         );
                         if (otherActive > 0) {
                             // CONFLICT: Table was taken while user was on Stripe!

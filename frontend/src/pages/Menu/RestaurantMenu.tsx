@@ -7,7 +7,7 @@ import CartFloating from '../../components/CartFloating';
 import OrderSummaryModal from '../../components/OrderSummaryModal';
 import OrderStatusFloating from '../../components/OrderStatusFloating';
 import BellButton from '../../components/BellButton';
-import { getActiveOrderFor } from '../../lib/orderStorage';
+import { getActiveOrderFor, removeActiveOrder } from '../../lib/orderStorage';
 import { Search, ChevronLeft, MapPin, Star, Clock, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { getOptimizedUrl } from '../../lib/imageUtils';
@@ -68,6 +68,7 @@ export default function RestaurantMenu() {
   const [existingOrderTableId, setExistingOrderTableId] = useState<string | null>(null);
   const [existingOrderTableName, setExistingOrderTableName] = useState<string | null>(null);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [isTableOccupiedByOthers, setIsTableOccupiedByOthers] = useState<boolean>(false);
 
   const [restaurant, setRestaurant] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
@@ -146,6 +147,45 @@ export default function RestaurantMenu() {
     } catch {}
   }, [cart]);
 
+  // check table occupancy
+  useEffect(() => {
+    if (!effectiveRestaurantId || !effectiveTableId) {
+      setIsTableOccupiedByOthers(false);
+      return;
+    }
+    api.get(`/api/restaurants/${effectiveRestaurantId}/tables/${effectiveTableId}`)
+      .then((res) => {
+        const table = res.data;
+        if (table && table.occupied) {
+          // Check if it's occupied by us
+          const ao = getActiveOrderFor(effectiveRestaurantId, effectiveTableId);
+          if (!ao) {
+            setIsTableOccupiedByOthers(true);
+          } else {
+            // It is occupied, but we have an active order tracked. Let's make sure it is valid
+            api.get(`/api/orders/${ao.orderId}`)
+              .then((orderRes) => {
+                const status = orderRes.data.status;
+                if (status === 'SERVED' || status === 'CANCELLED') {
+                  setIsTableOccupiedByOthers(true);
+                } else {
+                  setIsTableOccupiedByOthers(false);
+                }
+              })
+              .catch(() => {
+                setIsTableOccupiedByOthers(true);
+              });
+          }
+        } else {
+          setIsTableOccupiedByOthers(false);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to check table occupancy status:', err);
+        setIsTableOccupiedByOthers(false);
+      });
+  }, [effectiveRestaurantId, effectiveTableId, existingOrderForTable]);
+
   // track active order
   useEffect(() => {
     if (!effectiveRestaurantId || !effectiveTableId) {
@@ -155,9 +195,44 @@ export default function RestaurantMenu() {
       return;
     }
     const ao = getActiveOrderFor(effectiveRestaurantId, effectiveTableId);
-    setExistingOrderForTable(ao?.orderId ?? null);
-    setExistingOrderTableId(ao?.tableId ?? null);
-    setExistingOrderTableName(ao?.tableName ?? null);
+    if (ao?.orderId) {
+      api.get(`/api/orders/${ao.orderId}`)
+        .then((res) => {
+          const ord = res.data;
+          if (ord.status === 'SERVED' || ord.status === 'CANCELLED') {
+            removeActiveOrder(effectiveRestaurantId, effectiveTableId);
+            if (localStorage.getItem('qm_last_order_id') === ao.orderId) {
+              localStorage.removeItem('qm_last_order_id');
+            }
+            setExistingOrderForTable(null);
+            setExistingOrderTableId(null);
+            setExistingOrderTableName(null);
+          } else {
+            setExistingOrderForTable(ao.orderId);
+            setExistingOrderTableId(ao.tableId);
+            setExistingOrderTableName(ao.tableName ?? null);
+          }
+        })
+        .catch((err) => {
+          if (err.response?.status === 404) {
+            removeActiveOrder(effectiveRestaurantId, effectiveTableId);
+            if (localStorage.getItem('qm_last_order_id') === ao.orderId) {
+              localStorage.removeItem('qm_last_order_id');
+            }
+            setExistingOrderForTable(null);
+            setExistingOrderTableId(null);
+            setExistingOrderTableName(null);
+          } else {
+            setExistingOrderForTable(ao.orderId);
+            setExistingOrderTableId(ao.tableId);
+            setExistingOrderTableName(ao.tableName ?? null);
+          }
+        });
+    } else {
+      setExistingOrderForTable(null);
+      setExistingOrderTableId(null);
+      setExistingOrderTableName(null);
+    }
   }, [effectiveRestaurantId, effectiveTableId]);
 
   // scroll to category
@@ -205,6 +280,10 @@ export default function RestaurantMenu() {
   function onCheckoutClick() {
     if (!cart.length) return;
     if (orderComplete) return;
+    if (isTableOccupiedByOthers) {
+      alert("This table is currently occupied by another customer. Please choose a different table or consult restaurant staff.");
+      return;
+    }
     setOrderModalOpen(true);
   }
 
@@ -216,7 +295,8 @@ export default function RestaurantMenu() {
     try {
       localStorage.removeItem('qm_cart');
     } catch {}
-    if (id) navigate(`/order/success/${id}${effectiveTableId ? `?tableId=${effectiveTableId}` : ''}`);
+    const trackingTableId = responseData?.orderType === 'TAKEAWAY' ? null : responseData?.tableId;
+    if (id) navigate(`/order/success/${id}${trackingTableId ? `?tableId=${trackingTableId}` : ''}`);
   }
 
   function handleStopTracking() {
@@ -361,6 +441,21 @@ export default function RestaurantMenu() {
 
       <div className="container mx-auto px-4 pt-6">
         <OrderStatusFloating restaurantId={effectiveRestaurantId} />
+
+        {/* Table Occupied Warning */}
+        {isTableOccupiedByOthers && (
+          <div className="mb-6 bg-red-600 rounded-2xl p-4 text-white shadow-xl shadow-red-600/20 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-xl">
+                 <X className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                 <div className="font-bold">Table occupied!</div>
+                  <div className="text-xs opacity-80">Table #{effectiveTableId} is currently occupied by another customer. You cannot place a new order on this table.</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Existing Order Alert */}
         {existingOrderForTable && (
