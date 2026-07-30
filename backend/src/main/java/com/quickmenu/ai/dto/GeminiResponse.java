@@ -36,6 +36,16 @@ public class GeminiResponse {
     @NoArgsConstructor
     public static class Part {
         private String text;
+        private InlineData inlineData;
+    }
+
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class InlineData {
+        private String mimeType;
+        private String data;
     }
     
     public String getFirstText() {
@@ -44,6 +54,19 @@ public class GeminiResponse {
             candidates.get(0).getContent().getParts() != null &&
             !candidates.get(0).getContent().getParts().isEmpty()) {
             return candidates.get(0).getContent().getParts().get(0).getText();
+        }
+        return null;
+    }
+
+    public String getFirstImageBase64() {
+        if (candidates != null && !candidates.isEmpty() &&
+            candidates.get(0).getContent() != null &&
+            candidates.get(0).getContent().getParts() != null) {
+            for (Part part : candidates.get(0).getContent().getParts()) {
+                if (part.getInlineData() != null && part.getInlineData().getData() != null) {
+                    return part.getInlineData().getData();
+                }
+            }
         }
         return null;
     }
