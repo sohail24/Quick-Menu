@@ -11,10 +11,15 @@ public class OrderMapper {
         dto.setId(order.getId());
         dto.setRestaurantId(order.getRestaurantId());
         dto.setTableId(order.getTableId());
+        dto.setTableName(order.getTableName());
+        dto.setOrderType(order.getOrderType() != null ? order.getOrderType().name() : "DINE_IN");
+        dto.setVehicleNumber(order.getVehicleNumber());
         dto.setCustomerName(order.getCustomerName());
         dto.setCustomerPhone(order.getCustomerPhone());
         dto.setCustomerNote(order.getCustomerNote());
         dto.setStatus(order.getStatus().name());
+        dto.setPaymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : "CASH");
+        dto.setPaymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : "PENDING");
         dto.setTotalAmount(order.getTotalAmount());
         dto.setPlacedAt(order.getPlacedAt());
 

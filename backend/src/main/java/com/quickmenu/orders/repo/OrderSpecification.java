@@ -29,6 +29,12 @@ public class OrderSpecification {
                 predicates.add(cb.lessThanOrEqualTo(root.get("placedAt"), endDate));
             }
 
+            // Exclude ghost orders (Online and Pending payment)
+            // Staff should only see PAID online orders or CASH orders
+            Predicate isCash = cb.equal(root.get("paymentMethod"), Order.PaymentMethod.CASH);
+            Predicate isPaid = cb.equal(root.get("paymentStatus"), Order.PaymentStatus.PAID);
+            predicates.add(cb.or(isCash, isPaid));
+
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }

@@ -23,9 +23,9 @@ export default function AdminCreateRestaurant() {
   // form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [timezone, setTimezone] = useState('UTC');
+  const [timezone, setTimezone] = useState('Asia/Kolkata');
   const [currency, setCurrency] = useState('INR');
-  const [planId, setPlanId] = useState('free');
+  const [planId] = useState('free');
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [address, setAddress] = useState('');
   const { user } = useAuthStore();
@@ -186,25 +186,8 @@ export default function AdminCreateRestaurant() {
 
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Subscription Plan</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPlanId('free')}
-                      className={`h-11 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-                        planId === 'free' ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20' : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'
-                      }`}
-                    >
-                      Free Tier
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPlanId('pro')}
-                      className={`h-11 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-                        planId === 'pro' ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20' : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'
-                      }`}
-                    >
-                      Pro Tier
-                    </button>
+                  <div className="h-11 flex items-center bg-blue-600 text-white rounded-xl px-4 shadow-lg shadow-blue-600/20">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Standard Free Tier</span>
                   </div>
                 </div>
 

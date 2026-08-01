@@ -23,6 +23,14 @@ public class Order {
         PLACED, PENDING, IN_PROGRESS, READY, SERVED, CANCELLED, PREPARING
     }
 
+    public enum PaymentMethod {
+        CASH, ONLINE
+    }
+
+    public enum PaymentStatus {
+        PENDING, PAID, CANCELLED
+    }
+
     @Id
     @GeneratedValue
     @org.hibernate.annotations.UuidGenerator
@@ -32,8 +40,20 @@ public class Order {
     @Column(nullable = false)
     private String restaurantId;
 
-    @Column(nullable = false)
+    public enum OrderType {
+        DINE_IN, TAKEAWAY
+    }
+
+    @Column(name = "table_id", length = 36, nullable = true)
     private String tableId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_type")
+    @Builder.Default
+    private OrderType orderType = OrderType.DINE_IN;
+
+    @Column(name = "vehicle_number")
+    private String vehicleNumber;
 
     @Column(nullable = false)
     private String customerName;
@@ -55,7 +75,26 @@ public class Order {
 
     private String requestId; // For Idempotency
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private PaymentMethod paymentMethod = PaymentMethod.CASH;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+
     private String appliedDiscountStrategy; // For Strategy Pattern tracking
+
+    @Column(length = 1000)
+    private String stripeSessionId;
+    @Column(length = 1000)
+    private String stripeCheckoutUrl;
+
+    @Formula("(SELECT t.name FROM restaurant_tables t WHERE t.id = table_id)")
+    private String tableName;
+
+    @Column(name = "order_token", length = 36)
+    private String orderToken;
 
     @Column(name = "placed_at", nullable = false)
     private Instant placedAt;

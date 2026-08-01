@@ -33,6 +33,9 @@ public class BellEvent {
     @Column(name = "table_id", nullable = false)
     private String tableId;
 
+    @org.hibernate.annotations.Formula("(SELECT t.name FROM restaurant_tables t WHERE t.id = table_id)")
+    private String tableName;
+
     @Column(length = 2000)
     private String message;
 

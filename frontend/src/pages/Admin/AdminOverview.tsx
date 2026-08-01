@@ -134,9 +134,9 @@ export default function AdminOverview() {
         </div>
         <Link
           to="/admin/restaurants/create"
-          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm"
+          className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold transition-all shadow-sm active:scale-95"
         >
-          Create Restaurant
+          + Create Restaurant
         </Link>
       </div>
 

@@ -19,22 +19,36 @@ public class OrderDto {
     public static class CreateOrderRequest {
         private String requestId; // For Idempotency
         private String discountStrategy; // For Strategy Pattern
+        private String orderType; // DINE_IN, TAKEAWAY
+        private String vehicleNumber;
         private String tableId;
         private String customerName;
         private String customerPhone;
         private String customerNote;
+        private String paymentMethod; // CASH, ONLINE
         private List<CreateOrderItem> items;
+    }
+
+    @Data
+    public static class UpdateOrderRequest {
+        private String status;
+        private String paymentStatus;
     }
 
     @Data
     public static class OrderResponse {
         private String id;
         private String restaurantId;
+        private String orderType;
+        private String vehicleNumber;
         private String tableId;
+        private String tableName;
         private String customerName;
         private String customerPhone;
         private String customerNote;
         private String status;
+        private String paymentMethod;
+        private String paymentStatus;
         private BigDecimal totalAmount;
         private List<OrderItemResponse> items;
         private Instant placedAt;
@@ -47,5 +61,10 @@ public class OrderDto {
         private Integer quantity;
         private BigDecimal priceAtOrder;
         private String note;
+    }
+
+    @Data
+    public static class StripeVerifyRequest {
+        private String sessionId;
     }
 }

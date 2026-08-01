@@ -23,6 +23,7 @@ export default function DishForm({
   const [price, setPrice] = useState<number | ''>('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
+  const [prepTimeMins, setPrepTimeMins] = useState<number | ''>('');
   const [available, setAvailable] = useState<boolean>(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [tagsRaw, setTagsRaw] = useState('');
@@ -36,6 +37,7 @@ export default function DishForm({
       setName(initial.name ?? '');
       setDescription(initial.description ?? '');
       setPrice(initial.price ?? initial.amount ?? '');
+      setPrepTimeMins(initial.prepTimeMins ?? '');
       setCategoryId(initial.categoryId ?? initial.category?.id ?? null);
       setAvailable(
         initial.available === undefined ? (initial.isAvailable ?? true) : initial.available,
@@ -89,6 +91,7 @@ export default function DishForm({
       description,
       price: Number(price),
       categoryId,
+      prepTimeMins: prepTimeMins === '' ? null : Number(prepTimeMins),
       isAvailable: available,
       imageUrl,
       tags: tagsRaw.trim(),
@@ -180,7 +183,7 @@ export default function DishForm({
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Price (₹)</label>
             <input
@@ -188,6 +191,17 @@ export default function DishForm({
               value={price as any}
               onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
               placeholder="0.00"
+              className="border border-gray-100 bg-gray-50/50 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Prep Time (mins)</label>
+            <input
+              type="number"
+              value={prepTimeMins as any}
+              onChange={(e) => setPrepTimeMins(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="e.g. 15"
               className="border border-gray-100 bg-gray-50/50 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
             />
           </div>
@@ -233,7 +247,7 @@ export default function DishForm({
                   <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${available ? 'translate-x-5' : 'translate-x-0'}`}></div>
                 </div>
                 <span className={`text-[10px] font-black uppercase tracking-widest ${available ? 'text-green-600' : 'text-gray-500'}`}>
-                  {available ? 'Show on menu' : 'Hidden'}
+                  {available ? 'Show' : 'Hide'}
                 </span>
               </label>
             </div>
@@ -288,18 +302,18 @@ export default function DishForm({
 
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-bold mb-4">{error}</div>}
 
-      <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-50">
+      <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-50">
         <button
           type="button"
           onClick={() => window.history.back()}
-          className="h-11 px-8 border border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50 transition-colors"
+          className="h-12 px-8 border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-all active:scale-95"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={submitting || loading}
-          className="h-11 px-10 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
+          className="h-12 px-10 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 active:scale-95 disabled:opacity-50"
         >
           {submitLabel}
         </button>

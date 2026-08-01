@@ -6,6 +6,7 @@ export type ActiveOrderItem = {
   tableId: string;
   placedAt?: string;
   lastSeenAt?: number;
+  tableName?: string;
 };
 
 export function getActiveOrders(): Record<string, ActiveOrderItem> {
@@ -32,10 +33,11 @@ export function setActiveOrder(
   tableId: string,
   orderId: string,
   placedAt?: string,
+  tableName?: string,
 ) {
   const key = `${restaurantId}_${tableId}`;
   const map = getActiveOrders();
-  map[key] = { orderId, tableId, placedAt, lastSeenAt: Date.now() };
+  map[key] = { orderId, tableId, placedAt, tableName, lastSeenAt: Date.now() };
   saveActiveOrders(map);
 }
 
@@ -57,6 +59,20 @@ export function updateLastSeen(restaurantId: string, tableId: string) {
   const map = getActiveOrders();
   if (map[key]) {
     map[key].lastSeenAt = Date.now();
+    saveActiveOrders(map);
+  }
+}
+
+export function removeActiveOrderById(orderId: string) {
+  const map = getActiveOrders();
+  let changed = false;
+  for (const key in map) {
+    if (map[key].orderId === orderId) {
+      delete map[key];
+      changed = true;
+    }
+  }
+  if (changed) {
     saveActiveOrders(map);
   }
 }

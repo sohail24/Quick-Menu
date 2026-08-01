@@ -13,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 public class GeminiRequest {
     private List<Content> contents;
+    private GenerationConfig generationConfig;
 
     @Data
     @Builder
@@ -28,5 +29,23 @@ public class GeminiRequest {
     @NoArgsConstructor
     public static class Part {
         private String text;
+    }
+
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class GenerationConfig {
+        private List<String> responseModalities;
+        private ImageConfig imageConfig;
+    }
+
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ImageConfig {
+        private String aspectRatio;
+        private String imageSize;
     }
 }

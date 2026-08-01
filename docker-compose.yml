@@ -20,18 +20,13 @@ services:
     container_name: quickmenu-backend
     depends_on:
       - db
+    env_file:
+      - ./backend/.env
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/quickmenu
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      # AI Config (User will need to provide these in .env or shell)
-      APP_AI_GEMINI_API_KEY: ${GEMINI_API_KEY}
-      EMAIL_ID: ${EMAIL_ID}
-      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
     ports:
       - "8080:8080"
 

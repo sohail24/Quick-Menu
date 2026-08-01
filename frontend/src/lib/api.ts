@@ -18,6 +18,25 @@ api.interceptors.request.use((config) => {
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Attach X-Order-Token automatically for order-specific calls
+  if (config.url && config.headers) {
+    const match = config.url.match(/(?:\/orders\/|api\/[^\/]+\/orders\/)([a-f0-9\-]{36})/i);
+    if (match && match[1]) {
+      const orderId = match[1];
+      try {
+        const raw = localStorage.getItem('qm_order_tokens');
+        if (raw) {
+          const map = JSON.parse(raw);
+          const orderToken = map[orderId];
+          if (orderToken) {
+            config.headers['X-Order-Token'] = orderToken;
+          }
+        }
+      } catch {}
+    }
+  }
+
   return config;
 });
 

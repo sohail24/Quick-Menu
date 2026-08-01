@@ -31,9 +31,15 @@ public class AIService {
      * These models have the highest Rate Limits and zero cost on Google AI Studio.
      */
     private static final List<String> FLASH_MODELS = List.of(
-        "gemini-2.0-flash", 
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-8b",
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-flash-latest",
         "gemini-flash-lite-latest"
     );
 
@@ -58,9 +64,9 @@ public class AIService {
 
         // Tier 2: Hugging Face (Secondary - Professional Free Choice)
         try {
-            log.info("AI: Attempting Hugging Face Text (Mistral-7B)...");
+            log.info("AI: Attempting Hugging Face Text (Qwen-2.5-7B)...");
             String result = tryHuggingFaceText(prompt);
-            if (result != null) return new AIContentResponse(result, "Hugging Face (Mistral-7B)");
+            if (result != null) return new AIContentResponse(result, "Hugging Face (Qwen-2.5-7B)");
         } catch (Exception e) {
             log.warn("AI: Hugging Face Text failed: {}", e.getMessage());
             rca.append("[HF] ");
@@ -84,19 +90,25 @@ public class AIService {
         if (token.isEmpty()) return null;
 
         try {
-            // Using a high-quality instruction model
-            String model = "mistralai/Mistral-7B-Instruct-v0.1";
-            String url = "https://router.huggingface.co/hf-inference/models/" + model;
+            // Using the new OpenAI-compatible chat endpoint which automatically routes to available providers
+            String url = "https://router.huggingface.co/v1/chat/completions";
+
+            java.util.Map<String, Object> request = java.util.Map.of(
+                "model", "Qwen/Qwen2.5-7B-Instruct",
+                "messages", java.util.List.of(
+                    java.util.Map.of("role", "user", "content", prompt)
+                )
+            );
 
             com.fasterxml.jackson.databind.JsonNode response = restClient.post()
                     .uri(url)
                     .header("Authorization", "Bearer " + token)
-                    .body(java.util.Map.of("inputs", prompt))
+                    .body(request)
                     .retrieve()
                     .body(com.fasterxml.jackson.databind.JsonNode.class);
 
-            if (response != null && response.isArray()) {
-                return response.get(0).get("generated_text").asText();
+            if (response != null && response.has("choices") && response.get("choices").size() > 0) {
+                return response.get("choices").get(0).get("message").get("content").asText();
             }
         } catch (Exception e) {
             log.warn("Hugging Face Text failed: {}", e.getMessage());
@@ -194,53 +206,91 @@ public class AIService {
 
         // List of potential Gemini Image models (Google updates these frequently)
         List<String> imagenModels = List.of(
-            "imagen-4.0-generate-001",
-            "imagen-4.0-fast-generate-001",
-            "imagen-4.0-ultra-generate-001",
-            "imagen-3.0-generate-001"
+            "gemini-3.1-flash-image",
+            "gemini-3.1-flash-lite-image",
+            "gemini-3-pro-image",
+            "gemini-2.5-flash-image",
+            "imagen-3.0-generate-002"
         );
 
         String prompt = String.format("Professional gourmet restaurant food photography of %s, cinematic lighting, 8k, black background, top view of food, it should look like food photography for online food portal", dishName);
 
         for (String modelName : imagenModels) {
             try {
-                log.info("AI: Attempting image generation via Google Imagen model: {}", modelName);
+                log.info("AI: Attempting image generation via Google Gemini model: {}", modelName);
                 
-                // Note: Imagen 4 and latest 3.x models use ':predict' instead of ':generateImages'
-                String url = String.format("https://generativelanguage.googleapis.com/v1beta/models/%s:predict?key=%s", modelName, key);
+                if (modelName.contains("-image")) {
+                    // New style: generateContent
+                    String url = String.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", modelName, key);
+                    
+                    com.quickmenu.ai.dto.GeminiRequest request = com.quickmenu.ai.dto.GeminiRequest.builder()
+                            .contents(List.of(com.quickmenu.ai.dto.GeminiRequest.Content.builder()
+                                    .parts(List.of(com.quickmenu.ai.dto.GeminiRequest.Part.builder()
+                                            .text(prompt)
+                                            .build()))
+                                    .build()))
+                            .generationConfig(com.quickmenu.ai.dto.GeminiRequest.GenerationConfig.builder()
+                                    .responseModalities(List.of("IMAGE"))
+                                    .build())
+                            .build();
 
-                // Google Imagen Request Structure (Vertex-mirror style)
-                java.util.Map<String, Object> request = java.util.Map.of(
-                    "instances", java.util.List.of(java.util.Map.of("prompt", prompt)),
-                    "parameters", java.util.Map.of("sampleCount", 1)
-                );
+                    com.quickmenu.ai.dto.GeminiResponse response = restClient.post()
+                            .uri(java.net.URI.create(url))
+                            .body(request)
+                            .retrieve()
+                            .onStatus(status -> status.value() == 404, (req, res) -> {
+                                throw new RuntimeException("Model not found (404)");
+                            })
+                            .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) -> {
+                                log.error("Gemini Image {} Error: {}", modelName, res.getStatusCode());
+                                throw new RuntimeException("Gemini Image fail");
+                            })
+                            .body(com.quickmenu.ai.dto.GeminiResponse.class);
 
-                com.fasterxml.jackson.databind.JsonNode response = restClient.post()
-                        .uri(url)
-                        .body(request)
-                        .retrieve()
-                        .onStatus(status -> status.value() == 404, (req, res) -> {
-                            throw new RuntimeException("Model not found (404)");
-                        })
-                        .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) -> {
-                            log.error("Gemini Imagen {} Error: {}", modelName, res.getStatusCode());
-                            throw new RuntimeException("Imagen fail");
-                        })
-                        .body(com.fasterxml.jackson.databind.JsonNode.class);
+                    if (response != null) {
+                        String base64 = response.getFirstImageBase64();
+                        if (base64 != null) {
+                            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64);
+                            log.info("AI: SUCCESS using Google Gemini model: {}. Uploading to Cloudinary...", modelName);
+                            return cloudinaryService.uploadBytes(imageBytes);
+                        }
+                    }
+                } else {
+                    // Legacy style: predict
+                    String url = String.format("https://generativelanguage.googleapis.com/v1beta/models/%s:predict?key=%s", modelName, key);
 
-                if (response != null && response.has("predictions")) {
-                    com.fasterxml.jackson.databind.JsonNode prediction = response.get("predictions").get(0);
-                    if (prediction != null && prediction.has("bytesBase64Encoded")) {
-                        String base64 = prediction.get("bytesBase64Encoded").asText();
-                        byte[] imageBytes = java.util.Base64.getDecoder().decode(base64);
-                        
-                        log.info("AI: SUCCESS using Google Imagen model: {}. Uploading to Cloudinary...", modelName);
-                        return cloudinaryService.uploadBytes(imageBytes);
+                    // Google Imagen Request Structure (Vertex-mirror style)
+                    java.util.Map<String, Object> request = java.util.Map.of(
+                        "instances", java.util.List.of(java.util.Map.of("prompt", prompt)),
+                        "parameters", java.util.Map.of("sampleCount", 1)
+                    );
+
+                    com.fasterxml.jackson.databind.JsonNode response = restClient.post()
+                            .uri(url)
+                            .body(request)
+                            .retrieve()
+                            .onStatus(status -> status.value() == 404, (req, res) -> {
+                                throw new RuntimeException("Model not found (404)");
+                            })
+                            .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) -> {
+                                log.error("Gemini Imagen {} Error: {}", modelName, res.getStatusCode());
+                                throw new RuntimeException("Imagen fail");
+                            })
+                            .body(com.fasterxml.jackson.databind.JsonNode.class);
+
+                    if (response != null && response.has("predictions")) {
+                        com.fasterxml.jackson.databind.JsonNode prediction = response.get("predictions").get(0);
+                        if (prediction != null && prediction.has("bytesBase64Encoded")) {
+                            String base64 = prediction.get("bytesBase64Encoded").asText();
+                            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64);
+                            
+                            log.info("AI: SUCCESS using Google Imagen model: {}. Uploading to Cloudinary...", modelName);
+                            return cloudinaryService.uploadBytes(imageBytes);
+                        }
                     }
                 }
             } catch (Exception e) {
                 log.warn("Gemini Imagen model {} unavailable or failed: {}", modelName, e.getMessage());
-                // Continue to next model if it's a 404 or other failure
             }
         }
         return null;
@@ -253,20 +303,27 @@ public class AIService {
             return null;
         }
 
-        // List of robust models that are usually active on the Free Inference API
+        // List of robust models and providers that are active on the Hugging Face Router
         List<String> hfModels = List.of(
-            "black-forest-labs/FLUX.1-schnell",              // State of the Art (Top choice)
-            "stabilityai/stable-diffusion-xl-base-1.0",      // High Res Fallback
-            "stabilityai/stable-diffusion-2-1"               // Legacy Robustness
+            "hf-inference/stabilityai/stable-diffusion-3-medium-diffusers",
+            "together/black-forest-labs/FLUX.1-schnell",
+            "fal-ai/black-forest-labs/FLUX.1-schnell",
+            "hf-inference/black-forest-labs/FLUX.1-schnell",
+            "together/stabilityai/stable-diffusion-3.5-medium"
         );
 
         String prompt = String.format("Professional gourmet restaurant food photography of %s, cinematic lighting, 8k, black background, top view of food, it should look like food photography for online food portal", dishName);
 
-        for (String modelName : hfModels) {
+        for (String entry : hfModels) {
             try {
-                log.info("AI: Attempting image generation via Hugging Face model: {}", modelName);
-                // New Hugging Face Inference Endpoint (as of 2026 deprecation)
-                String modelUrl = "https://router.huggingface.co/hf-inference/models/" + modelName;
+                log.info("AI: Attempting image generation via Hugging Face model/provider: {}", entry);
+                
+                int firstSlash = entry.indexOf('/');
+                if (firstSlash == -1) continue;
+                String provider = entry.substring(0, firstSlash);
+                String modelName = entry.substring(firstSlash + 1);
+
+                String modelUrl = String.format("https://router.huggingface.co/%s/models/%s", provider, modelName);
                 
                 byte[] imageBytes = restClient.post()
                         .uri(modelUrl)
@@ -284,8 +341,7 @@ public class AIService {
                     return cloudinaryService.uploadBytes(imageBytes);
                 }
             } catch (Exception e) {
-                log.warn("Hugging Face model {} unavailable or failed: {}", modelName, e.getMessage());
-                // Continue to next model
+                log.warn("Hugging Face model {} unavailable or failed: {}", entry, e.getMessage());
             }
         }
         return null;

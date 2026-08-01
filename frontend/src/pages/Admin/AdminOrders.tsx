@@ -234,12 +234,10 @@ export default function AdminOrders() {
         <h1 className="text-2xl font-semibold">Orders</h1>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              fetchOrders();
-            }}
-            className="px-3 py-1 border rounded hover:bg-gray-100"
+            onClick={() => { fetchOrders(); }}
+            className="px-4 py-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded-full text-xs font-bold transition-all active:scale-95"
           >
-            Refresh
+            ↻ Refresh
           </button>
         </div>
       </div>
@@ -390,12 +388,21 @@ export default function AdminOrders() {
                        }`}>
                          {status}
                        </span>
-                       {o.tableId && (
-                         <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100/50">
-                           {tableMap[o.tableId] ? `${tableMap[o.tableId]} ` : ''}(Table ID: {o.tableId})
-                         </span>
-                       )}
-                    </div>
+                       <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border ${
+                         o.paymentStatus === 'PAID' ? 'bg-green-50 text-green-700 border-green-100/50' : 'bg-yellow-50 text-yellow-700 border-yellow-100/50'
+                       }`}>
+                         {o.paymentStatus === 'PAID' ? 'PAID' : 'UNPAID'}
+                       </span>
+                        {o.orderType === 'TAKEAWAY' ? (
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 uppercase tracking-widest border border-purple-100/50">
+                            Takeaway {o.vehicleNumber ? `(${o.vehicleNumber})` : '(Counter)'}
+                          </span>
+                        ) : o.tableId ? (
+                           <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100/50">
+                             Table #{o.tableId}{o.tableName ? ` (${o.tableName})` : ''}
+                           </span>
+                        ) : null}
+                     </div>
                     
                     <div className="flex flex-col gap-0.5 mb-2">
                       <div className="text-sm font-black text-gray-900 truncate flex items-center gap-2">

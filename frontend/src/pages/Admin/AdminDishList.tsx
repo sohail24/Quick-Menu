@@ -238,18 +238,15 @@ export default function AdminDishList() {
         <div className="flex gap-2">
           <button
             onClick={() => navigate('/admin/dishes/create')}
-            className="px-3 py-1 bg-blue-600 text-white rounded"
+            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold transition-all shadow-sm active:scale-95"
           >
-            Create Dish
+            + Create Dish
           </button>
           <button
-            onClick={() => {
-              setPage(0);
-              refreshData();
-            }}
-            className="px-3 py-1 border rounded"
+            onClick={() => { setPage(0); refreshData(); }}
+            className="px-4 py-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded-full text-xs font-bold transition-all active:scale-95"
           >
-            Refresh
+            ↻ Refresh
           </button>
         </div>
       </div>

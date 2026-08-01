@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import api from '../lib/api';
 import useStomp from '../hooks/useStomp';
+import { removeActiveOrder, getActiveOrders } from '../lib/orderStorage';
 import { Clock, CheckCircle2, Navigation, ChefHat, PackageCheck, Utensils, X, ChevronRight, ExternalLink, ClipboardList } from 'lucide-react';
 
 type OrderStatus = {
@@ -31,8 +32,20 @@ export default function OrderStatusFloating({ restaurantId }: { restaurantId?: s
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
-    setOrderId(storedOrderId);
-  }, [storedOrderId]);
+    const handleStorage = () => {
+      const newId = localStorage.getItem('qm_last_order_id');
+      if (newId !== orderId) setOrderId(newId);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    // Also poll slightly for local changes which don't trigger 'storage' in same tab
+    const interval = setInterval(handleStorage, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
+  }, [orderId]);
 
   useEffect(() => {
     if (!orderId) return;
@@ -44,9 +57,43 @@ export default function OrderStatusFloating({ restaurantId }: { restaurantId?: s
       if (!orderId) return;
       try {
         const res = await api.get(`/api/orders/${orderId}`);
-        if (active) setOrder(res.data);
-      } catch (err) {
+        const data = res.data;
+        if (active) {
+          setOrder(data);
+          if (data.status === 'SERVED' || data.status === 'CANCELLED') {
+            const trackingTableId = data.orderType === 'TAKEAWAY' ? 'takeaway' : data.tableId;
+            if (data.restaurantId && trackingTableId) {
+              removeActiveOrder(data.restaurantId, trackingTableId);
+            }
+            localStorage.removeItem('qm_last_order_id');
+            setOrderId(null);
+            setOrder(null);
+          }
+        }
+      } catch (err: any) {
         console.error('Order status fetch failed', err);
+        if (err.response?.status === 404) {
+          // Clear ghost order
+          localStorage.removeItem('qm_last_order_id');
+          const map = getActiveOrders();
+          let foundTableId: string | null = null;
+          let foundRestaurantId: string | null = null;
+          for (const key in map) {
+            if (map[key].orderId === orderId) {
+              foundTableId = map[key].tableId;
+              const parts = key.split('_');
+              if (parts.length > 0) {
+                 foundRestaurantId = parts[0];
+              }
+              break;
+            }
+          }
+          if (foundRestaurantId && foundTableId) {
+            removeActiveOrder(foundRestaurantId, foundTableId);
+          }
+          setOrderId(null);
+          setOrder(null);
+        }
       }
     }
 
@@ -61,6 +108,16 @@ export default function OrderStatusFloating({ restaurantId }: { restaurantId?: s
         if (payload?.id === orderId && active) {
           console.debug('[STOMP] Order status updated:', payload.status);
           setOrder(payload);
+          // If status is completed (SERVED) or cancelled (CANCELLED), clear tracking
+          if (payload.status === 'SERVED' || payload.status === 'CANCELLED') {
+             const trackingTableId = payload.orderType === 'TAKEAWAY' ? 'takeaway' : payload.tableId;
+             if (payload.restaurantId && trackingTableId) {
+                removeActiveOrder(payload.restaurantId, trackingTableId);
+             }
+             localStorage.removeItem('qm_last_order_id');
+             setOrderId(null);
+             setOrder(null);
+          }
         }
       } catch (e) {}
     });
@@ -164,7 +221,7 @@ export default function OrderStatusFloating({ restaurantId }: { restaurantId?: s
             {/* Actions */}
             <div className="flex gap-2">
                <a 
-                 href={`/order/success/${orderId}`}
+                 href={`/order/success/${orderId}${order?.tableId ? `?tableId=${order.tableId}` : ''}`}
                  className="flex-1 bg-gray-900 text-white text-xs font-black py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors"
                >
                   <ExternalLink className="w-4 h-4" /> Full Receipt
