@@ -44,7 +44,7 @@ public class Order {
         DINE_IN, TAKEAWAY
     }
 
-    @Column(length = 36)
+    @Column(name = "table_id", length = 36, nullable = true)
     private String tableId;
 
     @Enumerated(EnumType.STRING)
