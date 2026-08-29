@@ -7,6 +7,7 @@ import com.quickmenu.auth.dto.LoginRequest;
 import com.quickmenu.auth.dto.SignUpRequest;
 import com.quickmenu.auth.model.User;
 import com.quickmenu.auth.service.EmailSender;
+import com.quickmenu.auth.service.JwtBlacklistService;
 import com.quickmenu.auth.service.UserService;
 import com.quickmenu.auth.security.CustomUserDetails;
 import com.quickmenu.auth.security.JwtTokenProvider;
@@ -25,6 +26,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,6 +43,7 @@ public class AuthController {
     private final JwtTokenProvider tokenProvider;
     private final UserService userService;
     private final EmailSender emailSender;
+    private final JwtBlacklistService jwtBlacklistService;
 
     // Simple in-memory storage for reset tokens (email -> token)
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
@@ -45,11 +51,41 @@ public class AuthController {
     public AuthController(AuthenticationManager authenticationManager,
                           JwtTokenProvider tokenProvider,
                           UserService userService,
-                          EmailSender emailSender) {
+                          EmailSender emailSender,
+                          JwtBlacklistService jwtBlacklistService) {
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
         this.userService = userService;
         this.emailSender = emailSender;
+        this.jwtBlacklistService = jwtBlacklistService;
+    }
+
+    /**
+     * Logout — blacklist the current JWT token in Redis.
+     *
+     * Microservices pattern: Stateless JWT logout via Redis blacklist.
+     * The API Gateway checks this blacklist on every authenticated request.
+     * TTL = remaining token lifetime → Redis auto-expires the key.
+     */
+    @PostMapping(value = "/logout", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Logout", description = "Invalidates the current JWT by adding it to the Redis blacklist")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            try {
+                // Calculate remaining lifetime and blacklist with that TTL
+                Date expiry = tokenProvider.parseClaims(token).getPayload().getExpiration();
+                long remainingSeconds = (expiry.getTime() - Instant.now().toEpochMilli()) / 1000;
+                if (remainingSeconds > 0) {
+                    jwtBlacklistService.blacklist(token, Duration.ofSeconds(remainingSeconds));
+                }
+            } catch (Exception e) {
+                // Token already invalid — fine, just clear context
+            }
+        }
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
     @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)

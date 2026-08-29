@@ -1,0 +1,2 @@
+com\quickmenu\gateway\GatewayApplication.class
+com\quickmenu\gateway\filter\JwtAuthGatewayFilter.class

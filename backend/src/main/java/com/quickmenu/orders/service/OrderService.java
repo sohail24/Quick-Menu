@@ -1,6 +1,7 @@
 package com.quickmenu.orders.service;
 
 import com.quickmenu.bell.service.BellService;
+import com.quickmenu.config.RabbitMQProducerConfig;
 import com.quickmenu.config.customExceptions.TableOccupiedException;
 import com.quickmenu.menu.model.TableEntity;
 import com.quickmenu.menu.repo.TableRepository;
@@ -11,7 +12,7 @@ import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.model.OrderItem;
 import com.quickmenu.orders.repo.OrderItemRepository;
 import com.quickmenu.orders.repo.OrderRepository;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.stripe.model.PaymentIntent;
@@ -24,13 +25,36 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * OrderService — Core domain service for order management.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * MICROSERVICES CHANGE: SimpMessagingTemplate → RabbitTemplate
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * BEFORE (monolith):
+ *   messagingTemplate.convertAndSend("/topic/restaurants/" + id + "/orders", payload);
+ *   → Synchronous: order placement HTTP response waits for WebSocket delivery
+ *   → Tight coupling: OrderService knows about WebSocket topics
+ *   → Single point of failure: WebSocket issues slow down order processing
+ *
+ * AFTER (microservices):
+ *   rabbitTemplate.convertAndSend(EXCHANGE, routingKey, event);
+ *   → Asynchronous: event is published in <1ms, response returns immediately
+ *   → Loose coupling: OrderService only knows it published an event, not who handles it
+ *   → Fault isolation: WebSocket issues don't affect order processing
+ *   → Scalable: notification-service can be scaled independently
+ *
+ * This is the fundamental "Tell, Don't Ask" principle applied at service level.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
 @Service
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final DishRepository dishRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final RabbitTemplate rabbitTemplate;          // ← CHANGED: was SimpMessagingTemplate
     private final TableRepository tableRepository;
     private final BellService bellService;
     private final com.quickmenu.orders.strategy.DiscountService discountService;
@@ -45,7 +69,7 @@ public class OrderService {
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
                         DishRepository dishRepository,
-                        SimpMessagingTemplate messagingTemplate,
+                        RabbitTemplate rabbitTemplate,             // ← CHANGED
                         TableRepository tableRepository,
                         BellService bellService,
                         com.quickmenu.orders.strategy.DiscountService discountService,
@@ -53,7 +77,7 @@ public class OrderService {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.dishRepository = dishRepository;
-        this.messagingTemplate = messagingTemplate;
+        this.rabbitTemplate = rabbitTemplate;                     // ← CHANGED
         this.tableRepository = tableRepository;
         this.bellService = bellService;
         this.discountService = discountService;
@@ -157,11 +181,11 @@ public class OrderService {
         saved = orderRepository.save(saved);
 
         Map<String, Object> orderPayload = enrichOrderForResponse(saved);
-        
-        // IMPORTANT: Only notify staff via STOMP if it's CASH (immediate)
+
+        // IMPORTANT: Only notify staff via RabbitMQ if it's CASH (immediate)
         // For ONLINE, we notify in verifyPayment() after payment is successful
         if (saved.getPaymentMethod() != Order.PaymentMethod.ONLINE) {
-            messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+            publishOrderEvent(RabbitMQProducerConfig.ORDER_PLACED_CASH, saved, orderPayload);
         }
 
         return orderPayload;
@@ -235,7 +259,8 @@ public class OrderService {
         }
 
         Map<String, Object> orderPayload = enrichOrderForResponse(updated);
-        messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+        // Publish status update event — notification-service will push to WebSocket
+        publishOrderEvent(RabbitMQProducerConfig.ORDER_STATUS_UPDATED, updated, orderPayload);
 
         return updated;
     }
@@ -353,7 +378,8 @@ public class OrderService {
                 orderRepository.save(order);
                 
                 Map<String, Object> orderPayload = enrichOrderForResponse(order);
-                messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+                // Publish payment verified event — notification-service pushes to WebSocket
+                publishOrderEvent(RabbitMQProducerConfig.ORDER_PAYMENT_VERIFIED, order, orderPayload);
                 return orderPayload;
                 
             } else {
@@ -427,7 +453,8 @@ public class OrderService {
 
         Order updated = orderRepository.save(order);
         Map<String, Object> orderPayload = enrichOrderForResponse(updated);
-        messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+        // Publish items appended event
+        publishOrderEvent(RabbitMQProducerConfig.ORDER_ITEMS_APPENDED, updated, orderPayload);
 
         return orderPayload;
     }
@@ -458,9 +485,54 @@ public class OrderService {
         Map<String, Object> orderPayload = enrichOrderForResponse(updated);
         
         if (updated.getPaymentMethod() != Order.PaymentMethod.ONLINE) {
-            messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+            publishOrderEvent(RabbitMQProducerConfig.ORDER_STATUS_UPDATED, updated, orderPayload);
         }
 
         return orderPayload;
+    }
+
+    // ── Private helper ─────────────────────────────────────────────────────
+
+    /**
+     * Publish an order event to RabbitMQ.
+     *
+     * This replaces the old: messagingTemplate.convertAndSend("/topic/...", payload)
+     *
+     * Key difference: this is now FIRE-AND-FORGET.
+     * The HTTP response does NOT wait for the WebSocket push to happen.
+     * RabbitMQ guarantees delivery to notification-service asynchronously.
+     *
+     * @param routingKey  Determines which queues receive this message (e.g., "order.placed.cash")
+     * @param order       The order entity
+     * @param payload     Enriched order data to include in the event
+     */
+    private void publishOrderEvent(String routingKey, Order order, Map<String, Object> payload) {
+        try {
+            // Build a wrapper that includes event metadata + full payload
+            Map<String, Object> event = new HashMap<>();
+            event.put("eventType", routingKeyToEventType(routingKey));
+            event.put("orderId", order.getId());
+            event.put("restaurantId", order.getRestaurantId());
+            event.put("tableId", order.getTableId());
+            event.put("status", order.getStatus() != null ? order.getStatus().name() : null);
+            event.put("payload", payload); // full data — no back-call needed by consumer
+
+            rabbitTemplate.convertAndSend(RabbitMQProducerConfig.EXCHANGE, routingKey, event);
+        } catch (Exception ex) {
+            // Log but don't fail the order — notification failure is non-critical
+            // In production, use a retry/outbox pattern here
+            System.err.println("[OrderService] Warning: Failed to publish event to RabbitMQ: " + ex.getMessage());
+        }
+    }
+
+    private String routingKeyToEventType(String routingKey) {
+        return switch (routingKey) {
+            case RabbitMQProducerConfig.ORDER_PLACED_CASH      -> "ORDER_PLACED";
+            case RabbitMQProducerConfig.ORDER_PLACED_ONLINE    -> "ORDER_PLACED";
+            case RabbitMQProducerConfig.ORDER_STATUS_UPDATED   -> "ORDER_STATUS_UPDATED";
+            case RabbitMQProducerConfig.ORDER_PAYMENT_VERIFIED -> "ORDER_PAYMENT_VERIFIED";
+            case RabbitMQProducerConfig.ORDER_ITEMS_APPENDED   -> "ORDER_ITEMS_APPENDED";
+            default -> routingKey.toUpperCase().replace(".", "_");
+        };
     }
 }

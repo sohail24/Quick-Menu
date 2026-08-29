@@ -169,6 +169,18 @@
 			<artifactId>stripe-java</artifactId>
 			<version>28.3.0</version>
 		</dependency>
+
+		<!-- RabbitMQ / AMQP — async event publishing (replaces direct STOMP calls) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
+
+		<!-- Redis — JWT blacklist + Bell rate-limiting state -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
 	</dependencies>
 
 

@@ -102,3 +102,17 @@ demo:
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:sk_test_dummy}
   publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_dummy}
+
+  # RabbitMQ — localhost defaults for local development
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+
+  # Redis — localhost defaults for local development
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+

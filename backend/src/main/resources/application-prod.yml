@@ -39,6 +39,29 @@ spring:
   sendgrid:
     api-key: ${SENDGRID_API_KEY:}
 
+  # RabbitMQ — Message Broker for async event publishing
+  # Events flow: backend (producer) → RabbitMQ → notification-service (consumer) → WebSocket → browser
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+    # Publisher confirms: RabbitMQ ACKs back when message is durably stored
+    # This gives us at-least-once delivery guarantee on the producer side
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+  # Redis — Distributed state store
+  # Used for:
+  #   1. Bell rate-limiting (TTL keys replace in-memory ConcurrentHashMap)
+  #   2. JWT blacklist on logout (future: gateway checks this)
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 2000ms  # connection timeout — fail fast if Redis is down
+
+
 jwt:
   secret: ${JWT_SECRET:change-this-to-a-long-secure-secret-at-least-32-chars}
   expirationMs: ${JWT_EXPIRATION_MS:3600000}

@@ -1,6 +1,8 @@
-version: '3.8'
-
 services:
+  # ──────────────────────────────────────────────────────────────────
+  # Infrastructure
+  # ──────────────────────────────────────────────────────────────────
+
   db:
     image: postgres:16-alpine
     container_name: quickmenu-db
@@ -12,14 +14,63 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d quickmenu" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # RabbitMQ — Message Broker (Topic Exchange for async events)
+  # Management UI available at http://localhost:15672 (guest / guest)
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: quickmenu-rabbitmq
+    ports:
+      - "5672:5672"    # AMQP protocol port
+      - "15672:15672"  # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # Redis — Distributed state (JWT blacklist + Bell rate-limiting)
+  redis:
+    image: redis:7-alpine
+    container_name: quickmenu-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────────────────────────────
+  # Microservices
+  # ──────────────────────────────────────────────────────────────────
+
+  # Core backend monolith (auth, menu, orders, payments, ai)
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: quickmenu-backend
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - ./backend/.env
     environment:
@@ -27,8 +78,80 @@ services:
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     ports:
-      - "8080:8080"
+      - "8083:8080"
+
+  # Notification Service — WebSocket (STOMP) + RabbitMQ consumer
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: quickmenu-notification
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8084
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:5173
+    ports:
+      - "8084:8084"
+
+  # Bell Service — Standalone waiter call microservice
+  bell-service:
+    build:
+      context: ./bell-service
+      dockerfile: Dockerfile
+    container_name: quickmenu-bell
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8085
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    ports:
+      - "8085:8085"
+
+  # API Gateway — Single entry point, JWT validation, routing
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: quickmenu-gateway
+    depends_on:
+      - backend
+      - notification-service
+      - bell-service
+      - redis
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      # Downstream service URLs
+      BACKEND_URL: http://backend:8080
+      NOTIFICATION_URL: http://notification-service:8084
+      BELL_SERVICE_URL: http://bell-service:8085
+      JWT_SECRET: ${JWT_SECRET:-change-this-to-a-long-secure-secret-at-least-32-chars}
+    ports:
+      - "8080:8080"   # All traffic enters here
 
 volumes:
   postgres_data:
+  rabbitmq_data:
+  redis_data:

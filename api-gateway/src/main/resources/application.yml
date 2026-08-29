@@ -1,0 +1,107 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+
+  # Redis — reactive client (Gateway uses WebFlux, so reactive Redis is required)
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 1000ms
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Route Configuration
+  # ──────────────────────────────────────────────────────────────────────────
+  # The gateway routes incoming requests to the appropriate microservice.
+  # This is the "routing" responsibility of the API Gateway Pattern.
+  #
+  # Route priority: first matching route wins.
+  # lb:// prefix would use Spring Cloud LoadBalancer (Eureka/Kubernetes) —
+  # we use direct URLs for simplicity (production would use lb://service-name)
+  # ──────────────────────────────────────────────────────────────────────────
+  cloud:
+    gateway:
+      routes:
+        # WebSocket routes — must come BEFORE REST routes
+        # WebSocket upgrade requests go to notification-service
+        - id: websocket-ws
+          uri: ws://${NOTIFICATION_URL:http://localhost:8084}
+          predicates:
+            - Path=/ws/**
+          filters:
+            - RewritePath=/ws/(?<segment>.*), /ws/${segment}
+
+        - id: websocket-stomp
+          uri: ws://${NOTIFICATION_URL:http://localhost:8084}
+          predicates:
+            - Path=/websocket/**
+
+        # Auth Service — login, register, me
+        - id: auth-routes
+          uri: ${BACKEND_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/auth/**
+
+        # Bell routes - routed to extracted bell-service
+        - id: bell-routes
+          uri: ${BELL_SERVICE_URL:http://bell-service:8085}
+          predicates:
+            - Path=/api/restaurants/*/tables/*/bell
+
+        # Menu Service — public menu browsing, table management
+        - id: menu-routes
+          uri: ${BACKEND_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/*/menu/**, /api/*/tables/**, /api/restaurants/**
+
+        # Admin routes
+        - id: admin-routes
+          uri: ${BACKEND_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/admin/**
+
+        # Demo / Health / Docs — pass through to backend
+        - id: misc-routes
+          uri: ${BACKEND_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/demo/**, /api/health, /v3/api-docs/**, /swagger-ui/**
+
+      # Global CORS — handled once here, not in each service
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins:
+              - "http://localhost:5173"
+              - "${FRONTEND_URL:http://localhost:5173}"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
+
+# JWT secret — must match the backend's jwt.secret
+jwt:
+  secret: ${JWT_SECRET:change-this-to-a-long-secure-secret-at-least-32-chars}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, gateway
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.quickmenu: DEBUG
+    org.springframework.cloud.gateway: INFO

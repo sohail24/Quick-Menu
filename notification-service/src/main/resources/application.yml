@@ -1,0 +1,37 @@
+server:
+  port: ${SERVER_PORT:8084}
+
+spring:
+  application:
+    name: notification-service
+
+  # RabbitMQ connection
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+    # Publisher confirms — ensures messages are not silently lost on publish
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+# CORS for WebSocket connections from frontend
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+# Actuator — expose health endpoint for Docker / orchestrators
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.quickmenu: DEBUG
+    org.springframework.amqp: INFO
+    org.springframework.messaging: INFO
