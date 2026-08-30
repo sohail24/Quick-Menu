@@ -28,24 +28,30 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
+
 @EnableMethodSecurity
 @Configuration
 public class SecurityConfig {
 
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService userDetailsService;
+    private final StringRedisTemplate redisTemplate;
 
     @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
-    public SecurityConfig(JwtTokenProvider tokenProvider, CustomUserDetailsService userDetailsService) {
+    public SecurityConfig(JwtTokenProvider tokenProvider,
+                          CustomUserDetailsService userDetailsService,
+                          StringRedisTemplate redisTemplate) {
         this.tokenProvider = tokenProvider;
         this.userDetailsService = userDetailsService;
+        this.redisTemplate = redisTemplate;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(tokenProvider, userDetailsService);
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(tokenProvider, userDetailsService, redisTemplate);
 
         http
                 .httpBasic(AbstractHttpConfigurer::disable)

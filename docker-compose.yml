@@ -53,6 +53,8 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - ./backend/.env
     environment:
@@ -61,6 +63,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
     ports:
       - "8080:8080"
 
