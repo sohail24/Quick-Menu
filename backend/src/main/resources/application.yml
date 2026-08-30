@@ -1,6 +1,12 @@
 spring:
   application:
     name: quick-menu
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: 5672
+    username: guest
+    password: guest
   config:
     import:
       - optional:file:.env[.properties]
