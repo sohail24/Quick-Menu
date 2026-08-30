@@ -64,8 +64,9 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       RABBITMQ_HOST: rabbitmq
       REDIS_HOST: redis
+      SERVER_PORT: 8083           # moves backend off :8080 so gateway can take it
     ports:
-      - "8080:8080"
+      - "8083:8083"               # still exposed for direct debugging
 
   notification-service:
     build:
@@ -80,8 +81,25 @@ services:
     ports:
       - "8084:8084"
 
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: quickmenu-gateway
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      BACKEND_HOST: backend
+      NOTIFICATION_HOST: notification-service
+      JWT_SECRET: "change-this-to-a-long-secure-secret-at-least-32-chars"
+    ports:
+      - "8080:8080"               # public entry point — all client traffic goes here
+
 
 volumes:
   postgres_data:
   rabbitmq_data:
   redis_data:
+
