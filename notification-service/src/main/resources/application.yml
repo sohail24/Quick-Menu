@@ -9,7 +9,7 @@ spring:
     password: guest
 
 server:
-  port: 8084
+  port: ${SERVER_PORT:8084}
 
 # Health check endpoint for Docker
 management:

@@ -27,11 +27,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Pure WebSocket — for Postman or direct STOMP clients
         registry.addEndpoint("/websocket")
-                .setAllowedOriginPatterns("*");
+                .setAllowedOrigins("http://localhost:5173");
 
         // SockJS fallback — for browsers
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOrigins("http://localhost:5173")
                 .withSockJS();
     }
 }

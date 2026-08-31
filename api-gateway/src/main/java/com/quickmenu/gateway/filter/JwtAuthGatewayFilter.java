@@ -50,6 +50,7 @@ public class JwtAuthGatewayFilter implements GlobalFilter, Ordered {
             "/api/auth/forgot-password",
             "/api/auth/reset-password",
             "/api/demo/**",
+            "/api/health",
             "/actuator/**",
             "/ws/**",
             "/websocket/**"
@@ -91,8 +92,8 @@ public class JwtAuthGatewayFilter implements GlobalFilter, Ordered {
         String path = request.getPath().value();
         String method = request.getMethod().name();
 
-        // Always allow public paths regardless of method
-        if (isPublicPath(path, method)) {
+        // Always allow CORS preflight (OPTIONS) and public paths
+        if ("OPTIONS".equalsIgnoreCase(method) || isPublicPath(path, method)) {
             return chain.filter(exchange);
         }
 

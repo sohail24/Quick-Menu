@@ -9,32 +9,46 @@ spring:
 
   cloud:
     gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
       routes:
 
         # ── WebSocket / STOMP routes → notification-service ──────────────────
-        # MUST be declared first — Gateway matches routes top-to-bottom.
-        # If /api/** came first, /ws/** would never match.
         - id: websocket-routes
           uri: http://${NOTIFICATION_HOST:localhost}:8084
           predicates:
             - Path=/ws/**, /websocket/**
 
-        # ── All API + actuator routes → backend ──────────────────────────────
-        # In Day 2 Step 2, we will add a specific bell-service route
-        # ABOVE this catch-all. For now, backend handles everything.
+        # ── Bell routes → bell-service ────────────────────────────────────────
+        - id: bell-service-routes
+          uri: http://${BELL_HOST:localhost}:8085
+          predicates:
+            - Path=/api/restaurants/*/tables/*/bell, /api/*/bells, /api/*/bells/**
+
+        # ── All remaining API routes → backend ────────────────────────────────
         - id: backend-routes
           uri: http://${BACKEND_HOST:localhost}:8083
           predicates:
             - Path=/api/**, /actuator/**
 
-# JWT secret — MUST match the secret in backend/application.yml
 jwt:
   secret: ${JWT_SECRET:change-this-to-a-long-secure-secret-at-least-32-chars}
 
 server:
   port: 8080
 
-# Expose health check for Docker
 management:
   endpoints:
     web:
