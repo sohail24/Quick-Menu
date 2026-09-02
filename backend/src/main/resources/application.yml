@@ -1,6 +1,17 @@
 spring:
   application:
     name: quick-menu
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: 5672
+    username: guest
+    password: guest
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
   config:
     import:
       - optional:file:.env[.properties]
@@ -44,7 +55,7 @@ spring:
       max-request-size: 10MB
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   tomcat:
     # Accept POST bodies up to ~10MB (bytes)
     max-http-post-size: 10485760

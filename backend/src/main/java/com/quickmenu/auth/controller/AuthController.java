@@ -28,6 +28,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
+import java.time.Duration;
+import java.util.Date;
+
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Endpoints for Authentication")
@@ -38,6 +42,7 @@ public class AuthController {
     private final JwtTokenProvider tokenProvider;
     private final UserService userService;
     private final EmailSender emailSender;
+    private final StringRedisTemplate redisTemplate;
 
     // Simple in-memory storage for reset tokens (email -> token)
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
@@ -45,11 +50,33 @@ public class AuthController {
     public AuthController(AuthenticationManager authenticationManager,
                           JwtTokenProvider tokenProvider,
                           UserService userService,
-                          EmailSender emailSender) {
+                          EmailSender emailSender,
+                          StringRedisTemplate redisTemplate) {
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
         this.userService = userService;
         this.emailSender = emailSender;
+        this.redisTemplate = redisTemplate;
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout Endpoint", description = "Revokes the JWT token by adding it to Redis blacklist")
+    public ResponseEntity<?> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            try {
+                Date expiration = tokenProvider.getExpiration(token);
+                long remainingMillis = expiration.getTime() - System.currentTimeMillis();
+
+                if (remainingMillis > 0) {
+                    String blacklistKey = "jwt:blacklist:" + token;
+                    redisTemplate.opsForValue().set(blacklistKey, "revoked", Duration.ofMillis(remainingMillis));
+                }
+            } catch (Exception e) {
+                // If token is already invalid/expired, nothing to blacklist
+            }
+        }
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
     @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)

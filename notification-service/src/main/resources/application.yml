@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: notification-service
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: 5672
+    username: guest
+    password: guest
+
+server:
+  port: ${SERVER_PORT:8084}
+
+# Health check endpoint for Docker
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+websocket:
+  allowed-origins: "*"

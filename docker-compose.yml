@@ -13,13 +13,48 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: quickmenu-rabbitmq
+    ports:
+      - "5672:5672"     # AMQP protocol (Spring connects here)
+      - "15672:15672"   # Management UI (browser)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: quickmenu-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: quickmenu-backend
     depends_on:
-      - db
+      db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - ./backend/.env
     environment:
@@ -27,8 +62,67 @@ services:
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      SERVER_PORT: 8083           # moves backend off :8080 so gateway can take it
     ports:
-      - "8080:8080"
+      - "8083:8083"               # still exposed for direct debugging
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: quickmenu-notification
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+    ports:
+      - "8084:8084"
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: quickmenu-gateway
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      BACKEND_HOST: backend
+      NOTIFICATION_HOST: notification-service
+      BELL_HOST: bell-service
+      JWT_SECRET: "change-this-to-a-long-secure-secret-at-least-32-chars"
+    ports:
+      - "8080:8080"               # public entry point — all client traffic goes here
+
+  bell-service:
+    build:
+      context: ./bell-service
+      dockerfile: Dockerfile
+    container_name: quickmenu-bell
+    depends_on:
+      db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      JWT_SECRET: "change-this-to-a-long-secure-secret-at-least-32-chars"
+    ports:
+      - "8085:8085"              # exposed for direct debugging
+
 
 volumes:
   postgres_data:
+  rabbitmq_data:
+  redis_data:
+

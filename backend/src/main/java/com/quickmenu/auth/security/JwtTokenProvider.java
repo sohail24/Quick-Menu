@@ -51,4 +51,8 @@ public class JwtTokenProvider {
     public Jws<Claims> parseClaims(String token) {
         return Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
     }
+
+    public Date getExpiration(String token) {
+        return parseClaims(token).getPayload().getExpiration();
+    }
 }

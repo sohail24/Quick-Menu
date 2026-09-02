@@ -11,7 +11,8 @@ import com.quickmenu.orders.model.Order;
 import com.quickmenu.orders.model.OrderItem;
 import com.quickmenu.orders.repo.OrderItemRepository;
 import com.quickmenu.orders.repo.OrderRepository;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import com.quickmenu.config.RabbitMQProducerConfig;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.stripe.model.PaymentIntent;
@@ -30,7 +31,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final DishRepository dishRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final RabbitTemplate rabbitTemplate;
     private final TableRepository tableRepository;
     private final BellService bellService;
     private final com.quickmenu.orders.strategy.DiscountService discountService;
@@ -45,7 +46,7 @@ public class OrderService {
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
                         DishRepository dishRepository,
-                        SimpMessagingTemplate messagingTemplate,
+                        RabbitTemplate rabbitTemplate,
                         TableRepository tableRepository,
                         BellService bellService,
                         com.quickmenu.orders.strategy.DiscountService discountService,
@@ -53,7 +54,7 @@ public class OrderService {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.dishRepository = dishRepository;
-        this.messagingTemplate = messagingTemplate;
+        this.rabbitTemplate = rabbitTemplate;
         this.tableRepository = tableRepository;
         this.bellService = bellService;
         this.discountService = discountService;
@@ -158,10 +159,14 @@ public class OrderService {
 
         Map<String, Object> orderPayload = enrichOrderForResponse(saved);
         
-        // IMPORTANT: Only notify staff via STOMP if it's CASH (immediate)
-        // For ONLINE, we notify in verifyPayment() after payment is successful
+        // Only publish event for CASH (immediate) orders.
+        // For ONLINE, we publish in verifyPayment() after Stripe confirms payment.
         if (saved.getPaymentMethod() != Order.PaymentMethod.ONLINE) {
-            messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+            rabbitTemplate.convertAndSend(
+                RabbitMQProducerConfig.EXCHANGE,
+                RabbitMQProducerConfig.ORDER_PLACED_CASH,
+                buildOrderEvent("ORDER_PLACED", restaurantId, saved, orderPayload)
+            );
         }
 
         return orderPayload;
@@ -235,13 +240,34 @@ public class OrderService {
         }
 
         Map<String, Object> orderPayload = enrichOrderForResponse(updated);
-        messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+        rabbitTemplate.convertAndSend(
+            RabbitMQProducerConfig.EXCHANGE,
+            RabbitMQProducerConfig.ORDER_STATUS_UPDATED,
+            buildOrderEvent("STATUS_UPDATED", restaurantId, updated, orderPayload)
+        );
 
         return updated;
     }
 
-    // Simple event DTO
+    // Simple event DTO (kept for backward compat if anything references it)
     public static record OrderEvent(String orderId, String tableId, String type) { }
+
+    /**
+     * Builds the full event map published to RabbitMQ.
+     * The payload is the enriched order — same map previously sent via STOMP directly.
+     * notification-service deserializes this and forwards it to the WebSocket topic.
+     */
+    private java.util.Map<String, Object> buildOrderEvent(
+            String eventType, String restaurantId, Order order, Map<String, Object> payload) {
+        java.util.Map<String, Object> event = new java.util.HashMap<>();
+        event.put("eventType", eventType);
+        event.put("orderId", order.getId());
+        event.put("restaurantId", restaurantId);
+        event.put("tableId", order.getTableId());
+        event.put("status", order.getStatus() != null ? order.getStatus().toString() : null);
+        event.put("payload", payload);
+        return event;
+    }
 
 
     /**
@@ -353,7 +379,11 @@ public class OrderService {
                 orderRepository.save(order);
                 
                 Map<String, Object> orderPayload = enrichOrderForResponse(order);
-                messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+                rabbitTemplate.convertAndSend(
+                    RabbitMQProducerConfig.EXCHANGE,
+                    RabbitMQProducerConfig.ORDER_PLACED_ONLINE,
+                    buildOrderEvent("ORDER_PLACED", restaurantId, order, orderPayload)
+                );
                 return orderPayload;
                 
             } else {
@@ -427,7 +457,11 @@ public class OrderService {
 
         Order updated = orderRepository.save(order);
         Map<String, Object> orderPayload = enrichOrderForResponse(updated);
-        messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+        rabbitTemplate.convertAndSend(
+            RabbitMQProducerConfig.EXCHANGE,
+            RabbitMQProducerConfig.ORDER_STATUS_UPDATED,
+            buildOrderEvent("ITEMS_APPENDED", restaurantId, updated, orderPayload)
+        );
 
         return orderPayload;
     }
@@ -456,9 +490,13 @@ public class OrderService {
 
         Order updated = orderRepository.save(order);
         Map<String, Object> orderPayload = enrichOrderForResponse(updated);
-        
+
         if (updated.getPaymentMethod() != Order.PaymentMethod.ONLINE) {
-            messagingTemplate.convertAndSend("/topic/restaurants/" + restaurantId + "/orders", orderPayload);
+            rabbitTemplate.convertAndSend(
+                RabbitMQProducerConfig.EXCHANGE,
+                RabbitMQProducerConfig.ORDER_STATUS_UPDATED,
+                buildOrderEvent("PAYMENT_COMPLETED", restaurantId, updated, orderPayload)
+            );
         }
 
         return orderPayload;

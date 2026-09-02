@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,11 +20,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService userDetailsService;
+    private final StringRedisTemplate redisTemplate;
 
     public JwtAuthenticationFilter(JwtTokenProvider tokenProvider,
-                                   CustomUserDetailsService userDetailsService) {
+                                   CustomUserDetailsService userDetailsService,
+                                   StringRedisTemplate redisTemplate) {
         this.tokenProvider = tokenProvider;
         this.userDetailsService = userDetailsService;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -33,18 +37,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
 
         if (StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
-            try {
-                Jws<Claims> claimsJws = tokenProvider.parseClaims(token);
-                String email = claimsJws.getBody().get("email", String.class);
+            // Check Redis blacklist
+            String blacklistKey = "jwt:blacklist:" + token;
+            Boolean isBlacklisted = redisTemplate.hasKey(blacklistKey);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            } catch (Exception e) {
-                // invalid token - ignore and continue
+            if (Boolean.TRUE.equals(isBlacklisted)) {
                 SecurityContextHolder.clearContext();
+            } else {
+                try {
+                    Jws<Claims> claimsJws = tokenProvider.parseClaims(token);
+                    String email = claimsJws.getPayload().get("email", String.class);
+
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } catch (Exception e) {
+                    // invalid token - ignore and continue
+                    SecurityContextHolder.clearContext();
+                }
             }
         }
 
